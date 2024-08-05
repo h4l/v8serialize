@@ -1,0 +1,8 @@
+.*
+!.envrc
+!.env.local.example
+!.devcontainer
+!.editorconfig
+!.git*
+!.prettierrc
+__pycache__
