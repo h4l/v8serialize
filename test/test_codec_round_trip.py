@@ -56,3 +56,12 @@ def test_codec_rt_string_twobyte(value: str, offset: int) -> None:
     # UTF-16 always writes pairs of bytes, so if we aligned correctly the data
     # will be an even length
     assert len(rts.data) % 2 == 0
+
+
+@given(st.text(alphabet=st.characters(codec="utf-8")))
+def test_codec_rt_string_utf8(value: str) -> None:
+    wts = WritableTagStream()
+    wts.write_string_utf8(value)
+    rts = ReadableTagStream(wts.data)
+    result = rts.read_string_utf8()
+    assert value == result

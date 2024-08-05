@@ -152,6 +152,18 @@ class ReadableTagStream:
         self.pos += length
         return value
 
+    def read_string_utf8(self) -> str:
+        """Decode a Utf8String, which is UTF8-encoded text."""
+        self.read_tag(tag=SerializationTag.kUtf8String)
+        length = self.read_varint()
+        self.ensure_capacity(length)
+        try:
+            value = codecs.decode(self.data[self.pos : self.pos + length], "utf-8")
+        except UnicodeDecodeError as e:
+            self.throw("Utf8String is not valid UTF-8 data", cause=e)
+        self.pos += length
+        return value
+
 
 def loads(data: ByteString) -> None:
     """De-serialize JavaScript values encoded in V8 serialization format."""

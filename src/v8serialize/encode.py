@@ -60,3 +60,14 @@ class WritableTagStream:
         if self.pos & 1:
             self.data.insert(tag_pos, SerializationTag.kPadding)
         self.data.extend(encoded)
+
+    def write_string_utf8(self, value: str) -> None:
+        """Encode a Utf8String, which is UTF-8-encoded text.
+
+        **Note: We never encode Utf8String at runtime, but we use it to test the
+        decoder. The V8 implementation only decodes Utf8String.**
+        """
+        encoded = value.encode("utf-8")
+        self.write_tag(SerializationTag.kUtf8String)
+        self.write_varint(len(encoded))
+        self.data.extend(encoded)
