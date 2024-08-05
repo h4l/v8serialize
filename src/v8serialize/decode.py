@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import codecs
 import struct
 from dataclasses import dataclass, field
 from typing import ByteString, Never, cast
@@ -112,6 +113,17 @@ class ReadableTagStream:
         self.ensure_capacity(8)
         value = cast(float, struct.unpack_from("<d", self.data, self.pos)[0])
         self.pos += 8
+        return value
+
+    def read_string_onebyte(self) -> str:
+        """Decode a OneByte string, which is latin1-encoded text."""
+        self.read_tag(tag=SerializationTag.kOneByteString)
+        length = self.read_varint()
+        self.ensure_capacity(length)
+        # Decoding latin1 can't fail/throw — just 1 byte/char.
+        # We use codecs.decode because not all ByteString types have a decode method.
+        value = codecs.decode(self.data[self.pos : self.pos + length], "latin1")
+        self.pos += length
         return value
 
 

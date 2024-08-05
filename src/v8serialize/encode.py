@@ -37,3 +37,15 @@ class WritableTagStream:
     @tag(SerializationTag.kDouble)
     def write_double(self, value: float) -> None:
         self.data.extend(struct.pack("<d", value))
+
+    def write_string_onebyte(self, value: str) -> None:
+        """Encode a OneByte string, which is latin1-encoded text."""
+        try:
+            encoded = value.encode("latin1")
+        except UnicodeEncodeError as e:
+            raise ValueError(
+                "Attempted to encode non-latin1 string in OneByte representation"
+            ) from e
+        self.write_tag(SerializationTag.kOneByteString)
+        self.write_varint(len(encoded))
+        self.data.extend(encoded)

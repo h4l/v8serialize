@@ -32,3 +32,12 @@ def test_codec_rt_double(value: float) -> None:
     rts = ReadableTagStream(wts.data)
     result = rts.read_double()
     assert value == result or math.isnan(value) and math.isnan(result)
+
+
+@given(st.text(alphabet=st.characters(codec="latin1")))
+def test_codec_rt_string_onebyte(value: str) -> None:
+    wts = WritableTagStream()
+    wts.write_string_onebyte(value)
+    rts = ReadableTagStream(wts.data)
+    result = rts.read_string_onebyte()
+    assert value == result
