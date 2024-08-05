@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import struct
 from dataclasses import dataclass, field
 from typing import ByteString, Never, cast
 
 from v8serialize.constants import SerializationTag, kLatestVersion
+from v8serialize.decorators import tag
 
 
 class V8CodecError(ValueError):
@@ -104,6 +106,13 @@ class ReadableTagStream:
     def read_zigzag(self) -> int:
         uint = self.read_varint()
         return _decode_zigzag(uint)
+
+    @tag(SerializationTag.kDouble)
+    def read_double(self) -> float:
+        self.ensure_capacity(8)
+        value = cast(float, struct.unpack_from("<d", self.data, self.pos)[0])
+        self.pos += 8
+        return value
 
 
 def loads(data: ByteString) -> None:

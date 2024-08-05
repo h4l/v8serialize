@@ -1,3 +1,5 @@
+import math
+
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -21,3 +23,12 @@ def test_codec_rt_zigzag(n: int) -> None:
     rts = ReadableTagStream(wts.data)
     result = rts.read_zigzag()
     assert n == result
+
+
+@given(st.floats())
+def test_codec_rt_double(value: float) -> None:
+    wts = WritableTagStream()
+    wts.write_double(value)
+    rts = ReadableTagStream(wts.data)
+    result = rts.read_double()
+    assert value == result or math.isnan(value) and math.isnan(result)

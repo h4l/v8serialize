@@ -1,6 +1,8 @@
+import struct
 from dataclasses import dataclass, field
 
 from v8serialize.constants import SerializationTag
+from v8serialize.decorators import tag
 
 
 def _encode_zigzag(number: int) -> int:
@@ -31,3 +33,7 @@ class WritableTagStream:
 
     def write_zigzag(self, n: int) -> None:
         self.write_varint(_encode_zigzag(n))
+
+    @tag(SerializationTag.kDouble)
+    def write_double(self, value: float) -> None:
+        self.data.extend(struct.pack("<d", value))
