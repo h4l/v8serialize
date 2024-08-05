@@ -41,3 +41,18 @@ def test_codec_rt_string_onebyte(value: str) -> None:
     rts = ReadableTagStream(wts.data)
     result = rts.read_string_onebyte()
     assert value == result
+
+
+@given(st.text(alphabet=st.characters(codec="utf-16")), st.integers(0, 1))
+def test_codec_rt_string_twobyte(value: str, offset: int) -> None:
+    wts = WritableTagStream()
+    # randomise the start position because we align the UTF-16 pairs to even
+    wts.data.extend(b"\x00" * offset)
+    wts.write_string_twobyte(value)
+    rts = ReadableTagStream(wts.data, pos=offset)
+    result = rts.read_string_twobyte()
+    assert value == result
+
+    # UTF-16 always writes pairs of bytes, so if we aligned correctly the data
+    # will be an even length
+    assert len(rts.data) % 2 == 0

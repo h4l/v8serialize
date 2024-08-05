@@ -54,12 +54,17 @@ class ReadableTagStream:
                 f"{available} available"
             )
 
-    def throw(self, message: str) -> Never:
-        raise DecodeV8CodecError(message, data=self.data, position=self.pos)
+    def throw(self, message: str, *, cause: BaseException | None = None) -> Never:
+        raise DecodeV8CodecError(message, data=self.data, position=self.pos) from cause
 
     def read_tag(self, tag: SerializationTag | None = None) -> SerializationTag:
         self.ensure_capacity(1)
         value = self.data[self.pos]
+        # Some tags (e.g. TwoByteString) are preceded by padding for alignment
+        if value == SerializationTag.kPadding:
+            self.pos += 1
+            self.read_padding()
+            value = self.data[self.pos]
         if value in SerializationTag:
             if tag is None:
                 self.pos += 1
@@ -69,13 +74,22 @@ class ReadableTagStream:
                     self.pos += 1
                     return tag
 
-            expected = f"Expected tag {tag}"
-            actual = f"{self.data[self.pos]} ({SerializationTag(self.data[self.pos])}"
+            expected = f"Expected tag {tag.name}"
+            actual = (
+                f"{self.data[self.pos]} ({SerializationTag(self.data[self.pos]).name})"
+            )
         else:
             expected = "Expected a tag"
             actual = f"{self.data[self.pos]} (not a valid tag)"
 
         self.throw(f"{expected} at position {self.pos} but found {actual}")
+
+    def read_padding(self) -> None:
+        while True:
+            self.ensure_capacity(1)
+            if self.data[self.pos] != SerializationTag.kPadding:
+                return
+            self.pos += 1
 
     def read_uint8(self) -> int:
         self.ensure_capacity(1)
@@ -116,13 +130,25 @@ class ReadableTagStream:
         return value
 
     def read_string_onebyte(self) -> str:
-        """Decode a OneByte string, which is latin1-encoded text."""
+        """Decode a OneByteString, which is latin1-encoded text."""
         self.read_tag(tag=SerializationTag.kOneByteString)
         length = self.read_varint()
         self.ensure_capacity(length)
         # Decoding latin1 can't fail/throw — just 1 byte/char.
         # We use codecs.decode because not all ByteString types have a decode method.
         value = codecs.decode(self.data[self.pos : self.pos + length], "latin1")
+        self.pos += length
+        return value
+
+    def read_string_twobyte(self) -> str:
+        """Decode a TwoByteString, which is UTF-16-encoded text."""
+        self.read_tag(SerializationTag.kTwoByteString)
+        length = self.read_varint()
+        self.ensure_capacity(length)
+        try:
+            value = codecs.decode(self.data[self.pos : self.pos + length], "utf-16-le")
+        except UnicodeDecodeError as e:
+            self.throw("TwoByteString is not valid UTF-16 data", cause=e)
         self.pos += length
         return value
 

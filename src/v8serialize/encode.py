@@ -49,3 +49,14 @@ class WritableTagStream:
         self.write_tag(SerializationTag.kOneByteString)
         self.write_varint(len(encoded))
         self.data.extend(encoded)
+
+    def write_string_twobyte(self, value: str) -> None:
+        encoded = value.encode("utf-16-le")
+        tag_pos = self.pos
+        self.write_tag(SerializationTag.kTwoByteString)
+        self.write_varint(len(encoded))
+        # V8 implementation states that existing code expects TwoByteString to
+        # be aligned (to even bytes).
+        if self.pos & 1:
+            self.data.insert(tag_pos, SerializationTag.kPadding)
+        self.data.extend(encoded)
