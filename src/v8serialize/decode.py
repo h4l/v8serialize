@@ -164,6 +164,18 @@ class ReadableTagStream:
         self.pos += length
         return value
 
+    def read_bigint(self) -> int:
+        bitfield = self.read_varint()
+        is_negative = bitfield & 1
+        byte_count = (bitfield >> 1) & 0b111111111111111111111111111111
+        self.ensure_capacity(byte_count)
+        value = int.from_bytes(
+            self.data[self.pos : self.pos + byte_count], byteorder="little"
+        )
+        if is_negative:
+            return -value
+        return value
+
 
 def loads(data: ByteString) -> None:
     """De-serialize JavaScript values encoded in V8 serialization format."""

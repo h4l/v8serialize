@@ -65,3 +65,12 @@ def test_codec_rt_string_utf8(value: str) -> None:
     rts = ReadableTagStream(wts.data)
     result = rts.read_string_utf8()
     assert value == result
+
+
+@given(st.integers())
+def test_codec_rt_bigint(value: int) -> None:
+    wts = WritableTagStream()
+    wts.write_bigint(value)
+    rts = ReadableTagStream(wts.data)
+    result = rts.read_bigint()
+    assert value == result

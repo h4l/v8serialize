@@ -71,3 +71,16 @@ class WritableTagStream:
         self.write_tag(SerializationTag.kUtf8String)
         self.write_varint(len(encoded))
         self.data.extend(encoded)
+
+    def write_bigint(self, value: int) -> None:
+        byte_length = (value.bit_length() + 8) // 8  # round up
+        if byte_length.bit_length() > 30:
+            raise ValueError(
+                f"Python int is too large to represent as JavaScript BigInt: "
+                f"30 bits are available to represent the byte length, but this "
+                f"int needs {byte_length.bit_length()}"
+            )
+        bitfield = (byte_length << 1) | (value < 0)
+        digits = abs(value).to_bytes(length=byte_length, byteorder="little")
+        self.write_varint(bitfield)
+        self.data.extend(digits)
