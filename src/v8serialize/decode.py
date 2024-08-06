@@ -3,7 +3,7 @@ from __future__ import annotations
 import codecs
 import struct
 from dataclasses import dataclass, field
-from typing import ByteString, Never, cast
+from typing import ByteString, Callable, Mapping, Never, cast
 
 from v8serialize.constants import SerializationTag, kLatestVersion
 from v8serialize.decorators import tag
@@ -45,6 +45,25 @@ def _decode_zigzag(n: int) -> int:
 class ReadableTagStream:
     data: ByteString
     pos: int = field(default=0)
+    tag_readers: Mapping[SerializationTag, Callable[[], object]] = field(init=False)
+
+    def __post_init__(self) -> None:
+        tag_readers: dict[SerializationTag, Callable[[], object]] = {}
+        self.tag_readers = tag_readers
+        self.register_tag_readers(tag_readers)
+
+    def register_tag_readers(
+        self, tag_readers: dict[SerializationTag, Callable[[], object]]
+    ) -> None:
+        tag_readers.update(
+            {
+                SerializationTag.kDouble: self.read_double,
+                SerializationTag.kOneByteString: self.read_string_onebyte,
+                SerializationTag.kTwoByteString: self.read_string_twobyte,
+                SerializationTag.kUtf8String: self.read_string_utf8,
+                SerializationTag.kBigInt: self.read_bigint,
+            }
+        )
 
     def ensure_capacity(self, count: int) -> None:
         if self.pos + count > len(self.data):
@@ -175,6 +194,13 @@ class ReadableTagStream:
         if is_negative:
             return -value
         return value
+
+    def read_object(self) -> object:
+        tag = self.read_tag()
+        read = self.tag_readers.get(tag)
+        if not read:
+            self.throw(f"No reader is implemented for tag {tag.name}")
+        return read()
 
 
 def loads(data: ByteString) -> None:
