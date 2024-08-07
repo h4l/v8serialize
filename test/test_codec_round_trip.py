@@ -1,10 +1,30 @@
 import math
 
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from v8serialize.decode import ReadableTagStream
-from v8serialize.encode import WritableTagStream
+from v8serialize.decode import ReadableTagStream, TagMapper
+from v8serialize.encode import ObjectMapper, WritableTagStream
+
+
+@pytest.fixture(scope="session")
+def object_mapper() -> ObjectMapper:
+    return ObjectMapper()
+
+
+@pytest.fixture(scope="session")
+def tag_mapper() -> TagMapper:
+    return TagMapper()
+
+
+any_object = st.one_of(
+    st.integers(),
+    # NaN breaks equality when nested inside objects. We test with nan in
+    # test_codec_rt_double.
+    st.floats(allow_nan=False),
+    st.text(),
+)
 
 
 @given(st.integers(min_value=0))
@@ -73,4 +93,18 @@ def test_codec_rt_bigint(value: int) -> None:
     wts.write_bigint(value)
     rts = ReadableTagStream(wts.data)
     result = rts.read_bigint()
+    assert value == result
+
+
+
+
+@given(value=any_object)
+def test_codec_rt_object(
+    value: object, object_mapper: ObjectMapper, tag_mapper: TagMapper
+) -> None:
+    wts = WritableTagStream()
+    wts.write_object(value, object_mapper)
+
+    rts = ReadableTagStream(wts.data)
+    result = rts.read_object(tag_mapper)
     assert value == result

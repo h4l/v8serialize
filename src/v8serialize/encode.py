@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass, field
-from typing import Never, Protocol, cast
+from typing import Literal, Never, Protocol, cast
 
 from v8serialize.constants import SerializationTag, kLatestVersion
-
-# from functools import singledispatchmethod
-from v8serialize.decorators import singledispatchmethod, tag
+from v8serialize.decorators import singledispatchmethod
 from v8serialize.errors import V8CodecError
 
 
@@ -55,8 +53,9 @@ class WritableTagStream:
     def pos(self) -> int:
         return len(self.data)
 
-    def write_tag(self, tag: SerializationTag) -> None:
-        self.data.append(tag)
+    def write_tag(self, tag: SerializationTag | None) -> None:
+        if tag is not None:
+            self.data.append(tag)
 
     def write_varint(self, n: int) -> None:
         if n < 0:
@@ -77,11 +76,23 @@ class WritableTagStream:
         self.write_tag(SerializationTag.kVersion)
         self.write_varint(kLatestVersion)
 
-    @tag(SerializationTag.kDouble)
-    def write_double(self, value: float) -> None:
+    def write_double(
+        self,
+        value: float,
+        *,
+        tag: Literal[SerializationTag.kDouble] | None = SerializationTag.kDouble,
+    ) -> None:
+        self.write_tag(tag)
         self.data.extend(struct.pack("<d", value))
 
-    def write_string_onebyte(self, value: str) -> None:
+    def write_string_onebyte(
+        self,
+        value: str,
+        *,
+        tag: (
+            Literal[SerializationTag.kOneByteString] | None
+        ) = SerializationTag.kOneByteString,
+    ) -> None:
         """Encode a OneByte string, which is latin1-encoded text."""
         try:
             encoded = value.encode("latin1")
@@ -89,33 +100,52 @@ class WritableTagStream:
             raise ValueError(
                 "Attempted to encode non-latin1 string in OneByte representation"
             ) from e
-        self.write_tag(SerializationTag.kOneByteString)
+        self.write_tag(tag)
         self.write_varint(len(encoded))
         self.data.extend(encoded)
 
-    def write_string_twobyte(self, value: str) -> None:
+    def write_string_twobyte(
+        self,
+        value: str,
+        *,
+        tag: (
+            Literal[SerializationTag.kTwoByteString] | None
+        ) = SerializationTag.kTwoByteString,
+    ) -> None:
         encoded = value.encode("utf-16-le")
         tag_pos = self.pos
-        self.write_tag(SerializationTag.kTwoByteString)
+        self.write_tag(tag)
         self.write_varint(len(encoded))
         # V8 implementation states that existing code expects TwoByteString to
         # be aligned (to even bytes).
-        if self.pos & 1:
+        if tag is not None and self.pos & 1:
             self.data.insert(tag_pos, SerializationTag.kPadding)
         self.data.extend(encoded)
 
-    def write_string_utf8(self, value: str) -> None:
+    def write_string_utf8(
+        self,
+        value: str,
+        *,
+        tag: (
+            Literal[SerializationTag.kUtf8String] | None
+        ) = SerializationTag.kUtf8String,
+    ) -> None:
         """Encode a Utf8String, which is UTF-8-encoded text.
 
         **Note: We never encode Utf8String at runtime, but we use it to test the
         decoder. The V8 implementation only decodes Utf8String.**
         """
         encoded = value.encode("utf-8")
-        self.write_tag(SerializationTag.kUtf8String)
+        self.write_tag(tag)
         self.write_varint(len(encoded))
         self.data.extend(encoded)
 
-    def write_bigint(self, value: int) -> None:
+    def write_bigint(
+        self,
+        value: int,
+        *,
+        tag: Literal[SerializationTag.kBigInt] | None = SerializationTag.kBigInt,
+    ) -> None:
         byte_length = (value.bit_length() + 8) // 8  # round up
         if byte_length.bit_length() > 30:
             raise ValueError(
@@ -125,6 +155,7 @@ class WritableTagStream:
             )
         bitfield = (byte_length << 1) | (value < 0)
         digits = abs(value).to_bytes(length=byte_length, byteorder="little")
+        self.write_tag(tag)
         self.write_varint(bitfield)
         self.data.extend(digits)
 

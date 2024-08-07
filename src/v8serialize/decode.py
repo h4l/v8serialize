@@ -7,7 +7,6 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, ByteString, Iterable, Mapping, Never, Protocol, cast
 
 from v8serialize.constants import SerializationTag, kLatestVersion
-from v8serialize.decorators import tag
 from v8serialize.errors import V8CodecError
 
 if TYPE_CHECKING:
@@ -134,8 +133,8 @@ class ReadableTagStream:
             self.throw(f"Unsupported version {version}")
         return version
 
-    @tag(SerializationTag.kDouble)
     def read_double(self) -> float:
+        self.read_tag(tag=SerializationTag.kDouble)
         self.ensure_capacity(8)
         value = cast(float, struct.unpack_from("<d", self.data, self.pos)[0])
         self.pos += 8
@@ -177,6 +176,7 @@ class ReadableTagStream:
         return value
 
     def read_bigint(self) -> int:
+        self.read_tag(tag=SerializationTag.kBigInt)
         bitfield = self.read_varint()
         is_negative = bitfield & 1
         byte_count = (bitfield >> 1) & 0b111111111111111111111111111111
@@ -190,6 +190,7 @@ class ReadableTagStream:
 
     def read_object(self, tag_mapper: TagMapper) -> object:
         tag = self.read_tag()
+        self.pos -= 1
         return tag_mapper.deserialize(tag, self)
 
 
@@ -215,12 +216,19 @@ def read_stream(rts_fn: ReadableTagStreamReadFunction) -> TagReader:
 
     read_fn = operator.methodcaller(rts_fn.__name__)
 
-    def tag_reader(
+    def read_stream__tag_reader(
         tag_mapper: TagMapper, tag: SerializationTag, stream: ReadableTagStream
     ) -> object:
         return read_fn(stream)
 
-    return tag_reader
+    read_stream__tag_reader.__name__ = (
+        f"{read_stream__tag_reader.__name__}#{rts_fn.__name__}"
+    )
+    read_stream__tag_reader.__qualname__ = (
+        f"{read_stream__tag_reader.__qualname__}#{rts_fn.__name__}"
+    )
+
+    return read_stream__tag_reader
 
 
 @dataclass(slots=True, init=False)

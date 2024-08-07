@@ -13,6 +13,7 @@ T = TypeVar("T")
 F = TypeVar("F", bound=Callable[..., Any])
 
 
+# TODO: remove this if we don't start using it
 def tag(tag: SerializationTag) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """Mark a function with a SerializationTag.
 
