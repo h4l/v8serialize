@@ -1,20 +1,21 @@
 from __future__ import annotations
 
 import codecs
+import operator
 import struct
 from dataclasses import dataclass, field
-from typing import ByteString, Callable, Mapping, Never, cast
+from typing import TYPE_CHECKING, ByteString, Iterable, Mapping, Never, Protocol, cast
 
 from v8serialize.constants import SerializationTag, kLatestVersion
 from v8serialize.decorators import tag
+from v8serialize.errors import V8CodecError
 
-
-class V8CodecError(ValueError):
-    pass
+if TYPE_CHECKING:
+    from _typeshed import SupportsKeysAndGetItem, SupportsRead
 
 
 @dataclass(init=False)
-class DecodeV8CodecError(V8CodecError):
+class DecodeV8CodecError(V8CodecError, ValueError):
     message: str
     position: int
     data: ByteString
@@ -45,25 +46,6 @@ def _decode_zigzag(n: int) -> int:
 class ReadableTagStream:
     data: ByteString
     pos: int = field(default=0)
-    tag_readers: Mapping[SerializationTag, Callable[[], object]] = field(init=False)
-
-    def __post_init__(self) -> None:
-        tag_readers: dict[SerializationTag, Callable[[], object]] = {}
-        self.tag_readers = tag_readers
-        self.register_tag_readers(tag_readers)
-
-    def register_tag_readers(
-        self, tag_readers: dict[SerializationTag, Callable[[], object]]
-    ) -> None:
-        tag_readers.update(
-            {
-                SerializationTag.kDouble: self.read_double,
-                SerializationTag.kOneByteString: self.read_string_onebyte,
-                SerializationTag.kTwoByteString: self.read_string_twobyte,
-                SerializationTag.kUtf8String: self.read_string_utf8,
-                SerializationTag.kBigInt: self.read_bigint,
-            }
-        )
 
     def ensure_capacity(self, count: int) -> None:
         if self.pos + count > len(self.data):
@@ -141,6 +123,17 @@ class ReadableTagStream:
         uint = self.read_varint()
         return _decode_zigzag(uint)
 
+    def read_header(self) -> int:
+        """Read the V8 serialization stream header and verify it's a supported version.
+
+        @return the header's version number.
+        """
+        self.read_tag(SerializationTag.kVersion)
+        version = self.read_varint()
+        if version > kLatestVersion:
+            self.throw(f"Unsupported version {version}")
+        return version
+
     @tag(SerializationTag.kDouble)
     def read_double(self) -> float:
         self.ensure_capacity(8)
@@ -195,19 +188,104 @@ class ReadableTagStream:
             return -value
         return value
 
-    def read_object(self) -> object:
+    def read_object(self, tag_mapper: TagMapper) -> object:
         tag = self.read_tag()
-        read = self.tag_readers.get(tag)
-        if not read:
-            self.throw(f"No reader is implemented for tag {tag.name}")
-        return read()
+        return tag_mapper.deserialize(tag, self)
 
 
-def loads(data: ByteString) -> None:
-    """De-serialize JavaScript values encoded in V8 serialization format."""
-    rts = ReadableTagStream(data)
+class TagReader(Protocol):
+    def __call__(
+        self,
+        tag_mapper: TagMapper,
+        tag: SerializationTag,
+        stream: ReadableTagStream,
+        /,
+    ) -> object: ...
 
-    rts.read_tag(SerializationTag.kVersion)
-    version = rts.read_uint8()
-    if version > kLatestVersion:
-        rts.throw(f"Unsupported version {version}")
+
+class ReadableTagStreamReadFunction(Protocol):
+    def __call__(self, cls: ReadableTagStream, /) -> object: ...
+
+    @property
+    def __name__(self) -> str: ...
+
+
+def read_stream(rts_fn: ReadableTagStreamReadFunction) -> TagReader:
+    """Create a TagReader that calls a primitive read_xxx function on the stream."""
+
+    read_fn = operator.methodcaller(rts_fn.__name__)
+
+    def tag_reader(
+        tag_mapper: TagMapper, tag: SerializationTag, stream: ReadableTagStream
+    ) -> object:
+        return read_fn(stream)
+
+    return tag_reader
+
+
+@dataclass(slots=True, init=False)
+class TagMapper:
+    """Defines the conversion of V8 serialization tagged data to Python values."""
+
+    tag_readers: Mapping[SerializationTag, TagReader]
+    default_tag_mapper: TagMapper | None
+
+    def __init__(
+        self,
+        tag_readers: (
+            SupportsKeysAndGetItem[SerializationTag, TagReader]
+            | Iterable[tuple[SerializationTag, TagReader]]
+            | None
+        ) = None,
+        default_tag_mapper: TagMapper | None = None,
+    ) -> None:
+        self.default_tag_mapper = default_tag_mapper
+
+        if tag_readers is not None:
+            tag_readers = dict(tag_readers)
+
+        self.tag_readers = self.register_tag_readers(tag_readers)
+        assert self.tag_readers
+
+    def register_tag_readers(
+        self, tag_readers: dict[SerializationTag, TagReader] | None
+    ) -> dict[SerializationTag, TagReader]:
+
+        primitives: list[tuple[SerializationTag, ReadableTagStreamReadFunction]] = [
+            (SerializationTag.kDouble, ReadableTagStream.read_double),
+            (SerializationTag.kOneByteString, ReadableTagStream.read_string_onebyte),
+            (SerializationTag.kTwoByteString, ReadableTagStream.read_string_twobyte),
+            (SerializationTag.kUtf8String, ReadableTagStream.read_string_utf8),
+            (SerializationTag.kBigInt, ReadableTagStream.read_bigint),
+        ]
+        primitive_tag_readers = {t: read_stream(read_fn) for (t, read_fn) in primitives}
+
+        return {**primitive_tag_readers, **(tag_readers or {})}
+
+    def deserialize(self, tag: SerializationTag, stream: ReadableTagStream) -> object:
+        read_tag = self.tag_readers.get(tag)
+        if not read_tag:
+            # FIXME: more specific error
+            stream.throw(f"No reader is implemented for tag {tag.name}")
+        return read_tag(self, tag, stream)
+
+
+@dataclass(init=False)
+class Decoder:
+    tag_mapper: TagMapper
+
+    def __init__(self, tag_mapper: TagMapper | None) -> None:
+        self.tag_mapper = tag_mapper or TagMapper()
+
+    def decode(self, fp: SupportsRead[bytes]) -> object:
+        return self.decodes(fp.read())
+
+    def decodes(self, data: ByteString) -> object:
+        stream = ReadableTagStream(data)
+        stream.read_header()
+        return stream.read_object(self.tag_mapper)
+
+
+def loads(data: ByteString, *, tag_mapper: TagMapper | None = None) -> object:
+    """Deserialize a JavaScript value encoded in V8 serialization format."""
+    return Decoder(tag_mapper=tag_mapper).decodes(data)
