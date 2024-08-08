@@ -46,6 +46,10 @@ class ReadableTagStream:
     data: ByteString
     pos: int = field(default=0)
 
+    @property
+    def eof(self) -> bool:
+        return self.pos == len(self.data)
+
     def ensure_capacity(self, count: int) -> None:
         if self.pos + count > len(self.data):
             available = max(0, len(self.data) - self.pos)
@@ -91,11 +95,10 @@ class ReadableTagStream:
                 return
             self.pos += 1
 
-    def read_uint8(self) -> int:
-        self.ensure_capacity(1)
-        value = self.data[self.pos]
-        self.pos += 1
-        return value
+    def read_bytes(self, count: int) -> ByteString:
+        self.ensure_capacity(count)
+        self.pos += count
+        return self.data[self.pos - count : self.pos]
 
     def read_varint(self) -> int:
         data = self.data
@@ -147,32 +150,29 @@ class ReadableTagStream:
         self.ensure_capacity(length)
         # Decoding latin1 can't fail/throw — just 1 byte/char.
         # We use codecs.decode because not all ByteString types have a decode method.
-        value = codecs.decode(self.data[self.pos : self.pos + length], "latin1")
-        self.pos += length
+        value = codecs.decode(self.read_bytes(length), "latin1")
         return value
 
     def read_string_twobyte(self) -> str:
         """Decode a TwoByteString, which is UTF-16-encoded text."""
         self.read_tag(SerializationTag.kTwoByteString)
         length = self.read_varint()
-        self.ensure_capacity(length)
         try:
-            value = codecs.decode(self.data[self.pos : self.pos + length], "utf-16-le")
+            value = codecs.decode(self.read_bytes(length), "utf-16-le")
         except UnicodeDecodeError as e:
+            self.pos -= length
             self.throw("TwoByteString is not valid UTF-16 data", cause=e)
-        self.pos += length
         return value
 
     def read_string_utf8(self) -> str:
         """Decode a Utf8String, which is UTF8-encoded text."""
         self.read_tag(tag=SerializationTag.kUtf8String)
         length = self.read_varint()
-        self.ensure_capacity(length)
         try:
-            value = codecs.decode(self.data[self.pos : self.pos + length], "utf-8")
+            value = codecs.decode(self.read_bytes(length), "utf-8")
         except UnicodeDecodeError as e:
+            self.pos -= length
             self.throw("Utf8String is not valid UTF-8 data", cause=e)
-        self.pos += length
         return value
 
     def read_bigint(self) -> int:
@@ -180,10 +180,7 @@ class ReadableTagStream:
         bitfield = self.read_varint()
         is_negative = bitfield & 1
         byte_count = (bitfield >> 1) & 0b111111111111111111111111111111
-        self.ensure_capacity(byte_count)
-        value = int.from_bytes(
-            self.data[self.pos : self.pos + byte_count], byteorder="little"
-        )
+        value = int.from_bytes(self.read_bytes(byte_count), byteorder="little")
         if is_negative:
             return -value
         return value

@@ -34,6 +34,7 @@ def test_codec_rt_varint(n: int) -> None:
     rts = ReadableTagStream(wts.data)
     result = rts.read_varint()
     assert n == result
+    assert rts.eof
 
 
 @given(st.integers())
@@ -43,6 +44,7 @@ def test_codec_rt_zigzag(n: int) -> None:
     rts = ReadableTagStream(wts.data)
     result = rts.read_zigzag()
     assert n == result
+    assert rts.eof
 
 
 @given(st.floats())
@@ -52,6 +54,7 @@ def test_codec_rt_double(value: float) -> None:
     rts = ReadableTagStream(wts.data)
     result = rts.read_double()
     assert value == result or math.isnan(value) and math.isnan(result)
+    assert rts.eof
 
 
 @given(st.text(alphabet=st.characters(codec="latin1")))
@@ -61,6 +64,7 @@ def test_codec_rt_string_onebyte(value: str) -> None:
     rts = ReadableTagStream(wts.data)
     result = rts.read_string_onebyte()
     assert value == result
+    assert rts.eof
 
 
 @given(st.text(alphabet=st.characters(codec="utf-16")), st.integers(0, 1))
@@ -72,6 +76,7 @@ def test_codec_rt_string_twobyte(value: str, offset: int) -> None:
     rts = ReadableTagStream(wts.data, pos=offset)
     result = rts.read_string_twobyte()
     assert value == result
+    assert rts.eof
 
     # UTF-16 always writes pairs of bytes, so if we aligned correctly the data
     # will be an even length
@@ -85,6 +90,7 @@ def test_codec_rt_string_utf8(value: str) -> None:
     rts = ReadableTagStream(wts.data)
     result = rts.read_string_utf8()
     assert value == result
+    assert rts.eof
 
 
 @given(st.integers())
@@ -94,6 +100,7 @@ def test_codec_rt_bigint(value: int) -> None:
     rts = ReadableTagStream(wts.data)
     result = rts.read_bigint()
     assert value == result
+    assert rts.eof
 
 
 
@@ -108,3 +115,4 @@ def test_codec_rt_object(
     rts = ReadableTagStream(wts.data)
     result = rts.read_object(tag_mapper)
     assert value == result
+    assert rts.eof
