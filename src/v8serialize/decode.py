@@ -61,7 +61,16 @@ class ReadableTagStream:
     def throw(self, message: str, *, cause: BaseException | None = None) -> Never:
         raise DecodeV8CodecError(message, data=self.data, position=self.pos) from cause
 
-    def read_tag(self, tag: SerializationTag | None = None) -> SerializationTag:
+    def read_tag(
+        self, tag: SerializationTag | None = None, consume: bool = True
+    ) -> SerializationTag:
+        """Read the tag at the current position.
+
+        Padding tags are read and ignored until a non-padding tag is found. If
+        `consume` is False, the current `self.pos` remains on the tag after
+        returning rather than moving to the next byte. (Padding is always
+        consumed regardless.)
+        """
         self.ensure_capacity(1)
         value = self.data[self.pos]
         # Some tags (e.g. TwoByteString) are preceded by padding for alignment
@@ -71,11 +80,11 @@ class ReadableTagStream:
             value = self.data[self.pos]
         if value in SerializationTag:
             if tag is None:
-                self.pos += 1
+                self.pos += consume
                 return SerializationTag(value)
             else:
                 if value == tag:
-                    self.pos += 1
+                    self.pos += consume
                     return tag
 
             expected = f"Expected tag {tag.name}"
@@ -186,8 +195,7 @@ class ReadableTagStream:
         return value
 
     def read_object(self, tag_mapper: TagMapper) -> object:
-        tag = self.read_tag()
-        self.pos -= 1
+        tag = self.read_tag(consume=False)
         return tag_mapper.deserialize(tag, self)
 
 
