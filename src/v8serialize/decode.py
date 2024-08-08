@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
     ByteString,
+    Callable,
     Generator,
     Iterable,
     Mapping,
@@ -264,12 +265,16 @@ def read_stream(rts_fn: ReadableTagStreamReadFunction) -> TagReader:
     return read_stream__tag_reader
 
 
+JSMapType = Callable[[Iterable[tuple[object, object]]], Mapping[object, object]]
+
+
 @dataclass(slots=True, init=False)
 class TagMapper:
     """Defines the conversion of V8 serialization tagged data to Python values."""
 
     tag_readers: Mapping[SerializationTag, TagReader]
     default_tag_mapper: TagMapper | None
+    jsmap_type: JSMapType
 
     def __init__(
         self,
@@ -279,8 +284,10 @@ class TagMapper:
             | None
         ) = None,
         default_tag_mapper: TagMapper | None = None,
+        jsmap_type: JSMapType | None = None,
     ) -> None:
         self.default_tag_mapper = default_tag_mapper
+        self.jsmap_type = jsmap_type or dict
 
         if tag_readers is not None:
             tag_readers = dict(tag_readers)
@@ -319,9 +326,9 @@ class TagMapper:
 
     def deserialize_jsmap(
         self, tag: SerializationTag, stream: ReadableTagStream
-    ) -> dict[object, object]:
+    ) -> Mapping[object, object]:
         assert tag == SerializationTag.kBeginJSMap
-        return dict(stream.read_jsmap(self))
+        return self.jsmap_type(stream.read_jsmap(self))
 
 
 @dataclass(init=False)

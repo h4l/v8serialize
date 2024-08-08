@@ -1,6 +1,7 @@
 import math
 
 import pytest
+from frozendict import frozendict
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -15,15 +16,23 @@ def object_mapper() -> ObjectMapper:
 
 @pytest.fixture(scope="session")
 def tag_mapper() -> TagMapper:
-    return TagMapper()
+    return TagMapper(jsmap_type=frozendict)
 
 
-any_object = st.one_of(
+any_atomic = st.one_of(
     st.integers(),
     # NaN breaks equality when nested inside objects. We test with nan in
     # test_codec_rt_double.
     st.floats(allow_nan=False),
     st.text(),
+)
+# https://hypothesis.works/articles/recursive-data/
+any_object = st.recursive(
+    any_atomic,
+    lambda children: st.dictionaries(
+        keys=children, values=children, dict_class=frozendict
+    ),
+    max_leaves=3,  # TODO: tune this, perhaps increase in CI
 )
 
 
