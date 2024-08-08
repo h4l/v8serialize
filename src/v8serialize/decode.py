@@ -6,6 +6,7 @@ import struct
 from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     ByteString,
     Callable,
     Generator,
@@ -223,6 +224,23 @@ class ReadableTagStream:
             )
         return actual_count
 
+    def read_jsset(self, tag_mapper: TagMapper) -> Generator[object, None, int]:
+        self.read_tag(SerializationTag.kBeginJSSet)
+        actual_count = 0
+
+        while self.read_tag(consume=False) != SerializationTag.kEndJSSet:
+            yield self.read_object(tag_mapper)
+            actual_count += 1
+        self.pos += 1  # advance over EndJSSet
+
+        expected_count = self.read_varint()
+        if expected_count != actual_count:
+            self.throw(
+                f"Expected count does not match actual count after reading "
+                f"JSSet: expected={expected_count}, actual={actual_count}"
+            )
+        return actual_count
+
     def read_object(self, tag_mapper: TagMapper) -> object:
         tag = self.read_tag(consume=False)
         return tag_mapper.deserialize(tag, self)
@@ -266,6 +284,7 @@ def read_stream(rts_fn: ReadableTagStreamReadFunction) -> TagReader:
 
 
 JSMapType = Callable[[Iterable[tuple[object, object]]], Mapping[object, object]]
+JSSetType = Callable[[Iterable[object]], AbstractSet[object]]
 
 
 @dataclass(slots=True, init=False)
@@ -275,6 +294,7 @@ class TagMapper:
     tag_readers: Mapping[SerializationTag, TagReader]
     default_tag_mapper: TagMapper | None
     jsmap_type: JSMapType
+    jsset_type: JSSetType
 
     def __init__(
         self,
@@ -285,9 +305,11 @@ class TagMapper:
         ) = None,
         default_tag_mapper: TagMapper | None = None,
         jsmap_type: JSMapType | None = None,
+        jsset_type: JSSetType | None = None,
     ) -> None:
         self.default_tag_mapper = default_tag_mapper
         self.jsmap_type = jsmap_type or dict
+        self.jsset_type = jsset_type or set
 
         if tag_readers is not None:
             tag_readers = dict(tag_readers)
@@ -312,7 +334,8 @@ class TagMapper:
         #       with @singledispatchmethod? (Can't use that directly a it
         #       doesn't dispatch on values or Literal annotations.)
         default_tag_readers: dict[SerializationTag, TagReader] = {
-            SerializationTag.kBeginJSMap: TagMapper.deserialize_jsmap
+            SerializationTag.kBeginJSMap: TagMapper.deserialize_jsmap,
+            SerializationTag.kBeginJSSet: TagMapper.deserialize_jsset,
         }
 
         return {**primitive_tag_readers, **default_tag_readers, **(tag_readers or {})}
@@ -329,6 +352,12 @@ class TagMapper:
     ) -> Mapping[object, object]:
         assert tag == SerializationTag.kBeginJSMap
         return self.jsmap_type(stream.read_jsmap(self))
+
+    def deserialize_jsset(
+        self, tag: SerializationTag, stream: ReadableTagStream
+    ) -> AbstractSet[object]:
+        assert tag == SerializationTag.kBeginJSSet
+        return self.jsset_type(stream.read_jsset(self))
 
 
 @dataclass(init=False)

@@ -16,7 +16,7 @@ def object_mapper() -> ObjectMapper:
 
 @pytest.fixture(scope="session")
 def tag_mapper() -> TagMapper:
-    return TagMapper(jsmap_type=frozendict)
+    return TagMapper(jsmap_type=frozendict, jsset_type=frozenset)
 
 
 any_atomic = st.one_of(
@@ -29,8 +29,9 @@ any_atomic = st.one_of(
 # https://hypothesis.works/articles/recursive-data/
 any_object = st.recursive(
     any_atomic,
-    lambda children: st.dictionaries(
-        keys=children, values=children, dict_class=frozendict
+    lambda children: st.one_of(
+        st.dictionaries(keys=children, values=children, dict_class=frozendict),
+        st.frozensets(elements=children),
     ),
     max_leaves=3,  # TODO: tune this, perhaps increase in CI
 )
@@ -120,6 +121,18 @@ def test_codec_rt_jsmap(
     wts.write_jsmap(value.items(), object_mapper)
     rts = ReadableTagStream(wts.data)
     result = dict(rts.read_jsmap(tag_mapper))
+    assert value == result
+    assert rts.eof
+
+
+@given(value=st.sets(elements=any_object))
+def test_codec_rt_jsset(
+    value: set[object], object_mapper: ObjectMapper, tag_mapper: TagMapper
+) -> None:
+    wts = WritableTagStream()
+    wts.write_jsset(value, object_mapper)
+    rts = ReadableTagStream(wts.data)
+    result = set(rts.read_jsset(tag_mapper))
     assert value == result
     assert rts.eof
 

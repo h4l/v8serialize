@@ -3,7 +3,7 @@ from __future__ import annotations
 import struct
 from collections import abc
 from dataclasses import dataclass, field
-from typing import Iterable, Literal, Mapping, Never, Protocol, cast
+from typing import AbstractSet, Iterable, Literal, Mapping, Never, Protocol, cast
 
 from v8serialize.constants import SerializationTag, kLatestVersion
 from v8serialize.decorators import singledispatchmethod
@@ -174,6 +174,17 @@ class WritableTagStream:
         self.write_tag(SerializationTag.kEndJSMap)
         self.write_varint(count)
 
+    def write_jsset(
+        self, values: Iterable[object], object_mapper: ObjectMapperSerialize
+    ) -> None:
+        self.write_tag(SerializationTag.kBeginJSSet)
+        count = 0
+        for value in values:
+            self.write_object(value, object_mapper)
+            count += 1
+        self.write_tag(SerializationTag.kEndJSSet)
+        self.write_varint(count)
+
     def write_object(self, value: object, object_mapper: ObjectMapperSerialize) -> None:
         object_mapper.serialize(value, self)
 
@@ -222,6 +233,12 @@ class ObjectMapper(ObjectMapperSerialize):
         self, value: Mapping[object, object], stream: WritableTagStream
     ) -> None:
         stream.write_jsmap(value.items(), self)
+
+    @serialize.register(abc.Set)
+    def serialize_set(
+        self, value: AbstractSet[object], stream: WritableTagStream
+    ) -> None:
+        stream.write_jsset(value, self)
 
 
 @dataclass(init=False)
