@@ -5,7 +5,7 @@ from collections import abc
 from dataclasses import dataclass, field
 from typing import AbstractSet, Iterable, Literal, Mapping, Never, Protocol, cast
 
-from v8serialize.constants import SerializationTag, kLatestVersion
+from v8serialize.constants import INT32_RANGE, SerializationTag, kLatestVersion
 from v8serialize.decorators import singledispatchmethod
 from v8serialize.errors import V8CodecError
 
@@ -160,6 +160,19 @@ class WritableTagStream:
         self.write_varint(bitfield)
         self.data.extend(digits)
 
+    def write_int32(
+        self,
+        value: int,
+        tag: Literal[SerializationTag.kInt32] | None = SerializationTag.kInt32,
+    ) -> None:
+        if value not in INT32_RANGE:
+            raise ValueError(
+                f"Python int is too large to represent as Int32: value must be "
+                f"in {INT32_RANGE}"
+            )
+        self.write_tag(tag)
+        self.write_zigzag(value)
+
     def write_jsmap(
         self,
         items: Iterable[tuple[object, object]],
@@ -218,7 +231,10 @@ class ObjectMapper(ObjectMapperSerialize):
 
     @serialize.register
     def _(self, value: int, stream: WritableTagStream) -> None:
-        stream.write_bigint(value)
+        if value in INT32_RANGE:
+            stream.write_int32(value)
+        else:
+            stream.write_bigint(value)
 
     @serialize.register
     def _(self, value: str, stream: WritableTagStream) -> None:

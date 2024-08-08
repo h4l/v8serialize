@@ -113,6 +113,16 @@ def test_codec_rt_bigint(value: int) -> None:
     assert rts.eof
 
 
+@given(st.integers(min_value=-(2**31), max_value=2**31 - 1))
+def test_codec_rt_int32(value: int) -> None:
+    wts = WritableTagStream()
+    wts.write_int32(value)
+    rts = ReadableTagStream(wts.data)
+    result = rts.read_int32()
+    assert value == result
+    assert rts.eof
+
+
 @given(value=st.dictionaries(keys=any_object, values=any_object))
 def test_codec_rt_jsmap(
     value: dict[object, object], object_mapper: ObjectMapper, tag_mapper: TagMapper

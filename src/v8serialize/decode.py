@@ -17,7 +17,7 @@ from typing import (
     cast,
 )
 
-from v8serialize.constants import SerializationTag, kLatestVersion
+from v8serialize.constants import INT32_RANGE, SerializationTag, kLatestVersion
 from v8serialize.errors import V8CodecError
 
 if TYPE_CHECKING:
@@ -205,6 +205,13 @@ class ReadableTagStream:
             return -value
         return value
 
+    def read_int32(self) -> int:
+        self.read_tag(tag=SerializationTag.kInt32)
+        value = self.read_zigzag()
+        if value in INT32_RANGE:
+            return value
+        self.throw(f"Serialized value is out of {INT32_RANGE} for Int32: {value}")
+
     def read_jsmap(
         self, tag_mapper: TagMapper
     ) -> Generator[tuple[object, object], None, int]:
@@ -327,6 +334,7 @@ class TagMapper:
             (SerializationTag.kTwoByteString, ReadableTagStream.read_string_twobyte),
             (SerializationTag.kUtf8String, ReadableTagStream.read_string_utf8),
             (SerializationTag.kBigInt, ReadableTagStream.read_bigint),
+            (SerializationTag.kInt32, ReadableTagStream.read_int32),
         ]
         primitive_tag_readers = {t: read_stream(read_fn) for (t, read_fn) in primitives}
 

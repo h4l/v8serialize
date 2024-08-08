@@ -4,6 +4,8 @@ from typing import Final
 kLatestVersion: Final = 15
 """The current supported serialization format implemented here."""
 
+INT32_RANGE: Final = range(-(2**31), 2**31)
+
 
 class SerializationTag(IntEnum):
     """1-byte tags used to identify the type of the next value.
