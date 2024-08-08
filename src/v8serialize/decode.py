@@ -4,7 +4,16 @@ import codecs
 import operator
 import struct
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, ByteString, Iterable, Mapping, Never, Protocol, cast
+from typing import (
+    TYPE_CHECKING,
+    ByteString,
+    Generator,
+    Iterable,
+    Mapping,
+    Never,
+    Protocol,
+    cast,
+)
 
 from v8serialize.constants import SerializationTag, kLatestVersion
 from v8serialize.errors import V8CodecError
@@ -194,6 +203,25 @@ class ReadableTagStream:
             return -value
         return value
 
+    def read_jsmap(
+        self, tag_mapper: TagMapper
+    ) -> Generator[tuple[object, object], None, int]:
+        self.read_tag(SerializationTag.kBeginJSMap)
+        actual_count = 0
+
+        while self.read_tag(consume=False) != SerializationTag.kEndJSMap:
+            yield self.read_object(tag_mapper), self.read_object(tag_mapper)
+            actual_count += 2
+        self.pos += 1  # advance over EndJSMap
+        expected_count = self.read_varint()
+
+        if expected_count != actual_count:
+            self.throw(
+                f"Expected count does not match actual count after reading "
+                f"JSMap: expected={expected_count}, actual={actual_count}"
+            )
+        return actual_count
+
     def read_object(self, tag_mapper: TagMapper) -> object:
         tag = self.read_tag(consume=False)
         return tag_mapper.deserialize(tag, self)
@@ -273,7 +301,14 @@ class TagMapper:
         ]
         primitive_tag_readers = {t: read_stream(read_fn) for (t, read_fn) in primitives}
 
-        return {**primitive_tag_readers, **(tag_readers or {})}
+        # TODO: revisit how we register these, should we use a decorator, like
+        #       with @singledispatchmethod? (Can't use that directly a it
+        #       doesn't dispatch on values or Literal annotations.)
+        default_tag_readers: dict[SerializationTag, TagReader] = {
+            SerializationTag.kBeginJSMap: TagMapper.deserialize_jsmap
+        }
+
+        return {**primitive_tag_readers, **default_tag_readers, **(tag_readers or {})}
 
     def deserialize(self, tag: SerializationTag, stream: ReadableTagStream) -> object:
         read_tag = self.tag_readers.get(tag)
@@ -281,6 +316,12 @@ class TagMapper:
             # FIXME: more specific error
             stream.throw(f"No reader is implemented for tag {tag.name}")
         return read_tag(self, tag, stream)
+
+    def deserialize_jsmap(
+        self, tag: SerializationTag, stream: ReadableTagStream
+    ) -> dict[object, object]:
+        assert tag == SerializationTag.kBeginJSMap
+        return dict(stream.read_jsmap(self))
 
 
 @dataclass(init=False)

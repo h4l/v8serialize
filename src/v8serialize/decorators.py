@@ -44,10 +44,21 @@ if TYPE_CHECKING:
         @property
         def __isabstractmethod__(self) -> bool: ...
 
+        # The register decorator can be used like @register to use the 1st arg's
+        # type annotation as the dispatch type.
         @overload
         def register(
-            self, cls: Callable[Concatenate[S, D1, P], T], method: None = None
+            self, cls: Callable[Concatenate[S, D1, P], T]
         ) -> Callable[Concatenate[S, D1, P], T]: ...
+
+        # ... or with an explicit type, like @register(bool)
+        @overload
+        def register(
+            self,
+            cls: type,
+        ) -> Callable[
+            [Callable[Concatenate[S, D1, P], T]], Callable[Concatenate[S, D1, P], T]
+        ]: ...
 
         @overload
         def register(

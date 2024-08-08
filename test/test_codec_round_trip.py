@@ -103,6 +103,16 @@ def test_codec_rt_bigint(value: int) -> None:
     assert rts.eof
 
 
+@given(value=st.dictionaries(keys=any_object, values=any_object))
+def test_codec_rt_jsmap(
+    value: dict[object, object], object_mapper: ObjectMapper, tag_mapper: TagMapper
+) -> None:
+    wts = WritableTagStream()
+    wts.write_jsmap(value.items(), object_mapper)
+    rts = ReadableTagStream(wts.data)
+    result = dict(rts.read_jsmap(tag_mapper))
+    assert value == result
+    assert rts.eof
 
 
 @given(value=any_object)

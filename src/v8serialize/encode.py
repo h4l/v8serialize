@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import struct
+from collections import abc
 from dataclasses import dataclass, field
-from typing import Literal, Never, Protocol, cast
+from typing import Iterable, Literal, Mapping, Never, Protocol, cast
 
 from v8serialize.constants import SerializationTag, kLatestVersion
 from v8serialize.decorators import singledispatchmethod
@@ -159,6 +160,20 @@ class WritableTagStream:
         self.write_varint(bitfield)
         self.data.extend(digits)
 
+    def write_jsmap(
+        self,
+        items: Iterable[tuple[object, object]],
+        object_mapper: ObjectMapperSerialize,
+    ) -> None:
+        self.write_tag(SerializationTag.kBeginJSMap)
+        count = 0
+        for key, value in items:
+            self.write_object(key, object_mapper)
+            self.write_object(value, object_mapper)
+            count += 2
+        self.write_tag(SerializationTag.kEndJSMap)
+        self.write_varint(count)
+
     def write_object(self, value: object, object_mapper: ObjectMapperSerialize) -> None:
         object_mapper.serialize(value, self)
 
@@ -201,6 +216,12 @@ class ObjectMapper(ObjectMapperSerialize):
     @serialize.register
     def _(self, value: float, stream: WritableTagStream) -> None:
         stream.write_double(value)
+
+    @serialize.register(abc.Mapping)
+    def serialize_mapping(
+        self, value: Mapping[object, object], stream: WritableTagStream
+    ) -> None:
+        stream.write_jsmap(value.items(), self)
 
 
 @dataclass(init=False)
