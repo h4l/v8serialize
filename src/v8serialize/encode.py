@@ -12,14 +12,7 @@ from v8serialize.errors import V8CodecError
 
 @dataclass(init=False)
 class EncodeV8CodecError(V8CodecError, ValueError):
-    message: str
-
-    def __init__(self, message: str, *args: object) -> None:
-        super().__init__(message, *args)
-
-    @property  # type: ignore[no-redef]
-    def message(self) -> str:
-        return cast(str, self.args[0])
+    pass
 
 
 @dataclass(init=False)

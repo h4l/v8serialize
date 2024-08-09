@@ -26,7 +26,6 @@ if TYPE_CHECKING:
 
 @dataclass(init=False)
 class DecodeV8CodecError(V8CodecError, ValueError):
-    message: str
     position: int
     data: ByteString
 
@@ -36,10 +35,6 @@ class DecodeV8CodecError(V8CodecError, ValueError):
         super().__init__(message, *args)
         self.position = position
         self.data = data
-
-    @property  # type: ignore[no-redef]
-    def message(self) -> str:
-        return cast(str, self.args[0])
 
 
 def _decode_zigzag(n: int) -> int:
