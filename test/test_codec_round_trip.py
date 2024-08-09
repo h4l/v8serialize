@@ -1,7 +1,6 @@
 import math
 
 import pytest
-from frozendict import frozendict
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -16,7 +15,7 @@ def object_mapper() -> ObjectMapper:
 
 @pytest.fixture(scope="session")
 def tag_mapper() -> TagMapper:
-    return TagMapper(jsmap_type=frozendict, jsset_type=frozenset)
+    return TagMapper()
 
 
 any_atomic = st.one_of(
@@ -26,12 +25,16 @@ any_atomic = st.one_of(
     st.floats(allow_nan=False),
     st.text(),
 )
+
 # https://hypothesis.works/articles/recursive-data/
 any_object = st.recursive(
     any_atomic,
     lambda children: st.one_of(
-        st.dictionaries(keys=children, values=children, dict_class=frozendict),
-        st.frozensets(elements=children),
+        st.dictionaries(
+            keys=any_atomic,
+            values=children,
+        ),
+        st.sets(elements=any_atomic),
     ),
     max_leaves=3,  # TODO: tune this, perhaps increase in CI
 )
@@ -123,26 +126,28 @@ def test_codec_rt_int32(value: int) -> None:
     assert rts.eof
 
 
-@given(value=st.dictionaries(keys=any_object, values=any_object))
+@given(value=st.dictionaries(keys=any_atomic, values=any_object))
 def test_codec_rt_jsmap(
     value: dict[object, object], object_mapper: ObjectMapper, tag_mapper: TagMapper
 ) -> None:
     wts = WritableTagStream()
     wts.write_jsmap(value.items(), object_mapper)
     rts = ReadableTagStream(wts.data)
-    result = dict(rts.read_jsmap(tag_mapper))
+    result = dict[object, object]()
+    result.update(rts.read_jsmap(tag_mapper, identity=result))
     assert value == result
     assert rts.eof
 
 
-@given(value=st.sets(elements=any_object))
+@given(value=st.sets(elements=any_atomic))
 def test_codec_rt_jsset(
     value: set[object], object_mapper: ObjectMapper, tag_mapper: TagMapper
 ) -> None:
     wts = WritableTagStream()
     wts.write_jsset(value, object_mapper)
     rts = ReadableTagStream(wts.data)
-    result = set(rts.read_jsset(tag_mapper))
+    result = set[object]()
+    result.update(rts.read_jsset(tag_mapper, identity=result))
     assert value == result
     assert rts.eof
 

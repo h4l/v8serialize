@@ -12,6 +12,8 @@ from typing import (
     Generator,
     Iterable,
     Mapping,
+    MutableMapping,
+    MutableSet,
     Never,
     Protocol,
     cast,
@@ -19,6 +21,7 @@ from typing import (
 
 from v8serialize.constants import INT32_RANGE, SerializationTag, kLatestVersion
 from v8serialize.errors import V8CodecError
+from v8serialize.references import SerializedId, SerializedObjectLog
 
 if TYPE_CHECKING:
     from _typeshed import SupportsKeysAndGetItem, SupportsRead
@@ -51,6 +54,7 @@ def _decode_zigzag(n: int) -> int:
 class ReadableTagStream:
     data: ByteString
     pos: int = field(default=0)
+    objects: SerializedObjectLog = field(default_factory=SerializedObjectLog)
 
     @property
     def eof(self) -> bool:
@@ -208,9 +212,10 @@ class ReadableTagStream:
         self.throw(f"Serialized value is out of {INT32_RANGE} for Int32: {value}")
 
     def read_jsmap(
-        self, tag_mapper: TagMapper
+        self, tag_mapper: TagMapper, *, identity: object
     ) -> Generator[tuple[object, object], None, int]:
         self.read_tag(SerializationTag.kBeginJSMap)
+        self.objects.record_reference(identity)
         actual_count = 0
 
         while self.read_tag(consume=False) != SerializationTag.kEndJSMap:
@@ -226,8 +231,11 @@ class ReadableTagStream:
             )
         return actual_count
 
-    def read_jsset(self, tag_mapper: TagMapper) -> Generator[object, None, int]:
+    def read_jsset(
+        self, tag_mapper: TagMapper, *, identity: object
+    ) -> Generator[object, None, int]:
         self.read_tag(SerializationTag.kBeginJSSet)
+        self.objects.record_reference(identity)
         actual_count = 0
 
         while self.read_tag(consume=False) != SerializationTag.kEndJSSet:
@@ -285,8 +293,8 @@ def read_stream(rts_fn: ReadableTagStreamReadFunction) -> TagReader:
     return read_stream__tag_reader
 
 
-JSMapType = Callable[[Iterable[tuple[object, object]]], Mapping[object, object]]
-JSSetType = Callable[[Iterable[object]], AbstractSet[object]]
+JSMapType = Callable[[], MutableMapping[object, object]]
+JSSetType = Callable[[], MutableSet[object]]
 
 
 @dataclass(slots=True, init=False)
@@ -354,13 +362,21 @@ class TagMapper:
         self, tag: SerializationTag, stream: ReadableTagStream
     ) -> Mapping[object, object]:
         assert tag == SerializationTag.kBeginJSMap
-        return self.jsmap_type(stream.read_jsmap(self))
+        # TODO: this model of references makes it impossible to handle immutable
+        # collections. We'd need forward references to do that.
+        map = self.jsmap_type()
+        map.update(stream.read_jsmap(self, identity=map))
+        return map
 
     def deserialize_jsset(
         self, tag: SerializationTag, stream: ReadableTagStream
     ) -> AbstractSet[object]:
         assert tag == SerializationTag.kBeginJSSet
-        return self.jsset_type(stream.read_jsset(self))
+        set = self.jsset_type()
+        # MutableSet doesn't provide update()
+        for element in stream.read_jsset(self, identity=set):
+            set.add(element)
+        return set
 
 
 @dataclass(init=False)

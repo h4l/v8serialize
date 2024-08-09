@@ -3,11 +3,12 @@ from __future__ import annotations
 import struct
 from collections import abc
 from dataclasses import dataclass, field
-from typing import AbstractSet, Iterable, Literal, Mapping, Never, Protocol, cast
+from typing import AbstractSet, Iterable, Literal, Mapping, Never, Protocol, overload
 
 from v8serialize.constants import INT32_RANGE, SerializationTag, kLatestVersion
 from v8serialize.decorators import singledispatchmethod
 from v8serialize.errors import V8CodecError
+from v8serialize.references import SerializedId, SerializedObjectLog
 
 
 @dataclass(init=False)
@@ -23,9 +24,17 @@ class UnmappedValueEncodeV8CodecError(EncodeV8CodecError, ValueError):
 
     value: object
 
-    def __init__(self, message: str, *args: object, value: object) -> None:
-        super().__init__(message, *args)
-        self.value = value
+    def __init__(
+        self,
+        message: str,
+        *args: object,
+        value: object,
+    ) -> None:
+        super().__init__(message, value, *args)
+
+    @property  # type: ignore[no-redef]
+    def value(self) -> object:
+        return self.args[1]
 
 
 def _encode_zigzag(number: int) -> int:
@@ -42,6 +51,7 @@ class WritableTagStream:
     """
 
     data: bytearray = field(default_factory=bytearray)
+    objects: SerializedObjectLog = field(default_factory=SerializedObjectLog)
 
     @property
     def pos(self) -> int:
@@ -170,7 +180,10 @@ class WritableTagStream:
         self,
         items: Iterable[tuple[object, object]],
         object_mapper: ObjectMapperSerialize,
+        *,
+        identity: object | None = None,
     ) -> None:
+        self.objects.record_reference(items if identity is None else identity)
         self.write_tag(SerializationTag.kBeginJSMap)
         count = 0
         for key, value in items:
@@ -181,8 +194,13 @@ class WritableTagStream:
         self.write_varint(count)
 
     def write_jsset(
-        self, values: Iterable[object], object_mapper: ObjectMapperSerialize
+        self,
+        values: Iterable[object],
+        object_mapper: ObjectMapperSerialize,
+        *,
+        identity: object | None = None,
     ) -> None:
+        self.objects.record_reference(values if identity is None else identity)
         self.write_tag(SerializationTag.kBeginJSSet)
         count = 0
         for value in values:
@@ -199,7 +217,7 @@ class ObjectMapperSerialize(Protocol):
     def serialize(self, value: object, stream: WritableTagStream) -> None: ...
 
 
-@dataclass
+@dataclass(slots=True)
 class ObjectMapper(ObjectMapperSerialize):
     """Defines the conversion of Python types into the V8 serialization format.
 
@@ -241,13 +259,13 @@ class ObjectMapper(ObjectMapperSerialize):
     def serialize_mapping(
         self, value: Mapping[object, object], stream: WritableTagStream
     ) -> None:
-        stream.write_jsmap(value.items(), self)
+        stream.write_jsmap(value.items(), object_mapper=self, identity=value)
 
     @serialize.register(abc.Set)
     def serialize_set(
         self, value: AbstractSet[object], stream: WritableTagStream
     ) -> None:
-        stream.write_jsset(value, self)
+        stream.write_jsset(value, object_mapper=self)
 
 
 @dataclass(init=False)
