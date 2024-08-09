@@ -5,7 +5,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from v8serialize.decode import ReadableTagStream, TagMapper
-from v8serialize.encode import ObjectMapper, WritableTagStream
+from v8serialize.encode import BackReferenceObjectMapper, ObjectMapper, WritableTagStream
 
 
 @pytest.fixture(scope="session")
@@ -150,6 +150,23 @@ def test_codec_rt_jsset(
     result.update(rts.read_jsset(tag_mapper, identity=result))
     assert value == result
     assert rts.eof
+
+
+def test_codec_rt_object_identity__simple() -> None:
+    object_mapper = BackReferenceObjectMapper()
+    wts = WritableTagStream()
+    set1 = {1, 2}
+    set2 = {1, 2}
+    value = {"a": set1, "b": set2, "c": set1}
+    wts.write_object(value, object_mapper)
+
+    rts = ReadableTagStream(wts.data)
+    result = map[object, object]()
+    result.update(rts.read_jsmap(tag_mapper, identity=result))
+
+    assert value == result
+    assert value["a"] is value["c"]
+    assert value["a"] is not value["b"]
 
 
 @given(value=any_object)

@@ -27,6 +27,9 @@ def test_decode_varint__truncated(n: int) -> None:
         ("/w87IgFhWhABAAAAAAAAACIBYloQAgAAAAAAAAA6BA==", {"a": 1, "b": 2}),
         # v8.serialize(new Set(["a", BigInt(1), "b", BigInt(2)])).toString('base64')
         ("/w8nIgFhWhABAAAAAAAAACIBYloQAgAAAAAAAAAsBA==", {"a", 1, "b", 2}),
+        # s = new Set([1]); v8.serialize(new Map([['a', s], ['b', s]]))
+        #   .toString('base64')
+        ("/w87IgFhJ0kCLAEiAWJeAToE", {"a": {1}, "b": {1}}),  # TODO: verify identity
     ],
 )
 def test_loads(serialized: str, expected: object) -> None:

@@ -251,6 +251,19 @@ class ReadableTagStream:
             )
         return actual_count
 
+    def read_object_reference(self) -> tuple[SerializedId, object]:
+        self.read_tag(SerializationTag.kObjectReference)
+        serialized_id = SerializedId(self.read_varint())
+
+        try:
+            return serialized_id, self.objects.get_object(serialized_id)
+        except V8CodecError as e:
+            self.throw(
+                "ObjectReference contains serialized ID which has not been "
+                "deserialized",
+                cause=e,
+            )
+
     def read_object(self, tag_mapper: TagMapper) -> object:
         tag = self.read_tag(consume=False)
         return tag_mapper.deserialize(tag, self)
@@ -347,6 +360,7 @@ class TagMapper:
         default_tag_readers: dict[SerializationTag, TagReader] = {
             SerializationTag.kBeginJSMap: TagMapper.deserialize_jsmap,
             SerializationTag.kBeginJSSet: TagMapper.deserialize_jsset,
+            SerializationTag.kObjectReference: TagMapper.deserialize_object_reference,
         }
 
         return {**primitive_tag_readers, **default_tag_readers, **(tag_readers or {})}
@@ -377,6 +391,13 @@ class TagMapper:
         for element in stream.read_jsset(self, identity=set):
             set.add(element)
         return set
+
+    def deserialize_object_reference(
+        self, tag: SerializationTag, stream: ReadableTagStream
+    ) -> object:
+        assert tag == SerializationTag.kObjectReference
+        serialized_id, obj = stream.read_object_reference()
+        return obj
 
 
 @dataclass(init=False)

@@ -209,6 +209,31 @@ class WritableTagStream:
         self.write_tag(SerializationTag.kEndJSSet)
         self.write_varint(count)
 
+    @overload
+    def write_object_reference(
+        self, *, obj: object, serialized_id: None = None
+    ) -> None: ...
+
+    @overload
+    def write_object_reference(
+        self,
+        *,
+        serialized_id: SerializedId,
+        obj: None = None,
+    ) -> None: ...
+
+    def write_object_reference(
+        self, *, obj: object | None = None, serialized_id: SerializedId | None = None
+    ) -> None:
+        if obj is not None:
+            serialized_id = self.objects.get_serialized_id(obj)
+        else:
+            assert serialized_id is not None
+            self.objects.get_object(serialized_id)  # throws if invalid
+
+        self.write_tag(SerializationTag.kObjectReference)
+        self.write_varint(serialized_id)
+
     def write_object(self, value: object, object_mapper: ObjectMapperSerialize) -> None:
         object_mapper.serialize(value, self)
 
@@ -266,6 +291,17 @@ class ObjectMapper(ObjectMapperSerialize):
         self, value: AbstractSet[object], stream: WritableTagStream
     ) -> None:
         stream.write_jsset(value, object_mapper=self)
+
+
+@dataclass(slots=True)
+class BackReferenceObjectMapper(ObjectMapperSerialize):
+    next: ObjectMapperSerialize = field(default_factory=ObjectMapper)
+
+    def serialize(self, value: object, stream: WritableTagStream) -> None:
+        if value in stream.objects:
+            stream.write_object_reference(obj=value)
+        else:
+            self.next.serialize(value, stream)
 
 
 @dataclass(init=False)
