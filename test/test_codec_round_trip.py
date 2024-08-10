@@ -5,7 +5,12 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from v8serialize.decode import ReadableTagStream, TagMapper
-from v8serialize.encode import BackReferenceObjectMapper, ObjectMapper, WritableTagStream
+from v8serialize.encode import (
+    DefaultEncodeContext,
+    ObjectMapper,
+    WritableTagStream,
+    serialize_object_references,
+)
 
 
 @pytest.fixture(scope="session")
@@ -128,11 +133,12 @@ def test_codec_rt_int32(value: int) -> None:
 
 @given(value=st.dictionaries(keys=any_atomic, values=any_object))
 def test_codec_rt_jsmap(
-    value: dict[object, object], object_mapper: ObjectMapper, tag_mapper: TagMapper
+    value: dict[object, object],
+    tag_mapper: TagMapper,
 ) -> None:
-    wts = WritableTagStream()
-    wts.write_jsmap(value.items(), object_mapper)
-    rts = ReadableTagStream(wts.data)
+    encode_ctx = DefaultEncodeContext([ObjectMapper()])
+    encode_ctx.stream.write_jsmap(value.items(), ctx=encode_ctx, identity=value)
+    rts = ReadableTagStream(encode_ctx.stream.data)
     result = dict[object, object]()
     result.update(rts.read_jsmap(tag_mapper, identity=result))
     assert value == result
@@ -143,25 +149,28 @@ def test_codec_rt_jsmap(
 def test_codec_rt_jsset(
     value: set[object], object_mapper: ObjectMapper, tag_mapper: TagMapper
 ) -> None:
-    wts = WritableTagStream()
-    wts.write_jsset(value, object_mapper)
-    rts = ReadableTagStream(wts.data)
+    encode_ctx = DefaultEncodeContext([object_mapper])
+    encode_ctx.stream.write_jsset(value, ctx=encode_ctx)
+    rts = ReadableTagStream(encode_ctx.stream.data)
     result = set[object]()
     result.update(rts.read_jsset(tag_mapper, identity=result))
     assert value == result
     assert rts.eof
 
 
-def test_codec_rt_object_identity__simple() -> None:
-    object_mapper = BackReferenceObjectMapper()
-    wts = WritableTagStream()
+def test_codec_rt_object_identity__simple(
+    object_mapper: ObjectMapper, tag_mapper: TagMapper
+) -> None:
+    encode_ctx = DefaultEncodeContext(
+        object_mappers=[serialize_object_references, object_mapper]
+    )
     set1 = {1, 2}
     set2 = {1, 2}
     value = {"a": set1, "b": set2, "c": set1}
-    wts.write_object(value, object_mapper)
+    encode_ctx.stream.write_object(value, ctx=encode_ctx)
 
-    rts = ReadableTagStream(wts.data)
-    result = map[object, object]()
+    rts = ReadableTagStream(encode_ctx.stream.data)
+    result = dict[object, object]()
     result.update(rts.read_jsmap(tag_mapper, identity=result))
 
     assert value == result
@@ -173,10 +182,10 @@ def test_codec_rt_object_identity__simple() -> None:
 def test_codec_rt_object(
     value: object, object_mapper: ObjectMapper, tag_mapper: TagMapper
 ) -> None:
-    wts = WritableTagStream()
-    wts.write_object(value, object_mapper)
+    encode_ctx = DefaultEncodeContext([object_mapper])
+    encode_ctx.stream.write_object(value, ctx=encode_ctx)
 
-    rts = ReadableTagStream(wts.data)
+    rts = ReadableTagStream(encode_ctx.stream.data)
     result = rts.read_object(tag_mapper)
     assert value == result
     assert rts.eof

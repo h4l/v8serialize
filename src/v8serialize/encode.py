@@ -3,7 +3,17 @@ from __future__ import annotations
 import struct
 from collections import abc
 from dataclasses import dataclass, field
-from typing import AbstractSet, Iterable, Literal, Mapping, Never, Protocol, overload
+from functools import partial
+from typing import (
+    AbstractSet,
+    Iterable,
+    Literal,
+    Mapping,
+    Never,
+    Protocol,
+    Sequence,
+    overload,
+)
 
 from v8serialize.constants import INT32_RANGE, SerializationTag, kLatestVersion
 from v8serialize.decorators import singledispatchmethod
@@ -179,7 +189,7 @@ class WritableTagStream:
     def write_jsmap(
         self,
         items: Iterable[tuple[object, object]],
-        object_mapper: ObjectMapperSerialize,
+        ctx: EncodeContext,
         *,
         identity: object | None = None,
     ) -> None:
@@ -187,8 +197,8 @@ class WritableTagStream:
         self.write_tag(SerializationTag.kBeginJSMap)
         count = 0
         for key, value in items:
-            self.write_object(key, object_mapper)
-            self.write_object(value, object_mapper)
+            self.write_object(key, ctx=ctx)
+            self.write_object(value, ctx=ctx)
             count += 2
         self.write_tag(SerializationTag.kEndJSMap)
         self.write_varint(count)
@@ -196,7 +206,7 @@ class WritableTagStream:
     def write_jsset(
         self,
         values: Iterable[object],
-        object_mapper: ObjectMapperSerialize,
+        ctx: EncodeContext,
         *,
         identity: object | None = None,
     ) -> None:
@@ -204,7 +214,7 @@ class WritableTagStream:
         self.write_tag(SerializationTag.kBeginJSSet)
         count = 0
         for value in values:
-            self.write_object(value, object_mapper)
+            self.write_object(value, ctx=ctx)
             count += 1
         self.write_tag(SerializationTag.kEndJSSet)
         self.write_varint(count)
@@ -234,16 +244,85 @@ class WritableTagStream:
         self.write_tag(SerializationTag.kObjectReference)
         self.write_varint(serialized_id)
 
-    def write_object(self, value: object, object_mapper: ObjectMapperSerialize) -> None:
-        object_mapper.serialize(value, self)
+    # TODO: should this just be a method of EncodeContext, not here?
+    def write_object(self, value: object, ctx: EncodeContext) -> None:
+        ctx.serialize(value)
 
 
-class ObjectMapperSerialize(Protocol):
-    def serialize(self, value: object, stream: WritableTagStream) -> None: ...
+class EncodeContext(Protocol):
+    """Maintains the state needed to write Python objects in V8 format."""
+
+    object_mappers: Sequence[ObjectMapperObject | SerializeObjectFn]
+    stream: WritableTagStream
+
+    def serialize(self, value: object) -> None:
+        """Serialize a single Python value to the stream.
+
+        The object_mappers convert the Python value to JavaScript representation,
+        and the stream writes out V8 serialization format tagged data.
+        """
+
+
+class SerializeNextFn(Protocol):
+    def __call__(self, value: object, /) -> None: ...
+
+
+class SerializeObjectFn(Protocol):
+    def __call__(
+        self, value: object, /, ctx: DefaultEncodeContext, next: SerializeNextFn
+    ) -> None: ...
+
+
+class ObjectMapperObject(Protocol):
+    serialize: SerializeObjectFn
+
+
+AnyObjectMapper = ObjectMapperObject | SerializeObjectFn
+
+
+@dataclass(slots=True, init=False)
+class DefaultEncodeContext(EncodeContext):
+    object_mappers: Sequence[ObjectMapperObject | SerializeObjectFn]
+    stream: WritableTagStream
+
+    def __init__(
+        self,
+        object_mappers: Iterable[ObjectMapperObject | SerializeObjectFn] | None = None,
+        *,
+        stream: WritableTagStream | None = None,
+    ) -> None:
+        self.object_mappers = list(
+            default_object_mappers if object_mappers is None else object_mappers
+        )
+        self.stream = WritableTagStream() if stream is None else stream
+
+    def __serialize(self, value: object, *, i: int) -> None:
+        if i < len(self.object_mappers):
+            om = self.object_mappers[i]
+            next = partial(self.__serialize, i=i + 1)
+            if callable(om):
+                return om(value, ctx=self, next=next)
+            else:
+                return om.serialize(value, ctx=self, next=next)
+        self._report_unmapped_value(value)
+        raise AssertionError("report_unmapped_value returned")
+
+    def serialize(self, value: object) -> None:
+        """Serialize a single Python value to the stream.
+
+        The object_mappers convert the Python value to JavaScript representation,
+        and the stream writes out V8 serialization format tagged data.
+        """
+        return self.__serialize(value, i=0)
+
+    def _report_unmapped_value(self, value: object) -> Never:
+        raise UnmappedValueEncodeV8CodecError(
+            "No object mapper was able to write the value", value=value
+        )
 
 
 @dataclass(slots=True)
-class ObjectMapper(ObjectMapperSerialize):
+class ObjectMapper(ObjectMapperObject):
     """Defines the conversion of Python types into the V8 serialization format.
 
     ObjectMappers are responsible for making suitable calls to a WritableTagStream
@@ -255,53 +334,74 @@ class ObjectMapper(ObjectMapperSerialize):
     sub-object.
     """
 
-    def report_unmapped_value(self, value: object) -> Never:
-        raise UnmappedValueEncodeV8CodecError(
-            "No serialize method was able to write a value", value=value
-        )
-
     @singledispatchmethod
-    def serialize(self, value: object, stream: WritableTagStream) -> None:
-        self.report_unmapped_value(value)
-        raise AssertionError("report_unmapped_value returned")
+    def serialize(  # type: ignore[override]
+        self, value: object, /, ctx: EncodeContext, next: SerializeNextFn
+    ) -> None:
+        next(value)
 
-    @serialize.register
-    def _(self, value: int, stream: WritableTagStream) -> None:
+    # Must use explicit type in register() as singledispatchmethod is not using
+    # the first positional argument's type annotation because it fails to read
+    # them in order (seems like a bug).
+    # TODO: replace @singledispatchmethod with a purpose-specific solution.
+
+    @serialize.register(int)
+    def serialize_int(
+        self, value: int, /, ctx: EncodeContext, next: SerializeNextFn
+    ) -> None:
         if value in INT32_RANGE:
-            stream.write_int32(value)
+            ctx.stream.write_int32(value)
         else:
-            stream.write_bigint(value)
+            ctx.stream.write_bigint(value)
 
-    @serialize.register
-    def _(self, value: str, stream: WritableTagStream) -> None:
-        stream.write_string_utf8(value)
+    @serialize.register(str)
+    def serialize_str(
+        self, value: str, /, ctx: EncodeContext, next: SerializeNextFn
+    ) -> None:
+        ctx.stream.write_string_utf8(value)
 
-    @serialize.register
-    def _(self, value: float, stream: WritableTagStream) -> None:
-        stream.write_double(value)
+    @serialize.register(float)
+    def serialize_float(
+        self, value: float, /, ctx: EncodeContext, next: SerializeNextFn
+    ) -> None:
+        ctx.stream.write_double(value)
 
     @serialize.register(abc.Mapping)
     def serialize_mapping(
-        self, value: Mapping[object, object], stream: WritableTagStream
+        self,
+        value: Mapping[object, object],
+        /,
+        ctx: EncodeContext,
+        next: SerializeNextFn,
     ) -> None:
-        stream.write_jsmap(value.items(), object_mapper=self, identity=value)
+        ctx.stream.write_jsmap(value.items(), ctx=ctx, identity=value)
 
     @serialize.register(abc.Set)
     def serialize_set(
-        self, value: AbstractSet[object], stream: WritableTagStream
+        self, value: AbstractSet[object], /, ctx: EncodeContext, next: SerializeNextFn
     ) -> None:
-        stream.write_jsset(value, object_mapper=self)
+        ctx.stream.write_jsset(value, ctx=ctx)
 
 
-@dataclass(slots=True)
-class BackReferenceObjectMapper(ObjectMapperSerialize):
-    next: ObjectMapperSerialize = field(default_factory=ObjectMapper)
+def serialize_object_references(
+    value: object, /, ctx: EncodeContext, next: SerializeNextFn
+) -> None:
+    """A SerializeObjectFn that writes references to previously-seen objects.
 
-    def serialize(self, value: object, stream: WritableTagStream) -> None:
-        if value in stream.objects:
-            stream.write_object_reference(obj=value)
-        else:
-            self.next.serialize(value, stream)
+    Objects that have already been written to the stream are written as
+    references to the original instance, which avoids duplication of data and
+    preserves object identity after de-serializing.
+    """
+    if value in ctx.stream.objects:
+        ctx.stream.write_object_reference(obj=value)
+    else:
+        next(value)
+
+
+default_object_mappers: tuple[AnyObjectMapper, ...] = (
+    serialize_object_references,
+    ObjectMapper(),
+)
 
 
 @dataclass(init=False)
@@ -313,19 +413,25 @@ class Encoder:
     respectively.
     """
 
-    object_mapper: ObjectMapper
+    object_mappers: Sequence[AnyObjectMapper]
 
-    def __init__(self, object_mapper: ObjectMapper | None = None) -> None:
-        self.object_mapper = object_mapper or ObjectMapper()
+    def __init__(self, object_mappers: Iterable[AnyObjectMapper] | None = None) -> None:
+        self.object_mappers = (
+            default_object_mappers if object_mappers is None else tuple(object_mappers)
+        )
 
     def encode(self, value: object) -> bytearray:
-        stream = WritableTagStream()
-        stream.write_header()
-        stream.write_object(value, self.object_mapper)
-        return stream.data
+        ctx = DefaultEncodeContext(
+            stream=WritableTagStream(), object_mappers=self.object_mappers
+        )
+        ctx.stream.write_header()
+        ctx.serialize(value)
+        return ctx.stream.data
 
 
-def dumps(value: object, *, object_mapper: ObjectMapper | None = None) -> bytes:
+def dumps(
+    value: object, *, object_mappers: Iterable[AnyObjectMapper] | None = None
+) -> bytes:
     """Encode a Python value in the V8 serialization format."""
-    encoder = Encoder(object_mapper=object_mapper)
+    encoder = Encoder(object_mappers=object_mappers)
     return bytes(encoder.encode(value))
