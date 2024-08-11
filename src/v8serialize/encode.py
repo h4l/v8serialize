@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import struct
 from collections import abc
+from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from functools import partial
+from types import TracebackType
 from typing import (
     AbstractSet,
     Iterable,
@@ -15,7 +17,13 @@ from typing import (
     overload,
 )
 
-from v8serialize.constants import INT32_RANGE, SerializationTag, kLatestVersion
+from v8serialize.constants import (
+    INT32_RANGE,
+    JS_OBJECT_KEY_TAGS,
+    SerializationTag,
+    TagConstraint,
+    kLatestVersion,
+)
 from v8serialize.decorators import singledispatchmethod
 from v8serialize.errors import V8CodecError
 from v8serialize.references import SerializedId, SerializedObjectLog
@@ -52,6 +60,27 @@ def _encode_zigzag(number: int) -> int:
 
 
 @dataclass(slots=True)
+class TagConstraintRemover(AbstractContextManager[None, None]):
+    """Context manager that removes the current tag constraint on a
+    WritableTagStream.
+    """
+
+    stream: WritableTagStream
+
+    def __enter__(self) -> None:
+        pass
+
+    def __exit__(
+        self,
+        exc_cls: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+        /,
+    ) -> None:
+        self.stream.allowed_tags = None
+
+
+@dataclass(slots=True)
 class WritableTagStream:
     """Write individual tagged data items in the V8 serialization format.
 
@@ -63,12 +92,44 @@ class WritableTagStream:
     data: bytearray = field(default_factory=bytearray)
     objects: SerializedObjectLog = field(default_factory=SerializedObjectLog)
 
+    allowed_tags: TagConstraint | None = field(init=False, default=None)
+    """When set, only tags allowed by the constraint may be written.
+
+    For example, when writing JavaScript Object keys, constraint is
+    `v8serialize.constants.JS_OBJECT_KEY_CONSTRAINT`, which only allows strings and
+    numbers other than bigint.
+    """
+    __tag_constraint_remover: TagConstraintRemover = field(
+        compare=False,
+        repr=False,
+        init=False,
+    )
+
+    def __post_init__(self) -> None:
+        self.__tag_constraint_remover = TagConstraintRemover(self)
+
+    def constrain_tags(self, allowed_tags: TagConstraint) -> TagConstraintRemover:
+        """Set `allowed_tags` to prevent tags being written which are not valid
+        in a given context.
+
+        Returns a context manager that removes the constraint it exits. Note
+        that constraints do not stack — an existing set of allowed_tags is
+        replaced.
+        """
+        self.allowed_tags = allowed_tags
+        return self.__tag_constraint_remover
+
     @property
     def pos(self) -> int:
         return len(self.data)
 
     def write_tag(self, tag: SerializationTag | None) -> None:
         if tag is not None:
+            if self.allowed_tags is not None and tag not in self.allowed_tags:
+                raise EncodeV8CodecError(
+                    f"Attempted to write tag {tag.name} in a context where "
+                    f"allowed tags are {self.allowed_tags}"
+                )
             self.data.append(tag)
 
     def write_varint(self, n: int) -> None:
@@ -219,6 +280,24 @@ class WritableTagStream:
         self.write_tag(SerializationTag.kEndJSSet)
         self.write_varint(count)
 
+    def write_js_object(
+        self,
+        items: Iterable[tuple[object, object]],
+        ctx: EncodeContext,
+        *,
+        identity: object | None = None,
+    ) -> None:
+        self.objects.record_reference(items if identity is None else identity)
+        self.write_tag(SerializationTag.kBeginJSObject)
+        count = 0
+        for key, value in items:
+            with self.constrain_tags(JS_OBJECT_KEY_TAGS):
+                self.write_object(key, ctx=ctx)
+            self.write_object(value, ctx=ctx)
+            count += 1
+        self.write_tag(SerializationTag.kEndJSObject)
+        self.write_varint(count)
+
     @overload
     def write_object_reference(
         self, *, obj: object, serialized_id: None = None
@@ -352,7 +431,11 @@ class ObjectMapper(ObjectMapperObject):
         if value in INT32_RANGE:
             ctx.stream.write_int32(value)
         else:
-            ctx.stream.write_bigint(value)
+            # Can't use bigints for object keys, so write large ints as strings
+            if ctx.stream.allowed_tags is JS_OBJECT_KEY_TAGS:
+                ctx.stream.write_object(str(value), ctx=ctx)
+            else:
+                ctx.stream.write_bigint(value)
 
     @serialize.register(str)
     def serialize_str(

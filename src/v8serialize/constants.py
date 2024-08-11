@@ -1,5 +1,6 @@
+from dataclasses import dataclass
 from enum import IntEnum
-from typing import Final
+from typing import AbstractSet, Final
 
 kLatestVersion: Final = 15
 """The current supported serialization format implemented here."""
@@ -138,3 +139,45 @@ class SerializationTag(IntEnum):
     kLegacyReservedOffscreenCanvas = ord("H")
     kLegacyReservedCryptoKey = ord("K")
     kLegacyReservedRTCCertificate = ord("k")
+
+
+TagSet = AbstractSet[SerializationTag]
+
+
+@dataclass(slots=True, frozen=True)
+class TagConstraint:
+    name: str
+    allowed_tags: TagSet
+
+    def __contains__(self, tag: SerializationTag) -> bool:
+        """True if `tag` is allowed by the constraint."""
+        return tag in self.allowed_tags
+
+    @property
+    def allowed_tag_names(self) -> str:
+        """The"""
+        return ", ".join(sorted(t.name for t in self.allowed_tags))
+
+    def __str__(self) -> str:
+        return f"{self.name}: {self.allowed_tag_names}"
+
+
+JS_OBJECT_KEY_TAGS: Final = TagConstraint(
+    name="JavaScript Object Keys",
+    allowed_tags=frozenset(
+        {
+            SerializationTag.kInt32,
+            SerializationTag.kDouble,
+            SerializationTag.kUint32,
+            SerializationTag.kNumberObject,
+            SerializationTag.kOneByteString,
+            SerializationTag.kTwoByteString,
+            SerializationTag.kUtf8String,
+            SerializationTag.kStringObject,
+        }
+    ),
+)
+"""Tags that are allowed in the context of a JSObject key.
+
+Numbers (except bigint) and strings.
+"""

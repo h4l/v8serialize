@@ -9,6 +9,7 @@ from typing import (
     AbstractSet,
     ByteString,
     Callable,
+    Final,
     Generator,
     Iterable,
     Mapping,
@@ -19,8 +20,14 @@ from typing import (
     cast,
 )
 
-from v8serialize.constants import INT32_RANGE, SerializationTag, kLatestVersion
+from v8serialize.constants import (
+    INT32_RANGE,
+    JS_OBJECT_KEY_TAGS,
+    SerializationTag,
+    kLatestVersion,
+)
 from v8serialize.errors import V8CodecError
+from v8serialize.jstypes import JSObject
 from v8serialize.references import SerializedId, SerializedObjectLog
 
 if TYPE_CHECKING:
@@ -251,6 +258,41 @@ class ReadableTagStream:
             )
         return actual_count
 
+    def read_js_object(
+        self, tag_mapper: TagMapper, *, identity: object
+    ) -> Generator[tuple[int | str, object], None, int]:
+        self.read_tag(SerializationTag.kBeginJSObject)
+        self.objects.record_reference(identity)
+        actual_count = 0
+
+        while True:
+            tag = self.read_tag(consume=False)
+            if tag in JS_OBJECT_KEY_TAGS:
+                key = self.read_object(tag_mapper)
+                if not isinstance(key, (int, str)):
+                    # TODO: more specific error
+                    raise TypeError(
+                        f"JSObject key must deserialize to str or int: {key}"
+                    )
+                yield key, self.read_object(tag_mapper)
+                actual_count += 1  # 1 per entry, unlike JSMap
+            elif tag == SerializationTag.kEndJSObject:
+                break
+            else:
+                self.throw(
+                    f"JSObject has a key encoded with tag {tag.name} that is "
+                    f"not a number or string tag. Valid {JS_OBJECT_KEY_TAGS}"
+                )
+        self.pos += 1  # advance over EndJSMap
+
+        expected_count = self.read_varint()
+        if expected_count != actual_count:
+            self.throw(
+                f"Expected count does not match actual count after reading "
+                f"JSMap: expected={expected_count}, actual={actual_count}"
+            )
+        return actual_count
+
     def read_object_reference(self) -> tuple[SerializedId, object]:
         self.read_tag(SerializationTag.kObjectReference)
         serialized_id = SerializedId(self.read_varint())
@@ -308,6 +350,7 @@ def read_stream(rts_fn: ReadableTagStreamReadFunction) -> TagReader:
 
 JSMapType = Callable[[], MutableMapping[object, object]]
 JSSetType = Callable[[], MutableSet[object]]
+JSObjectType = Callable[[], JSObject[int | str, object]]
 
 
 @dataclass(slots=True, init=False)
@@ -318,6 +361,7 @@ class TagMapper:
     default_tag_mapper: TagMapper | None
     jsmap_type: JSMapType
     jsset_type: JSSetType
+    js_object_type: JSObjectType
 
     def __init__(
         self,
@@ -329,10 +373,12 @@ class TagMapper:
         default_tag_mapper: TagMapper | None = None,
         jsmap_type: JSMapType | None = None,
         jsset_type: JSSetType | None = None,
+        js_object_type: JSObjectType | None = None,
     ) -> None:
         self.default_tag_mapper = default_tag_mapper
         self.jsmap_type = jsmap_type or dict
         self.jsset_type = jsset_type or set
+        self.js_object_type = js_object_type or JSObject
 
         if tag_readers is not None:
             tag_readers = dict(tag_readers)
@@ -391,6 +437,14 @@ class TagMapper:
         for element in stream.read_jsset(self, identity=set):
             set.add(element)
         return set
+
+    def deserialize_js_object(
+        self, tag: SerializationTag, stream: ReadableTagStream
+    ) -> JSObject[str | int, object]:
+        assert tag == SerializationTag.kBeginJSObject
+        obj = self.js_object_type()
+        obj.update(stream.read_js_object(self, identity=obj))
+        return obj
 
     def deserialize_object_reference(
         self, tag: SerializationTag, stream: ReadableTagStream

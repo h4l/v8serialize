@@ -4,6 +4,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+from v8serialize.constants import SerializationTag
 from v8serialize.decode import ReadableTagStream, TagMapper
 from v8serialize.encode import (
     DefaultEncodeContext,
@@ -11,6 +12,7 @@ from v8serialize.encode import (
     WritableTagStream,
     serialize_object_references,
 )
+from v8serialize.jstypes import JSObject
 
 
 @pytest.fixture(scope="session")
@@ -139,6 +141,7 @@ def test_codec_rt_jsmap(
     encode_ctx = DefaultEncodeContext([ObjectMapper()])
     encode_ctx.stream.write_jsmap(value.items(), ctx=encode_ctx, identity=value)
     rts = ReadableTagStream(encode_ctx.stream.data)
+    assert rts.read_tag(consume=False) == SerializationTag.kBeginJSMap
     result = dict[object, object]()
     result.update(rts.read_jsmap(tag_mapper, identity=result))
     assert value == result
@@ -152,8 +155,24 @@ def test_codec_rt_jsset(
     encode_ctx = DefaultEncodeContext([object_mapper])
     encode_ctx.stream.write_jsset(value, ctx=encode_ctx)
     rts = ReadableTagStream(encode_ctx.stream.data)
+    assert rts.read_tag(consume=False) == SerializationTag.kBeginJSSet
     result = set[object]()
     result.update(rts.read_jsset(tag_mapper, identity=result))
+    assert value == result
+    assert rts.eof
+
+
+@given(value=st.dictionaries(keys=any_atomic, values=any_object, dict_class=JSObject))
+def test_codec_rt_js_object(
+    value: dict[object, object],
+    tag_mapper: TagMapper,
+) -> None:
+    encode_ctx = DefaultEncodeContext([ObjectMapper()])
+    encode_ctx.stream.write_js_object(value.items(), ctx=encode_ctx, identity=value)
+    rts = ReadableTagStream(encode_ctx.stream.data)
+    assert rts.read_tag(consume=False) == SerializationTag.kBeginJSObject
+    result = JSObject[object, object]()
+    result.update(rts.read_js_object(tag_mapper, identity=result))
     assert value == result
     assert rts.eof
 
