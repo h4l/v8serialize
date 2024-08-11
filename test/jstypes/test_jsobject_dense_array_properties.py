@@ -16,8 +16,10 @@ from hypothesis.stateful import (
 from v8serialize.jstypes.jsobject import (
     ArrayProperties,
     DenseArrayProperties,
+    EmptyRegion,
     JSHole,
     JSHoleType,
+    OccupiedRegion,
 )
 
 T = TypeVar("T")
@@ -44,7 +46,7 @@ class SimpleArrayProperties(list[T | JSHoleType]):
     def elements_used(self) -> int:
         return len(self) - sum(1 for x in self if x is JSHole)
 
-    def __eq__(self, other: object) -> None:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, ArrayProperties):
             return other.__eq__(self)
         return super().__eq__(other)
@@ -82,6 +84,10 @@ class DenseArrayPropertiesComparisonMachine(RuleBasedStateMachine):
     @property
     def valid_indexes(self) -> st.SearchStrategy[int]:
         """Get a strategy generating in-range indexes, negative or positive."""
+        if len(self.simple) == 0:
+            # Should never get used if preconditions prevent calling a method
+            # using this strategy.
+            return st.nothing()
         return st.integers(min_value=-len(self.simple), max_value=len(self.simple) - 1)
 
     @staticmethod
@@ -90,63 +96,36 @@ class DenseArrayPropertiesComparisonMachine(RuleBasedStateMachine):
     ) -> st.SearchStrategy[int]:
         return self.valid_indexes
 
-    # @staticmethod
-    # def initialised(self: DenseArrayPropertiesComparisonMachine) -> bool:
-    #     return self._simple is not None
-
-    # @staticmethod
-    # def not_initialised(self: DenseArrayPropertiesComparisonMachine) -> bool:
-    #     return self._simple is None
-
     @staticmethod
     def not_empty(self: DenseArrayPropertiesComparisonMachine) -> bool:
         return self._simple is not None and len(self._simple) > 0
 
-    # @rule(initial_items=st.lists(elements=values_or_gaps))
-    # @precondition(not_initialised)
-    # @rule(value=st.integers())
     @initialize(initial_items=st.lists(elements=values_or_gaps))
     def init(self, initial_items: list[int | JSHoleType]) -> None:
         self._simple = SimpleArrayProperties(list(initial_items))
         self._dense = DenseArrayProperties(list(initial_items))
 
-    @rule(data=st.data(), value=st.integers())
-    # @precondition(initialised)
+    @rule(index=st.runner().flatmap(get_valid_indexes), value=st.integers())
     @precondition(not_empty)
-    def setitem(self, data: st.DataObject, value: int) -> None:
-        index = data.draw(
-            st.integers(min_value=-len(self.simple), max_value=len(self.simple) - 1)
-        )
-
+    def setitem(self, index: int, value: int) -> None:
         assert self.simple[index] == self.dense[index]
         self.simple[index] = value
         self.dense[index] = value
         assert self.simple[index] == value
         assert self.simple[index] == self.dense[index]
 
-    @rule(data=st.data(), value=st.integers())
-    # @precondition(initialised)
+    @rule(index=st.runner().flatmap(get_valid_indexes))
     @precondition(not_empty)
-    def del_(self, data: st.DataObject, value: int) -> None:
-        index = data.draw(
-            st.integers(min_value=-len(self.simple), max_value=len(self.simple) - 1)
-        )
-
+    def del_(self, index: int) -> None:
         del self.simple[index]
         del self.dense[index]
 
     @rule(index=st.runner().flatmap(get_valid_indexes), value=st.integers())
-    # @precondition(initialised)
-    def insert(self, data: st.DataObject, value: int) -> None:
-        index = data.draw(
-            st.integers(min_value=-len(self.simple) - 2, max_value=len(self.simple) + 1)
-        )
-
+    def insert(self, index: int, value: int) -> None:
         self.simple.insert(index, value)
         self.dense.insert(index, value)
 
     @rule(value=st.integers())
-    # @precondition(initialised)
     def append(self, value: int) -> None:
         self.simple.append(value)
         self.dense.append(value)
@@ -175,23 +154,6 @@ class DenseArrayPropertiesComparisonMachine(RuleBasedStateMachine):
 TestDenseArrayPropertiesComparison = DenseArrayPropertiesComparisonMachine.TestCase
 
 
-def test_failing_example_1() -> None:
-    state = DenseArrayPropertiesComparisonMachine()
-    state.init(initial_items=[])
-    state.implementations_equal()
-    state.implementations_same_elements_used()
-    state.implementations_same_has_holes()
-    state.implementations_same_length()
-    state.implementations_same_max_index()
-    state.append(value=0)
-    state.implementations_equal()
-    state.implementations_same_elements_used()
-    state.implementations_same_has_holes()
-    state.implementations_same_length()
-    state.implementations_same_max_index()
-    state.teardown()
-
-
 @pytest.mark.parametrize(
     "elements,result",
     [
@@ -210,5 +172,14 @@ def test_init_initial_state() -> None:
     assert array.max_index == 3
 
 
-# TODO: hypothesis stateful
-#   we can assert that manually counting blanks etc equals the @property state
+def test_regions() -> None:
+    array = DenseArrayProperties([JSHole, JSHole, "a", "b", JSHole, "c", JSHole])
+    regions = [r for r in array.regions()]
+
+    assert regions == [
+        EmptyRegion(start=0, length=2),
+        OccupiedRegion(items=[(2, "a"), (3, "b")]),
+        EmptyRegion(start=4, length=1),
+        OccupiedRegion(items=[(5, "c")]),
+        EmptyRegion(start=6, length=1),
+    ]
