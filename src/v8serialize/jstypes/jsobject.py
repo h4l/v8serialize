@@ -10,6 +10,7 @@ from typing import (
     MutableMapping,
     MutableSequence,
     Protocol,
+    Sequence,
     TypeVar,
     cast,
     overload,
@@ -26,56 +27,124 @@ KT = TypeVar("KT")
 T = TypeVar("T")
 
 
-class ArrayProperties(MutableSequence[T | JSUndefinedType], Generic[T]):
+# TODO: rename JSHole
+class HoleType:
+    """Representation of the explicit empty elements in V8's fixed arrays.
+
+    See v8serialize.constants.SerializationTag.kTheHole. We don't use that constant
+    directly, because that would prevent using it as a regular value. This is an
+    internal type that API users should not use.
+    """
+
+    def __init__(self) -> None:
+        if "HoleType" in globals():
+            raise AssertionError("Cannot instantiate HoleType")
+
+
+Hole: Final = HoleType()
+
+
+class ArrayProperties(
+    MutableSequence[T | JSUndefinedType], Sequence[T | JSUndefinedType], Generic[T]
+):
     pass
 
 
+@dataclass(slots=True)
 class SparseArrayRequired(IndexError):
-    pass
+    elements_used: int
+    length: int
+
+    def __str__(self) -> str:
+        return repr(self)
 
 
 MAX_ARRAY_LENGTH: Final = 2**32 - 1
+MIN_SPARSE_ARRAY_SIZE = 16
+MIN_DENSE_ARRAY_USED_RATIO = 1 / 4
+MAX_DENSE_ARRAY_HOLE_RATIO = 1 / 4
+
+# TODO: should we be explicit about Holes? e.g. treat elements as explicitly T | HoleType
+# Then in the JSObject we can hide this detail and return JSUndefined
 
 
 @dataclass(slots=True, init=False)
 class DenseArrayProperties(ArrayProperties[T]):
-    _items: list[T | JSUndefinedType]
+    _items: list[T | HoleType]
+    _max_index: int
+    _elements_used: int
 
     def __init__(self, items: Iterable[T]) -> None:
         self._items = list(items)
+        self._max_index = len(self._items) - 1
+        self._elements_used = len(self._items)
+
+    def _ensure_capacity(self, elements_used: int, length: int) -> None:
+        if (
+            elements_used >= MIN_SPARSE_ARRAY_SIZE
+            and elements_used / length < MIN_DENSE_ARRAY_USED_RATIO
+        ):
+            raise SparseArrayRequired(elements_used=elements_used, length=length)
+        required_capacity = length - len(self._items)
+        assert required_capacity > 0
+        self._items.extend([Hole] * required_capacity)
+
+    @property
+    def _has_holes(self) -> bool:
+        return self._elements_used < len(self._items)
+
+    def _normalise_index(self, i: int) -> int:
+        """Flip a negative index (offset from end) to non-negative and check bounds."""
+        if i >= 0:
+            if i >= MAX_ARRAY_LENGTH:
+                raise IndexError(i)
+            return i
+        _i = len(self) - i
+        if _i < 0:
+            raise IndexError(i)
+        return _i
 
     @overload
     def __getitem__(self, i: int, /) -> T | JSUndefinedType: ...
 
     @overload
-    def __getitem__(self, i: slice, /) -> MutableSequence[T | JSUndefinedType]: ...
+    def __getitem__(self, i: slice, /) -> ArrayProperties[T]: ...
 
     def __getitem__(
         self, i: int | slice, /
-    ) -> T | JSUndefinedType | MutableSequence[T | JSUndefinedType]:
+    ) -> T | JSUndefinedType | ArrayProperties[T]:
         if isinstance(i, slice):
             raise NotImplementedError
+        i = self._normalise_index(i)
+        if self._has_holes:
+            value = self._items[i]
+            return JSUndefined if value is Hole else value
         return self._items[i]
 
     @overload
-    def __setitem__(self, i: int, value: T | JSUndefinedType, /) -> None: ...
+    def __setitem__(self, i: int, value: T, /) -> None: ...
 
     @overload
-    def __setitem__(
-        self, i: slice, value: Iterable[T | JSUndefinedType], /
-    ) -> None: ...
+    def __setitem__(self, i: slice, value: Iterable[T], /) -> None: ...
 
     def __setitem__(
         self,
         i: int | slice,
-        value: T | JSUndefinedType | Iterable[T | JSUndefinedType],
+        value: T | Iterable[T],
         /,
     ) -> None:
         if isinstance(i, slice):
             raise NotImplementedError
-        if len(self) <= i < MAX_ARRAY_LENGTH:
-            raise SparseArrayRequired
-        self._items[i] = cast(T, value)
+        i = self._normalise_index(i)
+
+        if i >= len(self._items):
+            self._ensure_capacity(self._elements_used + 1, i + 1)
+
+        if self._items[i] is Hole:
+            self._elements_used += 1
+        if i > self._max_index:
+            self._max_index = i
+        self._items[i] = value
 
     @overload
     def __delitem__(self, i: int, /) -> None: ...
@@ -84,24 +153,51 @@ class DenseArrayProperties(ArrayProperties[T]):
     def __delitem__(self, i: slice, /) -> None: ...
 
     def __delitem__(self, i: int | slice, /) -> None:
+        """Delete the item at index i.
+
+        This implements the normal Python list behaviour of shifting following
+        elements back, not the JavaScript behaviour of leaving a hole.
+        """
         if isinstance(i, slice):
             raise NotImplementedError
-        if len(self) <= i < MAX_ARRAY_LENGTH:
+        i = self._normalise_index(i)
+        if len(self) <= i:
+            return
+
+        if self._has_holes and i == self._max_index:
+            self._items[i] = Hole
+            # find the next lowest used element to be the next max_index
+            for n in range(i - 1, -1, -1):
+                if self._items[n] is not Hole:
+                    self._max_index = n
+                    break
+            else:  # all elements were holes
+                self._max_index = -1
             return
         del self._items[i]
+        self._max_index -= 1
 
-    def insert(self, i: int, o: T | JSUndefinedType) -> None:
-        # Python lists can insert after the last index which appends. So
-        # inserting at len(self) is the same as appending, which keeps us dense.
-        if len(self) < i < MAX_ARRAY_LENGTH:
-            raise SparseArrayRequired
+    def insert(self, i: int, o: T) -> None:
+        """Insert a value before the values at index i.
+
+        This implements the normal Python list behaviour of inserting indexes
+        beyond end of the list immediately after the end. I.e. it doesn't create
+        a gap at the end.
+        """
+        i = self._normalise_index(i)
+
+        # Python arrays treat inserting beyond the end as inserting immediately
+        # after the final element.
+
+        i = min(i, self._max_index + 1)
         self._items.insert(i, o)
+        self._max_index += 1
 
-    def append(self, value: T | JSUndefinedType) -> None:
-        self._items.append(value)
+    def append(self, value: T) -> None:
+        self.insert(len(self), value)
 
     def __len__(self) -> int:
-        return len(self._items)
+        return self._max_index + 1
 
 
 # @dataclass(slots=True, init=False)
