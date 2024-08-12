@@ -13,19 +13,11 @@ from typing import (
     Iterator,
     MutableMapping,
     MutableSequence,
-    Protocol,
     Sequence,
     TypeVar,
     cast,
     overload,
 )
-
-from sortedcontainers import SortedDict
-
-if TYPE_CHECKING:
-    from sortedcontainers.sorteddict import SortedKeysView
-
-from v8serialize.jstypes.jsundefined import JSUndefined, JSUndefinedType
 
 KT = TypeVar("KT", bound=int | str)
 T = TypeVar("T")
@@ -63,9 +55,11 @@ class ArrayProperties(
     MutableSequence[T | JSHoleType], Sequence[T | JSHoleType], Generic[T], ABC
 ):
     @property
-    @abstractmethod
-    def has_holes(self) -> bool: ...
+    def has_holes(self) -> bool:
+        """True if any index between 0 and max_index is an empty hole."""
+        return self.elements_used <= self.max_index
 
+    # TODO: need to allow settings max_index to extend length
     @property
     @abstractmethod
     def max_index(self) -> int: ...
@@ -180,10 +174,6 @@ class DenseArrayProperties(ArrayProperties[T]):
         self._elements_used = elements_used
 
     @property
-    def has_holes(self) -> bool:
-        return self._elements_used < len(self._items)
-
-    @property
     def max_index(self) -> int:
         """The highest index containing a value that isn't a JSHole.
         -1 if no values exist.
@@ -192,9 +182,7 @@ class DenseArrayProperties(ArrayProperties[T]):
 
     @property
     def elements_used(self) -> int:
-        """The highest index containing a value that isn't a JSHole.
-        -1 if no values exist.
-        """
+        """The number of elements that are not empty holes."""
         return self._elements_used
 
     def _normalise_index(self, i: int) -> int:
@@ -562,121 +550,207 @@ class DenseArrayProperties(ArrayProperties[T]):
 #         return self._max_index + 1
 
 
-# @dataclass(slots=True, init=False)
-# class LazySparseArrayProperties(ArrayProperties[T]):
-#     _items: dict[int, T | JSUndefinedType]
-#     _sorted_keys: list[int]
-#     _max_index: int
+@dataclass(slots=True, init=False)
+class LazySparseArrayProperties(ArrayProperties[T]):
+    _items: dict[int, T]
+    _sorted_keys: list[int] | None
+    _max_index: int
 
-#     def __init__(self, items: Iterable[tuple[int, T | JSUndefinedType]]) -> None:
-#         max_index = -1
-#         _items = SortedDict[int, T | JSUndefinedType]()
-#         for i, v in items:
-#             if not (0 <= i < MAX_ARRAY_LENGTH):
-#                 raise IndexError(i)
-#             max_index = max(max_index, i)
-#             _items[i] = v
-#         self._items = _items
-#         self._max_index = max_index
+    """Indexes which have been added or removed from _items, but are not
+    reflected in _sorted_keys.
 
-#     @overload
-#     def __getitem__(self, i: int, /) -> T | JSUndefinedType: ...
+    True = added, False = removed."""
 
-#     @overload
-#     def __getitem__(self, i: slice, /) -> MutableSequence[T | JSUndefinedType]: ...
+    @overload
+    def __init__(self, *, entries: Iterable[tuple[int, T]] | None = None) -> None: ...
 
-#     def __getitem__(
-#         self, i: int | slice, /
-#     ) -> T | JSUndefinedType | MutableSequence[T | JSUndefinedType]:
-#         if isinstance(i, slice):
-#             raise NotImplementedError
+    @overload
+    def __init__(self, values: Iterable[T | JSHoleType] | None = None) -> None: ...
 
-#         if i < 0:
-#             _i = len(self) - i
-#             if _i < 0:
-#                 raise IndexError(i)
-#             i = _i
-#         return self._items.get(i, JSUndefined)
+    def __init__(
+        self,
+        values: Iterable[T | JSHoleType] | None = None,
+        *,
+        entries: Iterable[tuple[int, T]] | None = None,
+    ) -> None:
+        if values is not None:
+            entries = (
+                (i, v)
+                for i, v in enumerate(cast(Iterable[T], values))
+                if v is not JSHole
+            )
+        elif entries is None:
+            entries = []
 
-#     @overload
-#     def __setitem__(self, i: int, value: T | JSUndefinedType, /) -> None: ...
+        self._max_index = -1
+        self._items = _items = dict(entries)
+        # We need to establish the max_index and validate there are no negative
+        # indexes, so we might as well sort now rather than scanning for min/max
+        self._sorted_keys = _sorted_keys = sorted(_items)
+        if _sorted_keys:
+            min_index, max_index = _sorted_keys[0], _sorted_keys[-1]
+            if min_index < 0:
+                raise IndexError(
+                    f"initial item indexes must be 0 <= index < 2**32-1: {min_index}"
+                )
+            if max_index >= MAX_ARRAY_LENGTH:
+                raise IndexError(
+                    f"initial item indexes must be 0 <= index < 2**32-1: {max_index}"
+                )
 
-#     @overload
-#     def __setitem__(
-#         self, i: slice, value: Iterable[T | JSUndefinedType], /
-#     ) -> None: ...
+    @property
+    def max_index(self) -> int:
+        """The highest index containing a value that isn't a JSHole.
+        -1 if no values exist.
+        """
+        return self._max_index
 
-#     def __setitem__(
-#         self,
-#         i: int | slice,
-#         value: T | JSUndefinedType | Iterable[T | JSUndefinedType],
-#         /,
-#     ) -> None:
-#         if isinstance(i, slice):
-#             raise NotImplementedError
-#         if i >= MAX_ARRAY_LENGTH:
-#             raise IndexError(i)
-#         if i < 0:
-#             _i = len(self) - i
-#             if _i < 0:
-#                 raise IndexError(i)
-#             i = _i
+    @property
+    def elements_used(self) -> int:
+        """The number of elements that are not empty holes."""
+        return len(self._items)
 
-#         if i > self._max_index:
-#             self._max_index = i
-#         self._items[i] = cast(T, value)
+    def _normalise_index(self, i: int) -> int:
+        """Flip a negative index (offset from end) to non-negative and check bounds."""
+        if i < 0:
+            _i = len(self) + i
+            if _i < 0:
+                raise IndexError(i)
+            return _i
+        if i >= len(self):
+            raise IndexError(i)
+        return i
 
-#     @overload
-#     def __delitem__(self, i: int, /) -> None: ...
+    @overload
+    def __getitem__(self, i: int, /) -> T | JSHoleType: ...
 
-#     @overload
-#     def __delitem__(self, i: slice, /) -> None: ...
+    @overload
+    def __getitem__(self, i: slice, /) -> ArrayProperties[T]: ...
 
-#     def __delitem__(self, i: int | slice, /) -> None:
-#         if isinstance(i, slice):
-#             raise NotImplementedError
-#         if i >= MAX_ARRAY_LENGTH:
-#             raise IndexError(i)
-#         if i < 0:
-#             _i = len(self) - i
-#             if _i < 0:
-#                 raise IndexError(i)
-#             i = _i
+    def __getitem__(self, i: int | slice, /) -> T | JSHoleType | ArrayProperties[T]:
+        if isinstance(i, slice):
+            raise NotImplementedError
+        i = self._normalise_index(i)
+        return self._items.get(i, JSHole)
 
-#         if len(self) <= i < MAX_ARRAY_LENGTH:
-#             return
-#         del self._items[i]
-#         if i == self._max_index:
-#             self._max_index = -1 if len(self._items) == 0 else self._items_keys[-1]
+    @overload
+    def __setitem__(self, i: int, value: T | JSHoleType, /) -> None: ...
 
-#     def insert(self, i: int, o: T | JSUndefinedType) -> None:
-#         if i >= MAX_ARRAY_LENGTH:
-#             raise IndexError(i)
-#         if i < 0:
-#             _i = len(self) - i
-#             if _i < 0:
-#                 raise IndexError(i)
-#             i = _i
+    @overload
+    def __setitem__(self, i: slice, value: Iterable[T | JSHoleType], /) -> None: ...
 
-#         if i >= self._max_index:
-#             self._items[i] = o
-#             self._max_index = max(i, self._max_index)
-#             return
+    def __setitem__(
+        self,
+        i: int | slice,
+        value: T | JSHoleType | Iterable[T | JSHoleType],
+        /,
+    ) -> None:
+        if isinstance(i, slice):
+            raise NotImplementedError
+        i = self._normalise_index(i)
 
-#         # shift all keys >= i
-#         # TODO: how do we find the closest index to a key? Or get a slice of all
-#         #   things >= a key?
-#         # TODO: maybe implement w/ bisect, I feel like this'll be simpler
-#         #   Plus we can have 0 deps. :)
-#         # for ii in self._items_keys[i:]
-#         raise NotImplementedError
-#         self._items.insert(i, o)
+        items = self._items
+        if i in items:
+            if value is JSHole:
+                del items[i]
+                # Note: making the final element a hole does not reduce the
+                # max_index, as the hole is included in the length.
 
-#     def append(self, value: T | JSUndefinedType) -> None:
-#         self._items.append(value)
+                # Creating a hole invalidates the sorted keys, but if it's the
+                # last value we can update the sorted keys in place in O(1).
 
-#     def __len__(self) -> int:
-#         return self._max_index + 1
+                # TODO: ensure we set an empty sorted_keys when appending/inserting from empty list
+                sorted_keys = self._sorted_keys
+                assert sorted_keys is not None if len(items) <= 1 else True
+
+                if sorted_keys is None:
+                    return
+                if i == sorted_keys[-1]:
+                    sorted_keys.pop()
+                else:
+                    self._sorted_keys = None
+                return
+            items[i] = cast(T, value)
+        else:
+            if value is JSHole:
+                return
+            items[i] = cast(T, value)
+            # When filling a hole after the last existing element we can update
+            # sorted_keys in place in O(1).
+            sorted_keys = self._sorted_keys
+            # TODO: ensure we set an empty sorted_keys when appending/inserting from empty list
+            assert sorted_keys is not None if len(items) <= 1 else True
+            if sorted_keys is not None and i > (
+                -1 if len(sorted_keys) == 0 else sorted_keys[-1]
+            ):
+                sorted_keys.append(i)
+            else:
+                # Otherwise we need to invalidate it and re-generate later.
+                self._sorted_keys = None
+
+    @overload
+    def __delitem__(self, i: int, /) -> None: ...
+
+    @overload
+    def __delitem__(self, i: slice, /) -> None: ...
+
+    def __delitem__(self, i: int | slice, /) -> None:
+        if isinstance(i, slice):
+            raise NotImplementedError
+        i = self._normalise_index(i)
+
+        items = self._items
+        items.pop(i, None)
+        # Deleting from a list shifts all elements after i back by one
+        self._items = {k if k <= i else k - 1: v for k, v in items.items()}
+        self._max_index -= 1
+
+        if self._sorted_keys is None and len(items) <= 1:
+            self._sorted_keys = list(items)
+        else:
+            self._sorted_keys = None
+
+    def insert(self, i: int, value: T | JSHoleType, /) -> None:
+        i = self._normalise_index(i)
+        if len(self) >= MAX_ARRAY_LENGTH:
+            raise IndexError("Cannot insert, array is already at max allowed length")
+
+        # Inserting into a list shifts all elements at or after i up by one
+        items = {(k if k < i else k + 1): v for k, v in self._items.items()}
+        self._max_index += 1
+        if value is not JSHole:
+            items[i] = cast(T, value)
+        self._items = items
+
+        if self._sorted_keys is None and len(items) <= 1:
+            self._sorted_keys = list(items)
+        else:
+            self._sorted_keys = None
+
+    def append(self, value: T | JSHoleType) -> None:
+        if value is JSHole:
+            return
+        i = self.max_index + 1
+        if i >= MAX_ARRAY_LENGTH:
+            raise IndexError(
+                f"Cannot extend array beyond max length: {MAX_ARRAY_LENGTH}"
+            )
+
+        items = self._items
+        sorted_keys = self._sorted_keys
+        items[i] = cast(T, value)
+
+        if sorted_keys is None:
+            if len(items) == 1:
+                self._sorted_keys = [i]
+        else:
+            assert len(sorted_keys) == len(self._items) - 1
+            assert len(sorted_keys) == 0 or sorted_keys[-1] < i
+            sorted_keys.append(i)
+        self._max_index = i
+
+    def __len__(self) -> int:
+        return self._max_index + 1
 
 
 class JSObject(MutableMapping[KT, T], ABC):
