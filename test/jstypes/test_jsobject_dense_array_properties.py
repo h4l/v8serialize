@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import ClassVar, Iterable, Protocol, Self, TypeVar
+from typing import Any, ClassVar, Iterable, Protocol, Self, TypeVar, cast
 
 import pytest
 from hypothesis import strategies as st
@@ -164,13 +164,30 @@ class AbstractArrayPropertiesComparisonMachine(RuleBasedStateMachine):
 class DenseArrayPropertiesComparisonMachine(AbstractArrayPropertiesComparisonMachine):
     actual_type = DenseArrayProperties
 
+    @invariant()
+    def dense_array_elements_used_correspond_to_items(self) -> None:
+        actual = cast(DenseArrayProperties[object], self.actual)
+        assert actual._elements_used == sum(1 for i in actual._items if i is not JSHole)
 
-# TODO: test
+
 class SparseArrayPropertiesComparisonMachine(AbstractArrayPropertiesComparisonMachine):
-    reference_type = SparseArrayProperties
+    actual_type = SparseArrayProperties
+
+    @invariant()
+    def sparse_array_sorted_keys_correspond_to_items(self) -> None:
+        actual = cast(SparseArrayProperties[object], self.actual)
+        if actual._sorted_keys is not None:
+            assert actual._sorted_keys == sorted(actual._items)
+
+    @invariant()
+    def sparse_array_max_index_gte_items(self) -> None:
+        actual = cast(SparseArrayProperties[object], self.actual)
+        if len(actual._items) > 0:
+            assert actual._max_index >= max(actual._items)
 
 
 TestDenseArrayPropertiesComparison = DenseArrayPropertiesComparisonMachine.TestCase
+TestSparseArrayPropertiesComparison = SparseArrayPropertiesComparisonMachine.TestCase
 
 
 @pytest.mark.parametrize(
@@ -203,3 +220,41 @@ def test_regions() -> None:
         OccupiedRegion(items=[(5, "c")]),
         EmptyRegion(start=6, length=1),
     ]
+
+
+@pytest.mark.parametrize(
+    "args, kwargs, result",
+    [
+        ([], {}, []),
+        ([None], {"entries": None}, []),
+        ([], {"entries": None}, []),
+        ([None], {}, []),
+        ([[JSHole]], {}, [JSHole]),
+        (
+            [[JSHole, JSHole, "a", "b", JSHole, "c", JSHole]],
+            {},
+            [JSHole, JSHole, "a", "b", JSHole, "c", JSHole],
+        ),
+        ([], {"entries": []}, []),
+        ([], {"entries": {}}, []),
+        (
+            [],
+            {"entries": {2: "a", 3: "b", 5: "c"}},
+            [JSHole, JSHole, "a", "b", JSHole, "c"],
+        ),
+        (
+            [],
+            {"entries": {2: "a", 3: "b", 5: "c"}, "length": 4},
+            [JSHole, JSHole, "a", "b"],
+        ),
+        (
+            [],
+            {"entries": {2: "a", 3: "b", 5: "c"}, "length": 9},
+            [JSHole, JSHole, "a", "b", JSHole, "c", JSHole, JSHole, JSHole],
+        ),
+    ],
+)
+def test_SparseArrayProperties_init__(
+    args: list[Any], kwargs: dict[str, Any], result: list[JSHoleType | str]
+) -> None:
+    assert list(SparseArrayProperties(*args, **kwargs)) == result
