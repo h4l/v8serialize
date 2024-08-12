@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Iterable, Self, TypeVar
+from typing import ClassVar, Iterable, Protocol, Self, TypeVar
 
 import pytest
 from hypothesis import strategies as st
@@ -20,6 +19,7 @@ from v8serialize.jstypes.jsobject import (
     JSHole,
     JSHoleType,
     OccupiedRegion,
+    SparseArrayProperties,
 )
 
 T = TypeVar("T")
@@ -30,6 +30,10 @@ class SimpleArrayProperties(list[T | JSHoleType]):
     """Very simple but inefficient implementation of ArrayProperties to compare
     against real implementations.
     """
+
+    @classmethod
+    def create(cls, values: Iterable[T | JSHoleType]) -> Self:
+        return cls(values)
 
     @property
     def has_holes(self) -> bool:
@@ -62,93 +66,111 @@ class SimpleArrayProperties(list[T | JSHoleType]):
 values_or_gaps = st.one_of(st.integers(), st.just(JSHole))
 
 
-class DenseArrayPropertiesComparisonMachine(RuleBasedStateMachine):
-    _dense: DenseArrayProperties[object] | None
-    _simple: SimpleArrayProperties[object] | None
+class ArrayPropertiesConstructor(Protocol):
+    def __call__(self, values: Iterable[T | JSHoleType]) -> ArrayProperties[T]: ...
+
+
+class AbstractArrayPropertiesComparisonMachine(RuleBasedStateMachine):
+    actual_type: ClassVar[ArrayPropertiesConstructor]
+    reference_type: ClassVar[ArrayPropertiesConstructor] = SimpleArrayProperties.create  # type: ignore[assignment]
+
+    _actual: ArrayProperties[object] | None
+    _reference: ArrayProperties[object] | None
 
     def __init__(self) -> None:
         super().__init__()
-        self._dense = None
-        self._simple = None
+        self._actual = None
+        self._reference = None
 
     @property
-    def dense(self) -> DenseArrayProperties[object]:
-        assert self._dense is not None
-        return self._dense
+    def actual(self) -> ArrayProperties[object]:
+        assert self._actual is not None
+        return self._actual
 
     @property
-    def simple(self) -> SimpleArrayProperties[object]:
-        assert self._simple is not None
-        return self._simple
+    def reference(self) -> ArrayProperties[object]:
+        assert self._reference is not None
+        return self._reference
 
     @property
     def valid_indexes(self) -> st.SearchStrategy[int]:
         """Get a strategy generating in-range indexes, negative or positive."""
-        if len(self.simple) == 0:
+        if len(self.reference) == 0:
             # Should never get used if preconditions prevent calling a method
             # using this strategy.
             return st.nothing()
-        return st.integers(min_value=-len(self.simple), max_value=len(self.simple) - 1)
+        return st.integers(
+            min_value=-len(self.reference), max_value=len(self.reference) - 1
+        )
 
     @staticmethod
     def get_valid_indexes(
-        self: DenseArrayPropertiesComparisonMachine,
+        self: AbstractArrayPropertiesComparisonMachine,
     ) -> st.SearchStrategy[int]:
         return self.valid_indexes
 
     @staticmethod
-    def not_empty(self: DenseArrayPropertiesComparisonMachine) -> bool:
-        return self._simple is not None and len(self._simple) > 0
+    def not_empty(self: AbstractArrayPropertiesComparisonMachine) -> bool:
+        return self._reference is not None and len(self._reference) > 0
 
     @initialize(initial_items=st.lists(elements=values_or_gaps))
     def init(self, initial_items: list[int | JSHoleType]) -> None:
-        self._simple = SimpleArrayProperties(list(initial_items))
-        self._dense = DenseArrayProperties(list(initial_items))
+        self._reference = self.reference_type(list(initial_items))
+        self._actual = self.actual_type(list(initial_items))
 
     @rule(index=st.runner().flatmap(get_valid_indexes), value=st.integers())
     @precondition(not_empty)
     def setitem(self, index: int, value: int) -> None:
-        assert self.simple[index] == self.dense[index]
-        self.simple[index] = value
-        self.dense[index] = value
-        assert self.simple[index] == value
-        assert self.simple[index] == self.dense[index]
+        assert self.reference[index] == self.actual[index]
+        self.reference[index] = value
+        self.actual[index] = value
+        assert self.reference[index] == value
+        assert self.reference[index] == self.actual[index]
 
     @rule(index=st.runner().flatmap(get_valid_indexes))
     @precondition(not_empty)
     def del_(self, index: int) -> None:
-        del self.simple[index]
-        del self.dense[index]
+        del self.reference[index]
+        del self.actual[index]
 
     @rule(index=st.runner().flatmap(get_valid_indexes), value=st.integers())
     def insert(self, index: int, value: int) -> None:
-        self.simple.insert(index, value)
-        self.dense.insert(index, value)
+        self.reference.insert(index, value)
+        self.actual.insert(index, value)
 
     @rule(value=st.integers())
     def append(self, value: int) -> None:
-        self.simple.append(value)
-        self.dense.append(value)
+        self.reference.append(value)
+        self.actual.append(value)
 
     @invariant()
     def implementations_equal(self) -> None:
-        assert self.dense == self.simple
+        assert self.actual == self.reference
 
     @invariant()
     def implementations_same_length(self) -> None:
-        assert len(self.dense) == len(self.simple)
+        assert len(self.actual) == len(self.reference)
 
     @invariant()
     def implementations_same_has_holes(self) -> None:
-        assert self.dense.has_holes == self.simple.has_holes
+        assert self.actual.has_holes == self.reference.has_holes
 
     @invariant()
     def implementations_same_max_index(self) -> None:
-        assert self.dense.max_index == self.simple.max_index
+        assert self.actual.max_index == self.reference.max_index
 
     @invariant()
     def implementations_same_elements_used(self) -> None:
-        assert self.dense.elements_used == self.simple.elements_used
+        assert self.actual.elements_used == self.reference.elements_used
+
+
+class DenseArrayPropertiesComparisonMachine(AbstractArrayPropertiesComparisonMachine):
+    actual_type = DenseArrayProperties
+
+
+# TODO: test
+class SparseArrayPropertiesComparisonMachine(AbstractArrayPropertiesComparisonMachine):
+    reference_type = SparseArrayProperties
 
 
 TestDenseArrayPropertiesComparison = DenseArrayPropertiesComparisonMachine.TestCase
