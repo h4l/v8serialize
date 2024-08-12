@@ -57,12 +57,13 @@ class ArrayProperties(
     @property
     def has_holes(self) -> bool:
         """True if any index between 0 and max_index is an empty hole."""
-        return self.elements_used <= self.max_index
+        return self.elements_used < self.length
 
-    # TODO: need to allow settings max_index to extend length
+    # TODO: need to allow assigning length extend/truncate
     @property
-    @abstractmethod
-    def max_index(self) -> int: ...
+    def length(self) -> int:
+        """The number of elements in the array, either values or empty gaps."""
+        return len(self)
 
     @property
     @abstractmethod
@@ -157,28 +158,21 @@ MAX_DENSE_ARRAY_HOLE_RATIO = 1 / 4
 @dataclass(slots=True, init=False, eq=False)
 class DenseArrayProperties(ArrayProperties[T]):
     _items: list[T | JSHoleType]
-    _max_index: int
     _elements_used: int
 
-    def __init__(self, items: Iterable[T | JSHoleType]) -> None:
+    def __init__(self, values: Iterable[T | JSHoleType]) -> None:
         _items = []
-        max_index = -1
         elements_used = 0
-        for i, v in enumerate(items):
+        for v in values:
             if v is not JSHole:
-                max_index = i
                 elements_used += 1
             _items.append(v)
         self._items = _items
-        self._max_index = max_index
         self._elements_used = elements_used
 
     @property
-    def max_index(self) -> int:
-        """The highest index containing a value that isn't a JSHole.
-        -1 if no values exist.
-        """
-        return self._max_index
+    def length(self) -> int:
+        return len(self._items)
 
     @property
     def elements_used(self) -> int:
@@ -228,7 +222,6 @@ class DenseArrayProperties(ArrayProperties[T]):
         if current is JSHole:
             if value is not JSHole:
                 self._elements_used += 1
-                self._max_index = max(i, self._max_index)
         elif value is JSHole:
             self._elements_used -= 1
 
@@ -245,49 +238,25 @@ class DenseArrayProperties(ArrayProperties[T]):
 
         items = self._items
         current = items[i]
-        max_index = self._max_index
         del items[i]
 
-        if i > max_index:
-            assert current is JSHole
-            return
-
         if current is JSHole:
-            assert i < max_index
-            self._max_index = max_index - 1
             return
 
         self._elements_used -= 1
-        if i == max_index:
-            # find the next lowest used element to be the next max_index
-            for n in range(i - 1, -1, -1):
-                if items[n] is not JSHole:
-                    self._max_index = n
-                    break
-            else:  # all elements were holes
-                self._max_index = -1
-            return
-        self._max_index = max_index - 1
 
     def insert(self, i: int, o: T | JSHoleType) -> None:
         i = self._normalise_index(i)
 
-        max_index = self._max_index
         self._items.insert(i, o)
 
-        if o is JSHole:
-            if i > max_index:
-                return
-            self._max_index = max_index + 1
-        else:
+        if o is not JSHole:
             self._elements_used += 1
-            self._max_index = max(max_index + 1, i)
 
     def append(self, value: T | JSHoleType) -> None:
         items = self._items
         items.append(value)
         if value is not JSHole:
-            self._max_index = len(items) - 1
             self._elements_used += 1
 
     def __len__(self) -> int:
@@ -551,7 +520,7 @@ class DenseArrayProperties(ArrayProperties[T]):
 
 
 @dataclass(slots=True, init=False)
-class LazySparseArrayProperties(ArrayProperties[T]):
+class SparseArrayProperties(ArrayProperties[T]):
     _items: dict[int, T]
     _sorted_keys: list[int] | None
     _max_index: int
@@ -599,11 +568,8 @@ class LazySparseArrayProperties(ArrayProperties[T]):
                 )
 
     @property
-    def max_index(self) -> int:
-        """The highest index containing a value that isn't a JSHole.
-        -1 if no values exist.
-        """
-        return self._max_index
+    def length(self) -> int:
+        return self._max_index + 1
 
     @property
     def elements_used(self) -> int:
@@ -730,7 +696,7 @@ class LazySparseArrayProperties(ArrayProperties[T]):
     def append(self, value: T | JSHoleType) -> None:
         if value is JSHole:
             return
-        i = self.max_index + 1
+        i = self._max_index + 1
         if i >= MAX_ARRAY_LENGTH:
             raise IndexError(
                 f"Cannot extend array beyond max length: {MAX_ARRAY_LENGTH}"
@@ -751,6 +717,9 @@ class LazySparseArrayProperties(ArrayProperties[T]):
 
     def __len__(self) -> int:
         return self._max_index + 1
+
+    # TODO: implement __iter__ more efficiently
+    # TODO: implement regions more efficiently
 
 
 class JSObject(MutableMapping[KT, T], ABC):

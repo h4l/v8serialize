@@ -40,11 +40,8 @@ class SimpleArrayProperties(list[T | JSHoleType]):
         return any(x is JSHole for x in self)
 
     @property
-    def max_index(self) -> int:
-        for i in range(len(self) - 1, -1, -1):
-            if self[i] is not JSHole:
-                return i
-        return -1
+    def length(self) -> int:
+        return len(self)
 
     @property
     def elements_used(self) -> int:
@@ -58,7 +55,7 @@ class SimpleArrayProperties(list[T | JSHoleType]):
     def __repr__(self) -> str:
         return (
             f"< SimpleArrayProperties({super().__repr__()}) "
-            f"has_holes={self.has_holes!r}, max_index={self.max_index!r}, "
+            f"has_holes={self.has_holes!r}, length={self.length!r}, "
             f"elements_used={self.elements_used!r} >"
         )
 
@@ -148,7 +145,7 @@ class AbstractArrayPropertiesComparisonMachine(RuleBasedStateMachine):
         assert self.actual == self.reference
 
     @invariant()
-    def implementations_same_length(self) -> None:
+    def implementations_same_dunder_len(self) -> None:
         assert len(self.actual) == len(self.reference)
 
     @invariant()
@@ -156,8 +153,8 @@ class AbstractArrayPropertiesComparisonMachine(RuleBasedStateMachine):
         assert self.actual.has_holes == self.reference.has_holes
 
     @invariant()
-    def implementations_same_max_index(self) -> None:
-        assert self.actual.max_index == self.reference.max_index
+    def implementations_same_length(self) -> None:
+        assert self.actual.length == self.reference.length
 
     @invariant()
     def implementations_same_elements_used(self) -> None:
@@ -191,7 +188,8 @@ def test_init(elements: Iterable[object], result: list[object]) -> None:
 def test_init_initial_state() -> None:
     array = DenseArrayProperties([JSHole, "a", JSHole, "b", JSHole])
     assert array.elements_used == 2
-    assert array.max_index == 3
+    assert array.length == 5
+    assert len(array) == 5
 
 
 def test_regions() -> None:
