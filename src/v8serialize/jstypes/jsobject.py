@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections import deque
 from dataclasses import dataclass, field
-from itertools import groupby
+from itertools import groupby, repeat
 from typing import (
     TYPE_CHECKING,
     Final,
@@ -14,11 +14,17 @@ from typing import (
     MutableMapping,
     MutableSequence,
     Sequence,
+    Sized,
+    TypeGuard,
     TypeVar,
     cast,
     overload,
 )
 
+if TYPE_CHECKING:
+    from _typeshed import SupportsItems, SupportsKeysAndGetItem
+
+_KT = TypeVar("_KT")
 KT = TypeVar("KT", bound=int | str)
 T = TypeVar("T")
 
@@ -76,6 +82,7 @@ class ArrayProperties(
         return (
             other is self
             or isinstance(other, ArrayProperties)
+            # TODO: using regions would be better to avoid reading gaps
             and list(self) == list(other)
         )
 
@@ -123,7 +130,21 @@ class OccupiedRegion(Generic[T]):
     length: int
     items: Sequence[T]
 
-    def __init__(self, items: Iterable[tuple[int, T]]) -> None:
+    @overload
+    def __init__(self, items: Sequence[T], start: int) -> None: ...
+
+    @overload
+    def __init__(self, items: Iterable[tuple[int, T]]) -> None: ...
+
+    def __init__(
+        self, items: Sequence[T] | Iterable[tuple[int, T]], start: int | None = None
+    ) -> None:
+        if start is not None:
+            self.items = cast(Sequence[T], items)
+            self.start = start
+            self.length = len(self.items)
+            return
+
         items = iter(items)
         try:
             i, v = next(items)
@@ -147,12 +168,31 @@ class OccupiedRegion(Generic[T]):
 
 
 MAX_ARRAY_LENGTH: Final = 2**32 - 1
+MAX_ARRAY_LENGTH_REPR: Final = "2**32 - 1"
 MIN_SPARSE_ARRAY_SIZE = 16
 MIN_DENSE_ARRAY_USED_RATIO = 1 / 4
 MAX_DENSE_ARRAY_HOLE_RATIO = 1 / 4
 
 # TODO: should we be explicit about Holes? e.g. treat elements as explicitly T | HoleType
 # Then in the JSObject we can hide this detail and return JSUndefined
+
+
+def iter_items(
+    items: (
+        Iterable[tuple[_KT, T]] | SupportsKeysAndGetItem[_KT, T] | SupportsItems[_KT, T]
+    )
+) -> Iterable[tuple[_KT, T]]:
+    if callable(getattr(items, "items", None)):
+        supports_items = cast("SupportsItems[_KT, T]", items)
+        return supports_items.items()
+    elif all(callable(getattr(items, attr, None)) for attr in ["keys", "__getitem__"]):
+        supports_kagi = cast("SupportsKeysAndGetItem[_KT, T]", items)
+        return ((k, supports_kagi[k]) for k in supports_kagi.keys())
+    return cast(Iterable[tuple[_KT, T]], items)
+
+
+def supports_sized(obj: object) -> TypeGuard[Sized]:
+    return callable(getattr(obj, "__len__", None))
 
 
 @dataclass(slots=True, init=False, eq=False)
@@ -269,257 +309,7 @@ class DenseArrayProperties(ArrayProperties[T]):
         return array_properties_regions(self)
 
 
-# # TODO: throw this away and just use a simple list which can contain Hole
-# @dataclass(slots=True, init=False)
-# class DenseArrayProperties(ArrayProperties[T]):
-#     _items: list[T | HoleType]
-#     _max_index: int
-#     _elements_used: int
-
-#     def __init__(self, items: Iterable[T]) -> None:
-#         self._items = list(items)
-#         self._max_index = len(self._items) - 1
-#         self._elements_used = len(self._items)
-
-#     def _ensure_capacity(self, elements_used: int, length: int) -> None:
-#         if (
-#             elements_used >= MIN_SPARSE_ARRAY_SIZE
-#             and elements_used / length < MIN_DENSE_ARRAY_USED_RATIO
-#         ):
-#             raise SparseArrayRequired(elements_used=elements_used, length=length)
-#         required_capacity = length - len(self._items)
-#         assert required_capacity > 0
-#         self._items.extend([Hole] * required_capacity)
-
-#     @property
-#     def _has_holes(self) -> bool:
-#         return self._elements_used < len(self._items)
-
-#     def _normalise_index(self, i: int) -> int:
-#         """Flip a negative index (offset from end) to non-negative and check bounds."""
-#         if i >= 0:
-#             if i >= MAX_ARRAY_LENGTH:
-#                 raise IndexError(i)
-#             return i
-#         _i = len(self) - i
-#         if _i < 0:
-#             raise IndexError(i)
-#         return _i
-
-#     @overload
-#     def __getitem__(self, i: int, /) -> T | JSUndefinedType: ...
-
-#     @overload
-#     def __getitem__(self, i: slice, /) -> ArrayProperties[T]: ...
-
-#     def __getitem__(
-#         self, i: int | slice, /
-#     ) -> T | JSUndefinedType | ArrayProperties[T]:
-#         if isinstance(i, slice):
-#             raise NotImplementedError
-#         i = self._normalise_index(i)
-#         if self._has_holes:
-#             value = self._items[i]
-#             return JSUndefined if value is Hole else value
-#         return self._items[i]
-
-#     @overload
-#     def __setitem__(self, i: int, value: T, /) -> None: ...
-
-#     @overload
-#     def __setitem__(self, i: slice, value: Iterable[T], /) -> None: ...
-
-#     def __setitem__(
-#         self,
-#         i: int | slice,
-#         value: T | Iterable[T],
-#         /,
-#     ) -> None:
-#         if isinstance(i, slice):
-#             raise NotImplementedError
-#         i = self._normalise_index(i)
-
-#         if i >= len(self._items):
-#             self._ensure_capacity(self._elements_used + 1, i + 1)
-
-#         if self._items[i] is Hole:
-#             self._elements_used += 1
-#         if i > self._max_index:
-#             self._max_index = i
-#         self._items[i] = value
-
-#     @overload
-#     def __delitem__(self, i: int, /) -> None: ...
-
-#     @overload
-#     def __delitem__(self, i: slice, /) -> None: ...
-
-#     def __delitem__(self, i: int | slice, /) -> None:
-#         """Delete the item at index i.
-
-#         This implements the normal Python list behaviour of shifting following
-#         elements back, not the JavaScript behaviour of leaving a hole.
-#         """
-#         if isinstance(i, slice):
-#             raise NotImplementedError
-#         i = self._normalise_index(i)
-#         if len(self) <= i:
-#             return
-
-#         if self._has_holes and i == self._max_index:
-#             self._items[i] = Hole
-#             # find the next lowest used element to be the next max_index
-#             for n in range(i - 1, -1, -1):
-#                 if self._items[n] is not Hole:
-#                     self._max_index = n
-#                     break
-#             else:  # all elements were holes
-#                 self._max_index = -1
-#             return
-#         del self._items[i]
-#         self._max_index -= 1
-
-#     def insert(self, i: int, o: T) -> None:
-#         """Insert a value before the values at index i.
-
-#         This implements the normal Python list behaviour of inserting indexes
-#         beyond end of the list immediately after the end. I.e. it doesn't create
-#         a gap at the end.
-#         """
-#         i = self._normalise_index(i)
-
-#         # Python arrays treat inserting beyond the end as inserting immediately
-#         # after the final element.
-
-#         i = min(i, self._max_index + 1)
-#         self._items.insert(i, o)
-#         self._max_index += 1
-
-#     def append(self, value: T) -> None:
-#         self.insert(len(self), value)
-
-#     def __len__(self) -> int:
-#         return self._max_index + 1
-
-
-# @dataclass(slots=True, init=False)
-# class SparseArrayProperties(ArrayProperties[T]):
-#     _items: SortedDict[int, T | JSUndefinedType]
-#     _items_keys: SortedKeysView[int]
-#     _max_index: int
-
-#     def __init__(self, items: Iterable[tuple[int, T | JSUndefinedType]]) -> None:
-#         max_index = -1
-#         _items = SortedDict[int, T | JSUndefinedType]()
-#         for i, v in items:
-#             if not (0 <= i < MAX_ARRAY_LENGTH):
-#                 raise IndexError(i)
-#             max_index = max(max_index, i)
-#             _items[i] = v
-#         self._items = _items
-#         self._max_index = max_index
-
-#     @overload
-#     def __getitem__(self, i: int, /) -> T | JSUndefinedType: ...
-
-#     @overload
-#     def __getitem__(self, i: slice, /) -> MutableSequence[T | JSUndefinedType]: ...
-
-#     def __getitem__(
-#         self, i: int | slice, /
-#     ) -> T | JSUndefinedType | MutableSequence[T | JSUndefinedType]:
-#         if isinstance(i, slice):
-#             raise NotImplementedError
-
-#         if i < 0:
-#             _i = len(self) - i
-#             if _i < 0:
-#                 raise IndexError(i)
-#             i = _i
-#         return self._items.get(i, JSUndefined)
-
-#     @overload
-#     def __setitem__(self, i: int, value: T | JSUndefinedType, /) -> None: ...
-
-#     @overload
-#     def __setitem__(
-#         self, i: slice, value: Iterable[T | JSUndefinedType], /
-#     ) -> None: ...
-
-#     def __setitem__(
-#         self,
-#         i: int | slice,
-#         value: T | JSUndefinedType | Iterable[T | JSUndefinedType],
-#         /,
-#     ) -> None:
-#         if isinstance(i, slice):
-#             raise NotImplementedError
-#         if i >= MAX_ARRAY_LENGTH:
-#             raise IndexError(i)
-#         if i < 0:
-#             _i = len(self) - i
-#             if _i < 0:
-#                 raise IndexError(i)
-#             i = _i
-
-#         if i > self._max_index:
-#             self._max_index = i
-#         self._items[i] = cast(T, value)
-
-#     @overload
-#     def __delitem__(self, i: int, /) -> None: ...
-
-#     @overload
-#     def __delitem__(self, i: slice, /) -> None: ...
-
-#     def __delitem__(self, i: int | slice, /) -> None:
-#         if isinstance(i, slice):
-#             raise NotImplementedError
-#         if i >= MAX_ARRAY_LENGTH:
-#             raise IndexError(i)
-#         if i < 0:
-#             _i = len(self) - i
-#             if _i < 0:
-#                 raise IndexError(i)
-#             i = _i
-
-#         if len(self) <= i < MAX_ARRAY_LENGTH:
-#             return
-#         del self._items[i]
-#         if i == self._max_index:
-#             self._max_index = -1 if len(self._items) == 0 else self._items_keys[-1]
-
-#     def insert(self, i: int, o: T | JSUndefinedType) -> None:
-#         if i >= MAX_ARRAY_LENGTH:
-#             raise IndexError(i)
-#         if i < 0:
-#             _i = len(self) - i
-#             if _i < 0:
-#                 raise IndexError(i)
-#             i = _i
-
-#         if i >= self._max_index:
-#             self._items[i] = o
-#             self._max_index = max(i, self._max_index)
-#             return
-
-#         # shift all keys >= i
-#         # TODO: how do we find the closest index to a key? Or get a slice of all
-#         #   things >= a key?
-#         # TODO: maybe implement w/ bisect, I feel like this'll be simpler
-#         #   Plus we can have 0 deps. :)
-#         # for ii in self._items_keys[i:]
-#         raise NotImplementedError
-#         self._items.insert(i, o)
-
-#     def append(self, value: T | JSUndefinedType) -> None:
-#         self._items.append(value)
-
-#     def __len__(self) -> int:
-#         return self._max_index + 1
-
-
-@dataclass(slots=True, init=False)
+@dataclass(slots=True, init=False, eq=False)
 class SparseArrayProperties(ArrayProperties[T]):
     _items: dict[int, T]
     _sorted_keys: list[int] | None
@@ -531,7 +321,12 @@ class SparseArrayProperties(ArrayProperties[T]):
     True = added, False = removed."""
 
     @overload
-    def __init__(self, *, entries: Iterable[tuple[int, T]] | None = None) -> None: ...
+    def __init__(
+        self,
+        *,
+        entries: Iterable[tuple[int, T]] | SupportsKeysAndGetItem[int, T] | None = None,
+        length: int | None = None,
+    ) -> None: ...
 
     @overload
     def __init__(self, values: Iterable[T | JSHoleType] | None = None) -> None: ...
@@ -540,9 +335,14 @@ class SparseArrayProperties(ArrayProperties[T]):
         self,
         values: Iterable[T | JSHoleType] | None = None,
         *,
-        entries: Iterable[tuple[int, T]] | None = None,
+        entries: Iterable[tuple[int, T]] | SupportsKeysAndGetItem[int, T] | None = None,
+        length: int | None = None,
     ) -> None:
         if values is not None:
+            if length is not None:  # Enforce type signature
+                raise ValueError("length cannot be used with values argument")
+            if supports_sized(values):
+                length = len(values)
             entries = (
                 (i, v)
                 for i, v in enumerate(cast(Iterable[T], values))
@@ -550,22 +350,46 @@ class SparseArrayProperties(ArrayProperties[T]):
             )
         elif entries is None:
             entries = []
+        # elif all(
+        #     callable(getattr(entries, attr, None)) for attr in ["keys", "__getitem__"]
+        # ):
+        #     __mapping = cast("SupportsKeysAndGetItem[int, T]", entries)
+        #     entries = ((k, __mapping[k]) for k in __mapping.keys())
 
-        self._max_index = -1
-        self._items = _items = dict(entries)
-        # We need to establish the max_index and validate there are no negative
-        # indexes, so we might as well sort now rather than scanning for min/max
-        self._sorted_keys = _sorted_keys = sorted(_items)
-        if _sorted_keys:
-            min_index, max_index = _sorted_keys[0], _sorted_keys[-1]
-            if min_index < 0:
-                raise IndexError(
-                    f"initial item indexes must be 0 <= index < 2**32-1: {min_index}"
+        # entries = cast(Iterable[tuple[int, T]], entries)
+
+        invalid_index = None
+        if length is None:
+            self._max_index = -1
+            self._items = _items = dict(entries)
+            # We need to establish the max_index and validate there are no negative
+            # indexes, so we might as well sort now rather than scanning for min/max
+            self._sorted_keys = _sorted_keys = sorted(_items)
+            if _sorted_keys:
+                if _sorted_keys[0] < 0:
+                    invalid_index = _sorted_keys[0]
+                elif _sorted_keys[-1] >= MAX_ARRAY_LENGTH:
+                    invalid_index = _sorted_keys[-1]
+                self._max_index = _sorted_keys[-1]
+        else:
+            if length < 0 or length > MAX_ARRAY_LENGTH:
+                raise ValueError(
+                    f"length must be >= 0 and <= {MAX_ARRAY_LENGTH_REPR}: {length}"
                 )
-            if max_index >= MAX_ARRAY_LENGTH:
-                raise IndexError(
-                    f"initial item indexes must be 0 <= index < 2**32-1: {max_index}"
-                )
+            self._max_index = length - 1
+            self._items = _items = dict[int, T]()
+            for i, v in iter_items(entries):
+                if i < 0:
+                    invalid_index = i
+                    break
+                if i < length:
+                    _items[i] = v
+            self._sorted_keys = None if len(_items) > 1 else list(_items)
+
+        if invalid_index is not None:
+            raise IndexError(
+                f"initial item indexes must be 0 <= index < 2**32-1: {invalid_index}"
+            )
 
     @property
     def length(self) -> int:
@@ -668,11 +492,11 @@ class SparseArrayProperties(ArrayProperties[T]):
         items = self._items
         items.pop(i, None)
         # Deleting from a list shifts all elements after i back by one
-        self._items = {k if k <= i else k - 1: v for k, v in items.items()}
+        self._items = items = {k if k <= i else k - 1: v for k, v in items.items()}
         self._max_index -= 1
 
-        if self._sorted_keys is None and len(items) <= 1:
-            self._sorted_keys = list(items)
+        if len(items) <= 1:
+            self._sorted_keys = list(self._items)
         else:
             self._sorted_keys = None
 
@@ -682,11 +506,12 @@ class SparseArrayProperties(ArrayProperties[T]):
             raise IndexError("Cannot insert, array is already at max allowed length")
 
         # Inserting into a list shifts all elements at or after i up by one
-        items = {(k if k < i else k + 1): v for k, v in self._items.items()}
+        self._items = items = {
+            (k if k < i else k + 1): v for k, v in self._items.items()
+        }
         self._max_index += 1
         if value is not JSHole:
             items[i] = cast(T, value)
-        self._items = items
 
         if self._sorted_keys is None and len(items) <= 1:
             self._sorted_keys = list(items)
@@ -718,8 +543,55 @@ class SparseArrayProperties(ArrayProperties[T]):
     def __len__(self) -> int:
         return self._max_index + 1
 
-    # TODO: implement __iter__ more efficiently
-    # TODO: implement regions more efficiently
+    def regions(self) -> Generator[EmptyRegion | OccupiedRegion[T], None, None]:
+        items = self._items
+        if self._sorted_keys is None:
+            self._sorted_keys = sorted(items)
+        sorted_keys = self._sorted_keys
+        max_index = self._max_index
+
+        if len(sorted_keys) == 0:
+            length = len(self)
+            if length == 0:
+                return
+            yield EmptyRegion(0, length=length)
+            return
+
+        prev_index: int = -1
+        first_index: int = 0
+
+        def first_index_of_preceding_adjacent_elements(i: int) -> int:
+            nonlocal prev_index, first_index
+            # start a new group if we're not connected to an ongoing group
+            if i - 1 != prev_index:
+                first_index = i
+            prev_index = i
+            return first_index
+
+        groups = groupby(sorted_keys, first_index_of_preceding_adjacent_elements)
+        first, adjacent_indexes = next(groups)
+
+        if first > 0:
+            yield EmptyRegion(0, length=sorted_keys[0])
+        occupied = OccupiedRegion([items[i] for i in adjacent_indexes], start=first)
+        yield occupied
+
+        for first, adjacent_indexes in groups:
+            empty_start = occupied.start + occupied.length
+            yield EmptyRegion(start=empty_start, length=first - empty_start)
+            occupied = OccupiedRegion([items[i] for i in adjacent_indexes], start=first)
+            yield occupied
+
+        empty_start = occupied.start + occupied.length
+        if empty_start <= max_index:
+            yield EmptyRegion(start=empty_start, length=max_index - empty_start + 1)
+
+    def __iter__(self) -> Iterator[T | JSHoleType]:
+        for region in self.regions():
+            if region.items is None:
+                yield from repeat(JSHole, region.length)
+            else:
+                yield from region.items
 
 
 class JSObject(MutableMapping[KT, T], ABC):

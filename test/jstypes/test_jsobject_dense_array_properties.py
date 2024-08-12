@@ -1,6 +1,16 @@
 from __future__ import annotations
 
-from typing import Any, ClassVar, Iterable, Protocol, Self, TypeVar, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Generator,
+    Iterable,
+    Protocol,
+    Self,
+    TypeVar,
+    cast,
+)
 
 import pytest
 from hypothesis import strategies as st
@@ -20,6 +30,7 @@ from v8serialize.jstypes.jsobject import (
     JSHoleType,
     OccupiedRegion,
     SparseArrayProperties,
+    array_properties_regions,
 )
 
 T = TypeVar("T")
@@ -46,6 +57,9 @@ class SimpleArrayProperties(list[T | JSHoleType]):
     @property
     def elements_used(self) -> int:
         return len(self) - sum(1 for x in self if x is JSHole)
+
+    def regions(self) -> Generator[EmptyRegion | OccupiedRegion[T], None, None]:
+        return array_properties_regions(self)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, ArrayProperties):
@@ -159,6 +173,14 @@ class AbstractArrayPropertiesComparisonMachine(RuleBasedStateMachine):
     @invariant()
     def implementations_same_elements_used(self) -> None:
         assert self.actual.elements_used == self.reference.elements_used
+
+    @invariant()
+    def implementations_regions_equal(self) -> None:
+        assert list(self.actual.regions()) == list(self.reference.regions())
+
+    @invariant()
+    def implementations_iter_equal(self) -> None:
+        assert list(iter(self.actual)) == list(iter(self.reference))
 
 
 class DenseArrayPropertiesComparisonMachine(AbstractArrayPropertiesComparisonMachine):
