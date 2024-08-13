@@ -38,8 +38,19 @@ from v8serialize.jstypes.jsarrayproperties import (
 T = TypeVar("T")
 
 
+if TYPE_CHECKING:
+
+    class _SimpleArrayProperties(ArrayProperties[T]):
+        def __init__(self, values: Iterable[T | JSHoleType] | None = None) -> None: ...
+
+else:
+
+    class SimpleArrayProperties(list[T | JSHoleType]):
+        pass
+
+
 @ArrayProperties.register
-class SimpleArrayProperties(list[T | JSHoleType]):
+class SimpleArrayProperties(_SimpleArrayProperties[T]):
     """Very simple but inefficient implementation of ArrayProperties to compare
     against real implementations.
     """
@@ -87,12 +98,6 @@ class SimpleArrayProperties(list[T | JSHoleType]):
         )
 
 
-if TYPE_CHECKING:
-    t0: type[ArrayProperties[object]] = SimpleArrayProperties[object]
-    t1: type[ArrayProperties[object]] = DenseArrayProperties[object]
-    t2: type[ArrayProperties[object]] = SparseArrayProperties[object]
-
-
 values_or_gaps = st.one_of(st.integers(), st.just(JSHole))
 
 
@@ -102,7 +107,7 @@ class ArrayPropertiesConstructor(Protocol):
 
 class AbstractArrayPropertiesComparisonMachine(RuleBasedStateMachine):
     actual_type: ClassVar[ArrayPropertiesConstructor]
-    reference_type: ClassVar[ArrayPropertiesConstructor] = SimpleArrayProperties.create  # type: ignore[assignment]
+    reference_type: ClassVar[ArrayPropertiesConstructor] = SimpleArrayProperties.create
 
     _actual: ArrayProperties[object] | None
     _reference: ArrayProperties[object] | None
