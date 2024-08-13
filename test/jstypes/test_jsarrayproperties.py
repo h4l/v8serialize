@@ -265,15 +265,19 @@ TestSparseArrayPropertiesComparison = SparseArrayPropertiesComparisonMachine.Tes
 
 
 @pytest.mark.parametrize(
-    "elements,result",
+    "args, kwargs, result",
     [
-        ([], []),
-        (["a"], ["a"]),
-        (["a", JSHole, "b"], ["a", JSHole, "b"]),
+        ([], {}, []),
+        ([[]], {}, []),
+        ([["a"]], {}, ["a"]),
+        ([["a", JSHole, "b"]], {}, ["a", JSHole, "b"]),
+        ([], {"values": ["a"]}, ["a"]),
     ],
 )
-def test_init(elements: Iterable[object], result: list[object]) -> None:
-    assert list(DenseArrayProperties(elements)) == result
+def test_DenseArrayProperties_init(
+    args: list[Any], kwargs: dict[str, Any], result: list[JSHoleType | str]
+) -> None:
+    assert list(DenseArrayProperties(*args, **kwargs)) == result
 
 
 def test_init_initial_state() -> None:
@@ -304,6 +308,7 @@ def test_regions() -> None:
         ([], {"entries": None}, []),
         ([None], {}, []),
         ([[JSHole]], {}, [JSHole]),
+        ([], {"values": [JSHole]}, [JSHole]),
         (
             [[JSHole, JSHole, "a", "b", JSHole, "c", JSHole]],
             {},

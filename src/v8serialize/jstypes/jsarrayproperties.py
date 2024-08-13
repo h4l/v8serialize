@@ -194,10 +194,10 @@ class DenseArrayProperties(ArrayProperties[T]):
     _items: list[T | JSHoleType]
     _elements_used: int
 
-    def __init__(self, values: Iterable[T | JSHoleType]) -> None:
+    def __init__(self, values: Iterable[T | JSHoleType] | None = None) -> None:
         _items = []
         elements_used = 0
-        for v in values:
+        for v in values or []:
             if v is not JSHole:
                 elements_used += 1
             _items.append(v)
