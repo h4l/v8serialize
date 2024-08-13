@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from bisect import bisect_left
 from collections import deque
 from dataclasses import dataclass, field
 from itertools import groupby, repeat
@@ -65,11 +66,16 @@ class ArrayProperties(
         """True if any index between 0 and max_index is an empty hole."""
         return self.elements_used < self.length
 
-    # TODO: need to allow assigning length extend/truncate
     @property
     def length(self) -> int:
         """The number of elements in the array, either values or empty gaps."""
         return len(self)
+
+    @length.setter
+    @abstractmethod
+    def length(self, length: int) -> None:
+        """Change the length of the array. Elements are dropped if the length is
+        reduced, or gaps are created at the end if the length is increased."""
 
     @property
     @abstractmethod
@@ -201,6 +207,28 @@ class DenseArrayProperties(ArrayProperties[T]):
     @property
     def length(self) -> int:
         return len(self._items)
+
+    @length.setter
+    def length(self, length: int) -> None:
+        if length < 0:
+            raise ValueError(f"length must be >= 0 and < {MAX_ARRAY_LENGTH_REPR}")
+        items = self._items
+        current = len(items)
+        if length < current:
+            proportion_retained = length / current  # cannot be 0
+            if proportion_retained < 0.5:
+                elements_used_after = sum(
+                    1 for i in range(0, length) if items[i] is not JSHole
+                )
+            else:
+                elements_used_after = self._elements_used - sum(
+                    1 for i in range(length, len(items)) if items[i] is not JSHole
+                )
+            del items[length:]
+            self._elements_used = elements_used_after
+        else:
+            items.extend([JSHole] * (length - current))
+            # _elements_used is unchanged
 
     @property
     def elements_used(self) -> int:
@@ -338,13 +366,6 @@ class SparseArrayProperties(ArrayProperties[T]):
             )
         elif entries is None:
             entries = []
-        # elif all(
-        #     callable(getattr(entries, attr, None)) for attr in ["keys", "__getitem__"]
-        # ):
-        #     __mapping = cast("SupportsKeysAndGetItem[int, T]", entries)
-        #     entries = ((k, __mapping[k]) for k in __mapping.keys())
-
-        # entries = cast(Iterable[tuple[int, T]], entries)
 
         invalid_index = None
         if length is None:
@@ -382,6 +403,33 @@ class SparseArrayProperties(ArrayProperties[T]):
     @property
     def length(self) -> int:
         return self._max_index + 1
+
+    @length.setter
+    def length(self, length: int) -> None:
+        if length < 0:
+            raise ValueError(f"length must be >= 0 and < {MAX_ARRAY_LENGTH_REPR}")
+        items = self._items
+        sorted_keys = self._get_sorted_keys()
+
+        # binary search to find the position of the new length in the key list.
+        first_removed = bisect_left(sorted_keys, length)
+        sorted_keys_after = sorted_keys[:first_removed]
+
+        proportion_retained = (
+            1 if len(sorted_keys) == 0 else first_removed / len(sorted_keys) <= 0.5
+        )
+        if proportion_retained <= 0.5:
+            # copy just the retained elements as there are less kept than removed
+            items_after = {i: items[i] for i in sorted_keys_after}
+        else:
+            # unset just the removed elements are more are kept
+            items_after = items
+            for i in sorted_keys[first_removed:]:
+                del items_after[i]
+
+        self._items = items_after
+        self._sorted_keys = sorted_keys_after
+        self._max_index = length - 1
 
     @property
     def elements_used(self) -> int:
@@ -533,11 +581,19 @@ class SparseArrayProperties(ArrayProperties[T]):
     def __len__(self) -> int:
         return self._max_index + 1
 
+    def _get_sorted_keys(self) -> list[int]:
+        """Get the sorted list of indexes with non-gap values.
+
+        The sorted list invalidated after various mutation operations. Calling
+        this will re-generate and cache the list.
+        """
+        if self._sorted_keys is None:
+            self._sorted_keys = sorted(self._items)
+        return self._sorted_keys
+
     def regions(self) -> Generator[EmptyRegion | OccupiedRegion[T], None, None]:
         items = self._items
-        if self._sorted_keys is None:
-            self._sorted_keys = sorted(items)
-        sorted_keys = self._sorted_keys
+        sorted_keys = self._get_sorted_keys()
         max_index = self._max_index
 
         if len(sorted_keys) == 0:

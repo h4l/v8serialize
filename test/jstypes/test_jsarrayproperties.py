@@ -23,6 +23,7 @@ from hypothesis.stateful import (
 )
 
 from v8serialize.jstypes.jsarrayproperties import (
+    MAX_ARRAY_LENGTH_REPR,
     ArrayProperties,
     DenseArrayProperties,
     EmptyRegion,
@@ -53,6 +54,17 @@ class SimpleArrayProperties(list[T | JSHoleType]):
     @property
     def length(self) -> int:
         return len(self)
+
+    @length.setter
+    def length(self, length: int) -> None:
+        if length < 0:
+            raise ValueError(f"length must be >= 0 and < {MAX_ARRAY_LENGTH_REPR}")
+        current_length = len(self)
+        if length > current_length:
+            self.extend([JSHole] * (length - current_length))
+        else:
+            del self[length:]
+        assert len(self) == length
 
     @property
     def elements_used(self) -> int:
@@ -126,9 +138,24 @@ class AbstractArrayPropertiesComparisonMachine(RuleBasedStateMachine):
     ) -> st.SearchStrategy[int]:
         return self.valid_indexes
 
+    @property
+    def lengths_lte_current(self) -> st.SearchStrategy[int]:
+        """Get a strategy generating array lengths <= current length."""
+        return st.integers(min_value=0, max_value=len(self.reference))
+
+    @staticmethod
+    def get_lengths_lte_current(
+        self: AbstractArrayPropertiesComparisonMachine,
+    ) -> st.SearchStrategy[int]:
+        return self.lengths_lte_current
+
     @staticmethod
     def not_empty(self: AbstractArrayPropertiesComparisonMachine) -> bool:
         return self._reference is not None and len(self._reference) > 0
+
+    @staticmethod
+    def not_too_large(self: AbstractArrayPropertiesComparisonMachine) -> bool:
+        return self._reference is not None and len(self._reference) < 2048
 
     @initialize(initial_items=st.lists(elements=values_or_gaps))
     def init(self, initial_items: list[int | JSHoleType]) -> None:
@@ -143,6 +170,25 @@ class AbstractArrayPropertiesComparisonMachine(RuleBasedStateMachine):
         self.actual[index] = value
         assert self.reference[index] == value
         assert self.reference[index] == self.actual[index]
+
+    # arbitrary max to avoid creating needlessly large arrays
+    @rule(length_increase=st.integers(min_value=0, max_value=200))
+    @precondition(not_too_large)
+    def extend_length(self, length_increase: int) -> None:
+        new_length = self.reference.length + length_increase
+        self.reference.length = new_length
+        self.actual.length = new_length
+
+        assert self.reference.length == new_length
+        assert self.actual.length == new_length
+
+    @rule(new_length=st.runner().flatmap(get_lengths_lte_current))
+    def truncate_with_length(self, new_length: int) -> None:
+        self.reference.length = new_length
+        self.actual.length = new_length
+
+        assert self.reference.length == new_length
+        assert self.actual.length == new_length
 
     @rule(index=st.runner().flatmap(get_valid_indexes))
     @precondition(not_empty)
@@ -216,14 +262,6 @@ class SparseArrayPropertiesComparisonMachine(AbstractArrayPropertiesComparisonMa
 
 TestDenseArrayPropertiesComparison = DenseArrayPropertiesComparisonMachine.TestCase
 TestSparseArrayPropertiesComparison = SparseArrayPropertiesComparisonMachine.TestCase
-
-
-def test_failing_example() -> None:
-    state = SparseArrayPropertiesComparisonMachine()
-    state.init(initial_items=[0])
-    state.implementations_equal()
-    state.implementations_regions_equal()
-    state.teardown()
 
 
 @pytest.mark.parametrize(
