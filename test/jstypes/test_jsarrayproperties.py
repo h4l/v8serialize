@@ -22,7 +22,7 @@ from hypothesis.stateful import (
     rule,
 )
 
-from v8serialize.jstypes.jsobject import (
+from v8serialize.jstypes.jsarrayproperties import (
     ArrayProperties,
     DenseArrayProperties,
     EmptyRegion,
@@ -72,6 +72,12 @@ class SimpleArrayProperties(list[T | JSHoleType]):
             f"has_holes={self.has_holes!r}, length={self.length!r}, "
             f"elements_used={self.elements_used!r} >"
         )
+
+
+if TYPE_CHECKING:
+    t0: type[ArrayProperties[object]] = SimpleArrayProperties[object]
+    t1: type[ArrayProperties[object]] = DenseArrayProperties[object]
+    t2: type[ArrayProperties[object]] = SparseArrayProperties[object]
 
 
 values_or_gaps = st.one_of(st.integers(), st.just(JSHole))
@@ -210,6 +216,14 @@ class SparseArrayPropertiesComparisonMachine(AbstractArrayPropertiesComparisonMa
 
 TestDenseArrayPropertiesComparison = DenseArrayPropertiesComparisonMachine.TestCase
 TestSparseArrayPropertiesComparison = SparseArrayPropertiesComparisonMachine.TestCase
+
+
+def test_failing_example() -> None:
+    state = SparseArrayPropertiesComparisonMachine()
+    state.init(initial_items=[0])
+    state.implementations_equal()
+    state.implementations_regions_equal()
+    state.teardown()
 
 
 @pytest.mark.parametrize(
