@@ -23,6 +23,7 @@ from hypothesis.stateful import (
 )
 
 from v8serialize.jstypes.jsarrayproperties import (
+    MAX_ARRAY_LENGTH,
     MAX_ARRAY_LENGTH_REPR,
     ArrayProperties,
     DenseArrayProperties,
@@ -57,7 +58,7 @@ class SimpleArrayProperties(list[T | JSHoleType]):
 
     @length.setter
     def length(self, length: int) -> None:
-        if length < 0:
+        if length < 0 or length > MAX_ARRAY_LENGTH:
             raise ValueError(f"length must be >= 0 and < {MAX_ARRAY_LENGTH_REPR}")
         current_length = len(self)
         if length > current_length:
@@ -337,3 +338,13 @@ def test_SparseArrayProperties_init__(
     args: list[Any], kwargs: dict[str, Any], result: list[JSHoleType | str]
 ) -> None:
     assert list(SparseArrayProperties(*args, **kwargs)) == result
+
+
+@pytest.mark.parametrize("impl", [DenseArrayProperties, SparseArrayProperties])
+@pytest.mark.parametrize("invalid_length", [-1, MAX_ARRAY_LENGTH + 1])
+def test_cannot_set_length_to_out_of_bounds_value(
+    impl: type[ArrayProperties[object]], invalid_length: int
+) -> None:
+    arr = impl()
+    with pytest.raises(ValueError, match=r"length must be >= 0 and < 2\*\*32 - 1"):
+        arr.length = invalid_length

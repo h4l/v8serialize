@@ -210,7 +210,7 @@ class DenseArrayProperties(ArrayProperties[T]):
 
     @length.setter
     def length(self, length: int) -> None:
-        if length < 0:
+        if length < 0 or length > MAX_ARRAY_LENGTH:
             raise ValueError(f"length must be >= 0 and < {MAX_ARRAY_LENGTH_REPR}")
         items = self._items
         current = len(items)
@@ -406,7 +406,7 @@ class SparseArrayProperties(ArrayProperties[T]):
 
     @length.setter
     def length(self, length: int) -> None:
-        if length < 0:
+        if length < 0 or length > MAX_ARRAY_LENGTH:
             raise ValueError(f"length must be >= 0 and < {MAX_ARRAY_LENGTH_REPR}")
         items = self._items
         sorted_keys = self._get_sorted_keys()
