@@ -151,7 +151,7 @@ class OccupiedRegion(Generic[T]):
             self.length = len(self.items)
             return
 
-        items = iter(items)
+        items = iter(cast(Iterable[tuple[int, T]], items))
         try:
             i, v = next(items)
         except StopIteration:
