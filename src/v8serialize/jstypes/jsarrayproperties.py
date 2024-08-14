@@ -116,8 +116,14 @@ class AbstractArrayProperties(  # type: ignore[misc]
         return (
             other is self
             or isinstance(other, ArrayProperties)
-            # TODO: define via element_indexes() or similar to skip holes
-            and list(self) == list(other)
+            and (
+                len(self) == len(other)
+                and self.elements_used == other.elements_used
+                and all(
+                    i == ii and self[i] == other[i]
+                    for i, ii in zip(self.element_indexes(), other.element_indexes())
+                )
+            )
         )
 
     def __str__(self) -> str:
