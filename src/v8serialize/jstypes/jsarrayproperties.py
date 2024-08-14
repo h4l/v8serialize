@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from bisect import bisect_left
 from collections import deque
 from dataclasses import dataclass, field
@@ -12,8 +12,8 @@ from typing import (
     Generic,
     Iterable,
     Iterator,
-    MutableMapping,
     MutableSequence,
+    Self,
     Sequence,
     Sized,
     TypeGuard,
@@ -21,6 +21,8 @@ from typing import (
     cast,
     overload,
 )
+
+from v8serialize.typing import SparseMutableSequence
 
 if TYPE_CHECKING:
     from _typeshed import SupportsItems, SupportsKeysAndGetItem
@@ -51,6 +53,9 @@ class JSHoleType:
         if "JSHole" in globals():
             raise AssertionError("Cannot instantiate JSHoleType")
 
+    def isnot(self, value: T | JSHoleType) -> TypeGuard[T]:
+        return value is not JSHole
+
     def __repr__(self) -> str:
         return "JSHole"
 
@@ -58,9 +63,33 @@ class JSHoleType:
 JSHole: Final = JSHoleType()
 
 
-class ArrayProperties(
-    MutableSequence[T | JSHoleType], Sequence[T | JSHoleType], Generic[T], ABC
+class ArrayProperties(SparseMutableSequence[T, JSHoleType], metaclass=ABCMeta):
+    pass
+
+
+# The ignore[misc] on AbstractArrayProperties ignores this MyPy error:
+#
+#   > Definition of "__getitem__" in base class "Sequence" is incompatible with
+#   > definition in base class "MutableSequenceProtocol"
+#
+#  This is because __getitem__(slice) on Sequence returns a Sequence, whereas
+# __getitem__(slice) on MutableSequence returns a MutableSequence. This error
+# also occurred in v8serialize.jstypes when I copied in the Sequence and
+# MutableSequence protocols verbatim from typeshed, so I assume there must be
+# some special casing going on somewhere to suppress this error. In practice
+# it's not a problem. Also in v8serialize.jstypes we type __getitem__ to return
+# Self, which satisfies MyPy when combining our own copies of Sequence and
+# MutableSequence, but here we're using the default types from
+# collections.abc/typing.
+
+
+@ArrayProperties.register
+class AbstractArrayProperties(  # type: ignore[misc]
+    MutableSequence[T | JSHoleType],
+    ArrayProperties[T],
 ):
+    # TODO: maybe remove this, don't think it's necessary and probably not worth
+    #   having considering it's trivially derived from length and elements_used.
     @property
     def has_holes(self) -> bool:
         """True if any index between 0 and max_index is an empty hole."""
@@ -81,6 +110,8 @@ class ArrayProperties(
     @abstractmethod
     def elements_used(self) -> int: ...
 
+    # TODO: now that we have items() keys() values() views, I think this can be
+    #  defined in terms of those as a standalone function, not a method.
     @abstractmethod
     def regions(self) -> Generator[EmptyRegion | OccupiedRegion[T], None, None]: ...
 
@@ -190,7 +221,7 @@ def supports_sized(obj: object) -> TypeGuard[Sized]:
 
 
 @dataclass(slots=True, init=False, eq=False)
-class DenseArrayProperties(ArrayProperties[T]):
+class DenseArrayProperties(AbstractArrayProperties[T]):
     _items: list[T | JSHoleType]
     _elements_used: int
 
@@ -250,9 +281,9 @@ class DenseArrayProperties(ArrayProperties[T]):
     def __getitem__(self, i: int, /) -> T | JSHoleType: ...
 
     @overload
-    def __getitem__(self, i: slice, /) -> ArrayProperties[T]: ...
+    def __getitem__(self, i: slice, /) -> Self: ...
 
-    def __getitem__(self, i: int | slice, /) -> T | JSHoleType | ArrayProperties[T]:
+    def __getitem__(self, i: int | slice, /) -> T | JSHoleType | Self:
         if isinstance(i, slice):
             raise NotImplementedError
         return self._items[i]
@@ -326,7 +357,7 @@ class DenseArrayProperties(ArrayProperties[T]):
 
 
 @dataclass(slots=True, init=False, eq=False)
-class SparseArrayProperties(ArrayProperties[T]):
+class SparseArrayProperties(AbstractArrayProperties[T]):
     _items: dict[int, T]
     _sorted_keys: list[int] | None
     _max_index: int
@@ -451,9 +482,9 @@ class SparseArrayProperties(ArrayProperties[T]):
     def __getitem__(self, i: int, /) -> T | JSHoleType: ...
 
     @overload
-    def __getitem__(self, i: slice, /) -> ArrayProperties[T]: ...
+    def __getitem__(self, i: slice, /) -> Self: ...
 
-    def __getitem__(self, i: int | slice, /) -> T | JSHoleType | ArrayProperties[T]:
+    def __getitem__(self, i: int | slice, /) -> T | JSHoleType | Self:
         if isinstance(i, slice):
             raise NotImplementedError
         i = self._normalise_index(i)

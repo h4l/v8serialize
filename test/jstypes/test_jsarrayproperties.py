@@ -38,22 +38,19 @@ from v8serialize.jstypes.jsarrayproperties import (
 T = TypeVar("T")
 
 
-if TYPE_CHECKING:
-
-    class _SimpleArrayProperties(ArrayProperties[T]):
-        def __init__(self, values: Iterable[T | JSHoleType] | None = None) -> None: ...
-
-else:
-
-    class SimpleArrayProperties(list[T | JSHoleType]):
-        pass
+# The ignore[misc] here is for the same reason as for AbstractArrayProperties in
+# jsarrayproperties.py.
 
 
 @ArrayProperties.register
-class SimpleArrayProperties(_SimpleArrayProperties[T]):
+class SimpleArrayProperties(list[T | JSHoleType], ArrayProperties[T]):  # type: ignore[misc]
     """Very simple but inefficient implementation of ArrayProperties to compare
     against real implementations.
     """
+
+    def __init__(self, values: Iterable[T | JSHoleType] | None = None) -> None:
+        if values is not None:
+            super().__init__(values)
 
     @classmethod
     def create(cls, values: Iterable[T | JSHoleType]) -> Self:
@@ -268,6 +265,13 @@ class SparseArrayPropertiesComparisonMachine(AbstractArrayPropertiesComparisonMa
 
 TestDenseArrayPropertiesComparison = DenseArrayPropertiesComparisonMachine.TestCase
 TestSparseArrayPropertiesComparison = SparseArrayPropertiesComparisonMachine.TestCase
+
+
+def test_error() -> None:
+    state = SparseArrayPropertiesComparisonMachine()
+    state.init(initial_items=[])
+    state.implementations_equal()
+    state.teardown()
 
 
 @pytest.mark.parametrize(
