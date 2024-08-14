@@ -24,7 +24,7 @@ from typing import (
     overload,
 )
 
-from v8serialize.typing import ElementsView, SparseMutableSequence
+from v8serialize.typing import ElementsView, Order, SparseMutableSequence
 
 if TYPE_CHECKING:
     from _typeshed import SupportsItems, SupportsKeysAndGetItem
@@ -92,20 +92,6 @@ class AbstractArrayProperties(  # type: ignore[misc]
     ArrayProperties[T],
 ):
     hole_value: ClassVar[JSHoleType] = JSHole
-
-    @abstractmethod
-    def resize(self, length: int) -> None:
-        """
-        Change the length of the array. Elements are dropped if the length is
-        reduced, or gaps are created at the end if the length is increased.
-        """
-
-    @property
-    @abstractmethod
-    def elements_used(self) -> int: ...
-
-    @abstractmethod
-    def element_indexes(self, *, reverse: bool = False) -> Iterator[int]: ...
 
     # TODO: now that we have items() keys() values() views, I think this can be
     #  defined in terms of those as a standalone function, not a method.
@@ -351,8 +337,8 @@ class DenseArrayProperties(AbstractArrayProperties[T]):
     def __iter__(self) -> Iterator[T | JSHoleType]:
         return iter(self._items)
 
-    def element_indexes(self, *, reverse: bool = False) -> Iterator[int]:
-        if not reverse:
+    def element_indexes(self, *, order: Order | None = None) -> Iterator[int]:
+        if order is not Order.DESCENDING:
             return (i for i, v in enumerate(self._items) if v is not JSHole)
         last_index = len(self) - 1
         return (
@@ -364,8 +350,8 @@ class DenseArrayProperties(AbstractArrayProperties[T]):
     def regions(self) -> Generator[EmptyRegion | OccupiedRegion[T], None, None]:
         return array_properties_regions(self)
 
-    def elements(self) -> ElementsView[T]:
-        return ArrayPropertiesElementsView(self)
+    def elements(self, *, order: Order | None = None) -> ElementsView[T]:
+        return ArrayPropertiesElementsView(self, order=order)
 
 
 @dataclass(slots=True, init=False, eq=False)
@@ -677,20 +663,27 @@ class SparseArrayProperties(AbstractArrayProperties[T]):
             else:
                 yield from region.items
 
-    def element_indexes(self, *, reverse: bool = False) -> Iterator[int]:
-        sorted_keys = self._get_sorted_keys()
-        return reversed(sorted_keys) if reverse else iter(sorted_keys)
+    def element_indexes(self, *, order: Order | None = None) -> Iterator[int]:
+        if order is Order.UNORDERED or order is None:
+            return iter(self._items)
 
-    def elements(self) -> ElementsView[T]:
-        return ArrayPropertiesElementsView(self)
+        sorted_keys = self._get_sorted_keys()
+        return reversed(sorted_keys) if order is Order.DESCENDING else iter(sorted_keys)
+
+    def elements(self, *, order: Order | None = None) -> ElementsView[T]:
+        return ArrayPropertiesElementsView(self, order=order)
 
 
 @dataclass(slots=True, init=False)
 class ArrayPropertiesElementsView(Mapping[int, T], ElementsView[T]):
     _array_properties: ArrayProperties[T]
+    order: Order | None
 
-    def __init__(self, array_properties: ArrayProperties[T]) -> None:
+    def __init__(
+        self, array_properties: ArrayProperties[T], *, order: Order | None
+    ) -> None:
         self._array_properties = array_properties
+        self.order = order
 
     def __getitem__(self, key: int, /) -> T:
         if not (0 <= key <= len(self._array_properties)):
@@ -701,10 +694,7 @@ class ArrayPropertiesElementsView(Mapping[int, T], ElementsView[T]):
         raise KeyError(key)
 
     def __iter__(self) -> Iterator[int]:
-        return self._array_properties.element_indexes()
-
-    def __reversed__(self) -> Iterator[int]:
-        return self._array_properties.element_indexes(reverse=True)
+        return self._array_properties.element_indexes(order=self.order)
 
     def __len__(self) -> int:
         return self._array_properties.elements_used

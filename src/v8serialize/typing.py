@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum, auto
 from typing import (
     Any,
     Collection,
@@ -98,11 +99,14 @@ class MappingProtocol(Collection[_KT], Protocol[_KT, _VT_co]):
     def __eq__(self, other: object, /) -> bool: ...
 
 
-class ElementsView(Reversible[int], MappingProtocol[int, _VT_co], Protocol):
+class ElementsView(MappingProtocol[int, _VT_co], Protocol):
     """
     A read-only live view of the index elements in a SparseSequence with
     existant values.
     """
+
+    @property
+    def order(self) -> Order | None: ...
 
 
 class SparseSequence(SequenceProtocol[_T_co | _HoleT_co], Protocol):
@@ -127,14 +131,20 @@ class SparseSequence(SequenceProtocol[_T_co | _HoleT_co], Protocol):
     def elements_used(self) -> int:
         """The number of index positions that are not holes."""
 
-    def element_indexes(self, *, reverse: bool = False) -> Iterator[int]:
+    def element_indexes(self, *, order: Order | None = ...) -> Iterator[int]:
         """Iterate over the indexes in the sequence that are not holes."""
 
-    def elements(self) -> ElementsView[_T_co]:
+    def elements(self, *, order: Order | None = ...) -> ElementsView[_T_co]:
         """
         Get a read-only Mapping containing a live view of the index elements
         with existant values.
         """
+
+
+class Order(Enum):
+    UNORDERED = auto()
+    ASCENDING = auto()
+    DESCENDING = auto()
 
 
 # A read-only live view of the index elements in a SparseSequence with existant values.

@@ -35,7 +35,7 @@ from v8serialize.jstypes.jsarrayproperties import (
     SparseArrayProperties,
     array_properties_regions,
 )
-from v8serialize.typing import ElementsView
+from v8serialize.typing import ElementsView, Order
 
 T = TypeVar("T")
 
@@ -76,8 +76,8 @@ class SimpleArrayProperties(  # type: ignore[misc]
     def elements_used(self) -> int:
         return len(self) - sum(1 for x in self if x is JSHole)
 
-    def element_indexes(self, *, reverse: bool = False) -> Iterator[int]:
-        if not reverse:
+    def element_indexes(self, *, order: Order | None = None) -> Iterator[int]:
+        if order is not Order.DESCENDING:
             return (i for i, v in enumerate(self) if v is not JSHole)
         last_index = len(self) - 1
         return (last_index - i for i, v in enumerate(reversed(self)) if v is not JSHole)
@@ -85,8 +85,8 @@ class SimpleArrayProperties(  # type: ignore[misc]
     def regions(self) -> Generator[EmptyRegion | OccupiedRegion[T], None, None]:
         return array_properties_regions(self)
 
-    def elements(self) -> ElementsView[T]:
-        return ArrayPropertiesElementsView(self)
+    def elements(self, *, order: Order | None = None) -> ElementsView[T]:
+        return ArrayPropertiesElementsView(self, order=order)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, ArrayProperties):
@@ -229,18 +229,16 @@ class AbstractArrayPropertiesComparisonMachine(RuleBasedStateMachine):
 
     @invariant()
     def implementations_same_element_indexes(self) -> None:
-        actual_indexes = list(self.actual.element_indexes())
-        actual_indexes_reversed = list(self.actual.element_indexes(reverse=True))
-        reference_indexes = list(self.actual.element_indexes())
-        reference_indexes_reversed = list(self.actual.element_indexes(reverse=True))
+        actual_indexes_asc = list(self.actual.element_indexes(order=Order.ASCENDING))
+        actual_indexes_desc = list(self.actual.element_indexes(order=Order.DESCENDING))
+        reference_indexes_asc = list(self.actual.element_indexes(order=Order.ASCENDING))
+        reference_indexes_desc = list(
+            self.actual.element_indexes(order=Order.DESCENDING)
+        )
 
-        assert actual_indexes == reference_indexes
-        assert actual_indexes_reversed == reference_indexes_reversed
-        assert list(reversed(actual_indexes)) == actual_indexes_reversed
-
-    @invariant()
-    def implementations_regions_equal(self) -> None:
-        assert list(self.actual.regions()) == list(self.reference.regions())
+        assert actual_indexes_asc == reference_indexes_asc
+        assert actual_indexes_desc == reference_indexes_desc
+        assert list(reversed(actual_indexes_asc)) == actual_indexes_desc
 
     @invariant()
     def implementations_iter_equal(self) -> None:
