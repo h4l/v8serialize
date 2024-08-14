@@ -88,13 +88,6 @@ class AbstractArrayProperties(  # type: ignore[misc]
     MutableSequence[T | JSHoleType],
     ArrayProperties[T],
 ):
-    # TODO: maybe remove this, don't think it's necessary and probably not worth
-    #   having considering it's trivially derived from length and elements_used.
-    @property
-    def has_holes(self) -> bool:
-        """True if any index between 0 and max_index is an empty hole."""
-        return self.elements_used < self.length
-
     @property
     def length(self) -> int:
         """The number of elements in the array, either values or empty gaps."""

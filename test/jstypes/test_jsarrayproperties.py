@@ -57,10 +57,6 @@ class SimpleArrayProperties(list[T | JSHoleType], ArrayProperties[T]):  # type: 
         return cls(values)
 
     @property
-    def has_holes(self) -> bool:
-        return any(x is JSHole for x in self)
-
-    @property
     def length(self) -> int:
         return len(self)
 
@@ -90,7 +86,7 @@ class SimpleArrayProperties(list[T | JSHoleType], ArrayProperties[T]):  # type: 
     def __repr__(self) -> str:
         return (
             f"< SimpleArrayProperties({super().__repr__()}) "
-            f"has_holes={self.has_holes!r}, length={self.length!r}, "
+            f"length={self.length!r}, "
             f"elements_used={self.elements_used!r} >"
         )
 
@@ -216,10 +212,6 @@ class AbstractArrayPropertiesComparisonMachine(RuleBasedStateMachine):
     @invariant()
     def implementations_same_dunder_len(self) -> None:
         assert len(self.actual) == len(self.reference)
-
-    @invariant()
-    def implementations_same_has_holes(self) -> None:
-        assert self.actual.has_holes == self.reference.has_holes
 
     @invariant()
     def implementations_same_length(self) -> None:
