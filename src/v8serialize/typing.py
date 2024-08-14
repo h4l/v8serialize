@@ -3,17 +3,19 @@ from __future__ import annotations
 from typing import (
     Any,
     Collection,
+    ItemsView,
     Iterable,
     Iterator,
-    Mapping,
+    KeysView,
     Protocol,
     Self,
     TypeVar,
+    ValuesView,
     overload,
 )
 
 _T = TypeVar("_T")
-_KT_co = TypeVar("_KT_co", covariant=True)
+_KT = TypeVar("_KT")
 _T_co = TypeVar("_T_co", covariant=True)
 _VT_co = TypeVar("_VT_co", covariant=True)
 _HoleT_co = TypeVar("_HoleT_co", covariant=True)
@@ -79,7 +81,24 @@ class MutableSequenceProtocol(SequenceProtocol[_T], Protocol):
     def __iadd__(self, values: Iterable[_T]) -> Self: ...
 
 
-class ElementsView(Reversible[int], Mapping[int, _VT_co]):
+class MappingProtocol(Collection[_KT], Protocol[_KT, _VT_co]):
+    # TODO: We wish the key type could also be covariant, but that doesn't work,
+    # see discussion in https://github.com/python/typing/pull/273.
+    def __getitem__(self, key: _KT, /) -> _VT_co: ...
+
+    # Mixin methods
+    @overload
+    def get(self, key: _KT, /) -> _VT_co | None: ...
+    @overload
+    def get(self, key: _KT, /, default: _VT_co | _T) -> _VT_co | _T: ...
+    def items(self) -> ItemsView[_KT, _VT_co]: ...
+    def keys(self) -> KeysView[_KT]: ...
+    def values(self) -> ValuesView[_VT_co]: ...
+    def __contains__(self, key: object, /) -> bool: ...
+    def __eq__(self, other: object, /) -> bool: ...
+
+
+class ElementsView(Reversible[int], MappingProtocol[int, _VT_co], Protocol):
     """
     A read-only live view of the index elements in a SparseSequence with
     existant values.
@@ -101,6 +120,10 @@ class SparseSequence(SequenceProtocol[_T_co | _HoleT_co], Protocol):
     """
 
     @property
+    def hole_value(self) -> _HoleT_co:
+        """Get the empty value used by the sequence to represent holes."""
+
+    @property
     def length(self) -> int:
         """The number of elements in the array, either values or empty holes.
 
@@ -112,7 +135,10 @@ class SparseSequence(SequenceProtocol[_T_co | _HoleT_co], Protocol):
     def elements_used(self) -> int:
         """The number of index positions that are not holes."""
 
-    def elements() -> ElementsView[int, _T_co]:
+    def element_indexes(self, *, reverse: bool = False) -> Iterator[int]:
+        """Iterate over the indexes in the sequence that are not holes."""
+
+    def elements(self) -> ElementsView[_T_co]:
         """
         Get a read-only Mapping containing a live view of the index elements
         with existant values.
