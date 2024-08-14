@@ -108,28 +108,20 @@ class ElementsView(Reversible[int], MappingProtocol[int, _VT_co], Protocol):
 class SparseSequence(SequenceProtocol[_T_co | _HoleT_co], Protocol):
     """A Sequence that can have holes — indexes with no value present.
 
-    Similar to an ordered dict with int keys, but the empty values have an
-    explicit type `_HoleT_co`.
+    Similar to an ordered dict with int keys, but the empty values have a type
+    that need not be None — the `hole_value` property — with type `_HoleT_co`.
 
-    Unlike a dict, the bounds are defined. Indexing with __getitem__ returns the
-    hole value instead of raising a KeyError as dict does. Accessing
-    out-of-bound values raises an IndexError as other Sequences do.
+    Unlike a dict, the bounds are defined — __len__() is the length including
+    holes. Indexing with __getitem__ returns the hole value instead of raising a
+    KeyError as dict does. Accessing out-of-bound values raises an IndexError as
+    other Sequences do.
 
-    Like a dict, it has items(), keys() and values() views, which contain just
-    the existant values, not holes.
+    `elements()` provides a view of the non-hole values as a Mapping.
     """
 
     @property
     def hole_value(self) -> _HoleT_co:
         """Get the empty value used by the sequence to represent holes."""
-
-    @property
-    def length(self) -> int:
-        """The number of elements in the array, either values or empty holes.
-
-        The same as __len__, but exists so that the mutable version can use a
-        length setter to grow/shrink the bounds.
-        """
 
     @property
     def elements_used(self) -> int:
@@ -155,12 +147,8 @@ class SparseMutableSequence(
 ):
     """A writable extension of SparseSequence."""
 
-    @property
-    def length(self) -> int:
-        """The number of elements in the array, either values or empty gaps."""
-        return len(self)
-
-    @length.setter
-    def length(self, length: int) -> None:
-        """Change the length of the array. Elements are dropped if the length is
-        reduced, or gaps are created at the end if the length is increased."""
+    def resize(self, length: int) -> None:
+        """
+        Change the length of the array. Elements are dropped if the length is
+        reduced, or gaps are created at the end if the length is increased.
+        """
