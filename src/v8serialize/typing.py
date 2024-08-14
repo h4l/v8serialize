@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from typing import (
-    AbstractSet,
     Any,
     Collection,
-    Generic,
     Iterable,
     Iterator,
+    Mapping,
     Protocol,
     Self,
     TypeVar,
@@ -80,33 +79,14 @@ class MutableSequenceProtocol(SequenceProtocol[_T], Protocol):
     def __iadd__(self, values: Iterable[_T]) -> Self: ...
 
 
-# The *View types from collections.abc/typing tie the signature to MappingView,
-# which we don't want, because we don't have a Mapping implementation to view.
-class ItemsView(Reversible[tuple[_KT_co, _VT_co]], AbstractSet[tuple[_KT_co, _VT_co]]):
-    pass
+class ElementsView(Reversible[int], Mapping[int, _VT_co]):
+    """
+    A read-only live view of the index elements in a SparseSequence with
+    existant values.
+    """
 
 
-class KeysView(Reversible[_KT_co], AbstractSet[_KT_co]):
-    pass
-
-
-class ValuesView(Reversible[_VT_co], Collection[_VT_co]):
-    pass
-
-
-class MappingViews(Generic[_KT_co, _VT_co], Protocol):
-    """Just the items(), keys() and values() views from Mapping."""
-
-    def items(self) -> ItemsView[_KT_co, _VT_co]: ...
-    def keys(self) -> KeysView[_KT_co]: ...
-    def values(self) -> ValuesView[_VT_co]: ...
-
-
-class SparseSequence(
-    MappingViews[int, _T_co],  # only contains existant, non-hole values
-    SequenceProtocol[_T_co | _HoleT_co],  # contains both holes and values
-    Protocol,
-):
+class SparseSequence(SequenceProtocol[_T_co | _HoleT_co], Protocol):
     """A Sequence that can have holes — indexes with no value present.
 
     Similar to an ordered dict with int keys, but the empty values have an
@@ -131,6 +111,15 @@ class SparseSequence(
     @property
     def elements_used(self) -> int:
         """The number of index positions that are not holes."""
+
+    def elements() -> ElementsView[int, _T_co]:
+        """
+        Get a read-only Mapping containing a live view of the index elements
+        with existant values.
+        """
+
+
+# A read-only live view of the index elements in a SparseSequence with existant values.
 
 
 class SparseMutableSequence(
