@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from bisect import bisect_left
-from collections import deque
 from dataclasses import dataclass, field
 from itertools import groupby, repeat
 from typing import (
@@ -93,11 +92,6 @@ class AbstractArrayProperties(  # type: ignore[misc]
 ):
     hole_value: ClassVar[JSHoleType] = JSHole
 
-    # TODO: now that we have items() keys() values() views, I think this can be
-    #  defined in terms of those as a standalone function, not a method.
-    @abstractmethod
-    def regions(self) -> Generator[EmptyRegion | OccupiedRegion[T], None, None]: ...
-
     def __eq__(self, other: object) -> bool:
         return (
             other is self
@@ -115,27 +109,55 @@ class AbstractArrayProperties(  # type: ignore[misc]
     def __str__(self) -> str:
         elements = ", ".join(
             x
-            for r in self.regions()
+            for r in alternating_regions(self)
             for x in ([str(r)] if r.items is None else map(lambda r: repr(r), r.items))
         )
         return f"[ {elements} ]"
 
 
-# TODO: define via element_indexes()
-def array_properties_regions(
+def alternating_regions(
     array_properties: ArrayProperties[T],
 ) -> Generator[EmptyRegion | OccupiedRegion[T], None, None]:
-    for is_hole, items in groupby(
-        enumerate(array_properties), lambda x: x[1] is JSHole
-    ):
-        if is_hole:
-            first, _ = next(items)
-            dq = deque(items, 1)  # consume & throw away gaps except last
-            last = first if len(dq) == 0 else dq[0][0]
-            yield EmptyRegion(start=first, length=last - first + 1)
-        else:
-            occupied = OccupiedRegion(items=cast(Iterator[tuple[int, T]], items))
-            yield occupied
+    length = len(array_properties)
+
+    prev_index: int = -1
+    start_index: int = 0
+
+    def first_index_of_preceding_adjacent_elements(item: tuple[int, T]) -> int:
+        nonlocal prev_index, start_index
+        i = item[0]
+        # start a new group if we're not connected to an ongoing group
+        if i - 1 != prev_index:
+            start_index = i
+        prev_index = i
+        return start_index
+
+    groups = groupby(
+        array_properties.elements(order=Order.ASCENDING).items(),
+        first_index_of_preceding_adjacent_elements,
+    )
+    try:
+        start, adjacent_items = next(groups)
+    except StopIteration:
+        if length == 0:
+            return
+        yield EmptyRegion(0, length=length)
+        return
+
+    if start > 0:
+        yield EmptyRegion(0, length=start)
+    occupied = OccupiedRegion([v for _, v in adjacent_items], start=start)
+    yield occupied
+
+    for start, adjacent_items in groups:
+        gap_start = occupied.start + occupied.length
+        yield EmptyRegion(start=gap_start, length=start - gap_start)
+        occupied = OccupiedRegion([v for _, v in adjacent_items], start=start)
+        yield occupied
+
+    gap_start = occupied.start + occupied.length
+    if gap_start < length:
+        yield EmptyRegion(start=gap_start, length=length - gap_start)
 
 
 @dataclass(slots=True)
@@ -346,9 +368,6 @@ class DenseArrayProperties(AbstractArrayProperties[T]):
             for i, v in enumerate(reversed(self._items))
             if v is not JSHole
         )
-
-    def regions(self) -> Generator[EmptyRegion | OccupiedRegion[T], None, None]:
-        return array_properties_regions(self)
 
     def elements(self, *, order: Order | None = None) -> ElementsView[T]:
         return ArrayPropertiesElementsView(self, order=order)
@@ -615,49 +634,8 @@ class SparseArrayProperties(AbstractArrayProperties[T]):
             self._sorted_keys = sorted(self._items)
         return self._sorted_keys
 
-    def regions(self) -> Generator[EmptyRegion | OccupiedRegion[T], None, None]:
-        items = self._items
-        sorted_keys = self._get_sorted_keys()
-        max_index = self._max_index
-
-        if len(sorted_keys) == 0:
-            length = len(self)
-            if length == 0:
-                return
-            yield EmptyRegion(0, length=length)
-            return
-
-        prev_index: int = -1
-        first_index: int = 0
-
-        def first_index_of_preceding_adjacent_elements(i: int) -> int:
-            nonlocal prev_index, first_index
-            # start a new group if we're not connected to an ongoing group
-            if i - 1 != prev_index:
-                first_index = i
-            prev_index = i
-            return first_index
-
-        groups = groupby(sorted_keys, first_index_of_preceding_adjacent_elements)
-        first, adjacent_indexes = next(groups)
-
-        if first > 0:
-            yield EmptyRegion(0, length=sorted_keys[0])
-        occupied = OccupiedRegion([items[i] for i in adjacent_indexes], start=first)
-        yield occupied
-
-        for first, adjacent_indexes in groups:
-            empty_start = occupied.start + occupied.length
-            yield EmptyRegion(start=empty_start, length=first - empty_start)
-            occupied = OccupiedRegion([items[i] for i in adjacent_indexes], start=first)
-            yield occupied
-
-        empty_start = occupied.start + occupied.length
-        if empty_start <= max_index:
-            yield EmptyRegion(start=empty_start, length=max_index - empty_start + 1)
-
     def __iter__(self) -> Iterator[T | JSHoleType]:
-        for region in self.regions():
+        for region in alternating_regions(self):
             if region.items is None:
                 yield from repeat(JSHole, region.length)
             else:

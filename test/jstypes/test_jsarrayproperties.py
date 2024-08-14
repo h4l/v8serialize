@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 from typing import (
     Any,
     ClassVar,
@@ -8,6 +9,7 @@ from typing import (
     Iterator,
     Protocol,
     Self,
+    Sequence,
     TypeVar,
     cast,
 )
@@ -33,7 +35,7 @@ from v8serialize.jstypes.jsarrayproperties import (
     JSHoleType,
     OccupiedRegion,
     SparseArrayProperties,
-    array_properties_regions,
+    alternating_regions,
 )
 from v8serialize.typing import ElementsView, Order
 
@@ -81,9 +83,6 @@ class SimpleArrayProperties(  # type: ignore[misc]
             return (i for i, v in enumerate(self) if v is not JSHole)
         last_index = len(self) - 1
         return (last_index - i for i, v in enumerate(reversed(self)) if v is not JSHole)
-
-    def regions(self) -> Generator[EmptyRegion | OccupiedRegion[T], None, None]:
-        return array_properties_regions(self)
 
     def elements(self, *, order: Order | None = None) -> ElementsView[T]:
         return ArrayPropertiesElementsView(self, order=order)
@@ -305,17 +304,77 @@ def test_init_initial_state() -> None:
     assert len(array) == 5
 
 
-def test_regions() -> None:
-    array = DenseArrayProperties([JSHole, JSHole, "a", "b", JSHole, "c", JSHole])
-    regions = [r for r in array.regions()]
+@pytest.mark.parametrize(
+    "values, regions",
+    [
+        ([], []),
+        ([JSHole], [EmptyRegion(start=0, length=1)]),
+        ([JSHole, JSHole], [EmptyRegion(start=0, length=2)]),
+        (["a"], [OccupiedRegion(items=[(0, "a")])]),
+        (["a", "b"], [OccupiedRegion(items=[(0, "a"), (1, "b")])]),
+        (
+            [JSHole, JSHole, "a", "b", JSHole, "c", JSHole],
+            [
+                EmptyRegion(start=0, length=2),
+                OccupiedRegion(items=[(2, "a"), (3, "b")]),
+                EmptyRegion(start=4, length=1),
+                OccupiedRegion(items=[(5, "c")]),
+                EmptyRegion(start=6, length=1),
+            ],
+        ),
+    ],
+)
+def test_alternating_regions(
+    values: Sequence[JSHoleType | str],
+    regions: Sequence[EmptyRegion | OccupiedRegion[T]],
+) -> None:
+    array = DenseArrayProperties(values)
+    actual_regions = [r for r in alternating_regions(array)]
 
-    assert regions == [
-        EmptyRegion(start=0, length=2),
-        OccupiedRegion(items=[(2, "a"), (3, "b")]),
-        EmptyRegion(start=4, length=1),
-        OccupiedRegion(items=[(5, "c")]),
-        EmptyRegion(start=6, length=1),
-    ]
+    assert actual_regions == regions
+
+
+def test_empty_region_str() -> None:
+    assert str(EmptyRegion(start=3, length=4)) == "<4 empty items>"
+
+
+def test_empty_region_dunder_len() -> None:
+    assert len(EmptyRegion(start=3, length=4)) == 4
+
+
+@pytest.mark.parametrize(
+    "args, kwargs, result",
+    [
+        ([[]], {}, None),
+        ([["a"], 0], {}, dict(start=0, length=1, items=["a"])),
+        ([["a", "b"], 1], {}, dict(start=1, length=2, items=["a", "b"])),
+        (
+            [],
+            {"start": 1, "items": ["a", "b"]},
+            dict(start=1, length=2, items=["a", "b"]),
+        ),
+        ([[(3, "a"), (4, "b")]], {}, dict(start=3, length=2, items=["a", "b"])),
+        (
+            [],
+            {"items": [(3, "a"), (4, "b")]},
+            dict(start=3, length=2, items=["a", "b"]),
+        ),
+    ],
+)
+def test_occupied_region_init(
+    args: list[Any], kwargs: dict[str, Any], result: dict[str, object] | None
+) -> None:
+    try:
+        region = OccupiedRegion(*args, **kwargs)
+    except ValueError as e:
+        assert result is None
+        assert str(e) == "items cannot be empty"
+        return
+    assert dataclasses.asdict(region) == result
+
+
+def test_occupied_region_dunder_len() -> None:
+    assert len(OccupiedRegion(["a", "b", "c"], 10)) == 3
 
 
 @pytest.mark.parametrize(
