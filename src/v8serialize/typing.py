@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 from typing import (
+    AbstractSet,
     Any,
     Collection,
     Generic,
-    ItemsView,
     Iterable,
     Iterator,
-    KeysView,
     Protocol,
     Self,
     TypeVar,
-    ValuesView,
     overload,
 )
 
@@ -80,6 +78,20 @@ class MutableSequenceProtocol(SequenceProtocol[_T], Protocol):
     def pop(self, index: int = -1) -> _T: ...
     def remove(self, value: _T) -> None: ...
     def __iadd__(self, values: Iterable[_T]) -> Self: ...
+
+
+# The *View types from collections.abc/typing tie the signature to MappingView,
+# which we don't want, because we don't have a Mapping implementation to view.
+class ItemsView(Reversible[tuple[_KT_co, _VT_co]], AbstractSet[tuple[_KT_co, _VT_co]]):
+    pass
+
+
+class KeysView(Reversible[_KT_co], AbstractSet[_KT_co]):
+    pass
+
+
+class ValuesView(Reversible[_VT_co], Collection[_VT_co]):
+    pass
 
 
 class MappingViews(Generic[_KT_co, _VT_co], Protocol):

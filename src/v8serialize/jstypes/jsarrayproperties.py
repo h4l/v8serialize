@@ -22,7 +22,7 @@ from typing import (
     overload,
 )
 
-from v8serialize.typing import SparseMutableSequence
+from v8serialize.typing import ItemsView, KeysView, SparseMutableSequence, ValuesView
 
 if TYPE_CHECKING:
     from _typeshed import SupportsItems, SupportsKeysAndGetItem
@@ -347,6 +347,31 @@ class DenseArrayProperties(AbstractArrayProperties[T]):
 
     def regions(self) -> Generator[EmptyRegion | OccupiedRegion[T], None, None]:
         return array_properties_regions(self)
+
+    def items(self) -> ItemsView[int, T]:
+        raise NotImplementedError
+
+    def keys(self) -> KeysView[int]:
+        return ArrayPropertiesKeysView(self)
+
+    def values(self) -> ValuesView[T]:
+        raise NotImplementedError
+
+
+@dataclass(slots=True, init=False)
+class ArrayPropertiesView(ItemsView[int, T]):
+    _array_properties: ArrayProperties[T]
+
+    def __init__(self, array_properties: ArrayProperties[T]) -> None:
+        self._array_properties = array_properties
+
+    def __len__(self) -> int:
+        return self._array_properties.elements_used
+
+
+@dataclass(slots=True)
+class ArrayPropertiesKeysView(ArrayPropertiesView[T]):
+    pass
 
 
 @dataclass(slots=True, init=False, eq=False)
