@@ -7,11 +7,13 @@ from dataclasses import dataclass, field
 from itertools import groupby, repeat
 from typing import (
     TYPE_CHECKING,
+    ClassVar,
     Final,
     Generator,
     Generic,
     Iterable,
     Iterator,
+    Mapping,
     MutableSequence,
     Self,
     Sequence,
@@ -22,7 +24,7 @@ from typing import (
     overload,
 )
 
-from v8serialize.typing import ItemsView, KeysView, SparseMutableSequence, ValuesView
+from v8serialize.typing import ElementsView, SparseMutableSequence
 
 if TYPE_CHECKING:
     from _typeshed import SupportsItems, SupportsKeysAndGetItem
@@ -84,24 +86,26 @@ class ArrayProperties(SparseMutableSequence[T, JSHoleType], metaclass=ABCMeta):
 
 
 @ArrayProperties.register
+@dataclass(slots=True)
 class AbstractArrayProperties(  # type: ignore[misc]
     MutableSequence[T | JSHoleType],
     ArrayProperties[T],
 ):
-    @property
-    def length(self) -> int:
-        """The number of elements in the array, either values or empty gaps."""
-        return len(self)
+    hole_value: ClassVar[JSHoleType] = JSHole
 
-    @length.setter
     @abstractmethod
-    def length(self, length: int) -> None:
-        """Change the length of the array. Elements are dropped if the length is
-        reduced, or gaps are created at the end if the length is increased."""
+    def resize(self, length: int) -> None:
+        """
+        Change the length of the array. Elements are dropped if the length is
+        reduced, or gaps are created at the end if the length is increased.
+        """
 
     @property
     @abstractmethod
     def elements_used(self) -> int: ...
+
+    @abstractmethod
+    def element_indexes(self, *, reverse: bool = False) -> Iterator[int]: ...
 
     # TODO: now that we have items() keys() values() views, I think this can be
     #  defined in terms of those as a standalone function, not a method.
@@ -112,7 +116,7 @@ class AbstractArrayProperties(  # type: ignore[misc]
         return (
             other is self
             or isinstance(other, ArrayProperties)
-            # TODO: using regions would be better to avoid reading gaps
+            # TODO: define via element_indexes() or similar to skip holes
             and list(self) == list(other)
         )
 
@@ -125,6 +129,7 @@ class AbstractArrayProperties(  # type: ignore[misc]
         return f"[ {elements} ]"
 
 
+# TODO: define via element_indexes()
 def array_properties_regions(
     array_properties: ArrayProperties[T],
 ) -> Generator[EmptyRegion | OccupiedRegion[T], None, None]:
@@ -228,12 +233,7 @@ class DenseArrayProperties(AbstractArrayProperties[T]):
         self._items = _items
         self._elements_used = elements_used
 
-    @property
-    def length(self) -> int:
-        return len(self._items)
-
-    @length.setter
-    def length(self, length: int) -> None:
+    def resize(self, length: int) -> None:
         if length < 0 or length > MAX_ARRAY_LENGTH:
             raise ValueError(f"length must be >= 0 and < {MAX_ARRAY_LENGTH_REPR}")
         items = self._items
@@ -345,33 +345,21 @@ class DenseArrayProperties(AbstractArrayProperties[T]):
     def __iter__(self) -> Iterator[T | JSHoleType]:
         return iter(self._items)
 
+    def element_indexes(self, *, reverse: bool = False) -> Iterator[int]:
+        if not reverse:
+            return (i for i, v in enumerate(self._items) if v is not JSHole)
+        last_index = len(self) - 1
+        return (
+            last_index - i
+            for i, v in enumerate(reversed(self._items))
+            if v is not JSHole
+        )
+
     def regions(self) -> Generator[EmptyRegion | OccupiedRegion[T], None, None]:
         return array_properties_regions(self)
 
-    def items(self) -> ItemsView[int, T]:
-        raise NotImplementedError
-
-    def keys(self) -> KeysView[int]:
-        return ArrayPropertiesKeysView(self)
-
-    def values(self) -> ValuesView[T]:
-        raise NotImplementedError
-
-
-@dataclass(slots=True, init=False)
-class ArrayPropertiesView(ItemsView[int, T]):
-    _array_properties: ArrayProperties[T]
-
-    def __init__(self, array_properties: ArrayProperties[T]) -> None:
-        self._array_properties = array_properties
-
-    def __len__(self) -> int:
-        return self._array_properties.elements_used
-
-
-@dataclass(slots=True)
-class ArrayPropertiesKeysView(ArrayPropertiesView[T]):
-    pass
+    def elements(self) -> ElementsView[T]:
+        return ArrayPropertiesElementsView(self)
 
 
 @dataclass(slots=True, init=False, eq=False)
@@ -449,12 +437,7 @@ class SparseArrayProperties(AbstractArrayProperties[T]):
                 f"initial item indexes must be 0 <= index < 2**32-1: {invalid_index}"
             )
 
-    @property
-    def length(self) -> int:
-        return self._max_index + 1
-
-    @length.setter
-    def length(self, length: int) -> None:
+    def resize(self, length: int) -> None:
         if length < 0 or length > MAX_ARRAY_LENGTH:
             raise ValueError(f"length must be >= 0 and < {MAX_ARRAY_LENGTH_REPR}")
         items = self._items
@@ -687,3 +670,35 @@ class SparseArrayProperties(AbstractArrayProperties[T]):
                 yield from repeat(JSHole, region.length)
             else:
                 yield from region.items
+
+    def element_indexes(self, *, reverse: bool = False) -> Iterator[int]:
+        sorted_keys = self._get_sorted_keys()
+        return reversed(sorted_keys) if reverse else iter(sorted_keys)
+
+    def elements(self) -> ElementsView[T]:
+        return ArrayPropertiesElementsView(self)
+
+
+@dataclass(slots=True, init=False)
+class ArrayPropertiesElementsView(Mapping[int, T], ElementsView[T]):
+    _array_properties: ArrayProperties[T]
+
+    def __init__(self, array_properties: ArrayProperties[T]) -> None:
+        self._array_properties = array_properties
+
+    def __getitem__(self, key: int, /) -> T:
+        if not (0 <= key <= len(self._array_properties)):
+            raise KeyError(key)
+        value = self._array_properties[key]
+        if JSHole.isnot(value):
+            return value
+        raise KeyError(key)
+
+    def __iter__(self) -> Iterator[int]:
+        return self._array_properties.element_indexes()
+
+    def __reversed__(self) -> Iterator[int]:
+        return self._array_properties.element_indexes(reverse=True)
+
+    def __len__(self) -> int:
+        return self._array_properties.elements_used

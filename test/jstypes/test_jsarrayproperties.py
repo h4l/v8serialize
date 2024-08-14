@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING,
     Any,
     ClassVar,
     Generator,
     Iterable,
+    Iterator,
     Protocol,
     Self,
     TypeVar,
@@ -26,6 +26,7 @@ from v8serialize.jstypes.jsarrayproperties import (
     MAX_ARRAY_LENGTH,
     MAX_ARRAY_LENGTH_REPR,
     ArrayProperties,
+    ArrayPropertiesElementsView,
     DenseArrayProperties,
     EmptyRegion,
     JSHole,
@@ -34,6 +35,7 @@ from v8serialize.jstypes.jsarrayproperties import (
     SparseArrayProperties,
     array_properties_regions,
 )
+from v8serialize.typing import ElementsView
 
 T = TypeVar("T")
 
@@ -43,10 +45,14 @@ T = TypeVar("T")
 
 
 @ArrayProperties.register
-class SimpleArrayProperties(list[T | JSHoleType], ArrayProperties[T]):  # type: ignore[misc]
+class SimpleArrayProperties(  # type: ignore[misc]
+    list[T | JSHoleType], ArrayProperties[T]
+):
     """Very simple but inefficient implementation of ArrayProperties to compare
     against real implementations.
     """
+
+    hole_value: ClassVar[JSHoleType] = JSHole
 
     def __init__(self, values: Iterable[T | JSHoleType] | None = None) -> None:
         if values is not None:
@@ -56,12 +62,7 @@ class SimpleArrayProperties(list[T | JSHoleType], ArrayProperties[T]):  # type: 
     def create(cls, values: Iterable[T | JSHoleType]) -> Self:
         return cls(values)
 
-    @property
-    def length(self) -> int:
-        return len(self)
-
-    @length.setter
-    def length(self, length: int) -> None:
+    def resize(self, length: int) -> None:
         if length < 0 or length > MAX_ARRAY_LENGTH:
             raise ValueError(f"length must be >= 0 and < {MAX_ARRAY_LENGTH_REPR}")
         current_length = len(self)
@@ -75,8 +76,17 @@ class SimpleArrayProperties(list[T | JSHoleType], ArrayProperties[T]):  # type: 
     def elements_used(self) -> int:
         return len(self) - sum(1 for x in self if x is JSHole)
 
+    def element_indexes(self, *, reverse: bool = False) -> Iterator[int]:
+        if not reverse:
+            return (i for i, v in enumerate(self) if v is not JSHole)
+        last_index = len(self) - 1
+        return (last_index - i for i, v in enumerate(reversed(self)) if v is not JSHole)
+
     def regions(self) -> Generator[EmptyRegion | OccupiedRegion[T], None, None]:
         return array_properties_regions(self)
+
+    def elements(self) -> ElementsView[T]:
+        return ArrayPropertiesElementsView(self)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, ArrayProperties):
@@ -86,7 +96,7 @@ class SimpleArrayProperties(list[T | JSHoleType], ArrayProperties[T]):  # type: 
     def __repr__(self) -> str:
         return (
             f"< SimpleArrayProperties({super().__repr__()}) "
-            f"length={self.length!r}, "
+            f"length={len(self)!r}, "
             f"elements_used={self.elements_used!r} >"
         )
 
@@ -174,20 +184,20 @@ class AbstractArrayPropertiesComparisonMachine(RuleBasedStateMachine):
     @rule(length_increase=st.integers(min_value=0, max_value=200))
     @precondition(not_too_large)
     def extend_length(self, length_increase: int) -> None:
-        new_length = self.reference.length + length_increase
-        self.reference.length = new_length
-        self.actual.length = new_length
+        new_length = len(self.reference) + length_increase
+        self.reference.resize(new_length)
+        self.actual.resize(new_length)
 
-        assert self.reference.length == new_length
-        assert self.actual.length == new_length
+        assert len(self.reference) == new_length
+        assert len(self.actual) == new_length
 
     @rule(new_length=st.runner().flatmap(get_lengths_lte_current))
     def truncate_with_length(self, new_length: int) -> None:
-        self.reference.length = new_length
-        self.actual.length = new_length
+        self.reference.resize(new_length)
+        self.actual.resize(new_length)
 
-        assert self.reference.length == new_length
-        assert self.actual.length == new_length
+        assert len(self.reference) == new_length
+        assert len(self.actual) == new_length
 
     @rule(index=st.runner().flatmap(get_valid_indexes))
     @precondition(not_empty)
@@ -210,16 +220,23 @@ class AbstractArrayPropertiesComparisonMachine(RuleBasedStateMachine):
         assert self.actual == self.reference
 
     @invariant()
-    def implementations_same_dunder_len(self) -> None:
-        assert len(self.actual) == len(self.reference)
-
-    @invariant()
     def implementations_same_length(self) -> None:
-        assert self.actual.length == self.reference.length
+        assert len(self.actual) == len(self.reference)
 
     @invariant()
     def implementations_same_elements_used(self) -> None:
         assert self.actual.elements_used == self.reference.elements_used
+
+    @invariant()
+    def implementations_same_element_indexes(self) -> None:
+        actual_indexes = list(self.actual.element_indexes())
+        actual_indexes_reversed = list(self.actual.element_indexes(reverse=True))
+        reference_indexes = list(self.actual.element_indexes())
+        reference_indexes_reversed = list(self.actual.element_indexes(reverse=True))
+
+        assert actual_indexes == reference_indexes
+        assert actual_indexes_reversed == reference_indexes_reversed
+        assert list(reversed(actual_indexes)) == actual_indexes_reversed
 
     @invariant()
     def implementations_regions_equal(self) -> None:
@@ -228,6 +245,15 @@ class AbstractArrayPropertiesComparisonMachine(RuleBasedStateMachine):
     @invariant()
     def implementations_iter_equal(self) -> None:
         assert list(iter(self.actual)) == list(iter(self.reference))
+
+    @invariant()
+    def elements_views_reflect_sequence(self) -> None:
+        assert (
+            SparseArrayProperties(
+                entries=self.actual.elements(), length=len(self.actual)
+            )
+            == self.reference
+        )
 
 
 class DenseArrayPropertiesComparisonMachine(AbstractArrayPropertiesComparisonMachine):
@@ -259,13 +285,6 @@ TestDenseArrayPropertiesComparison = DenseArrayPropertiesComparisonMachine.TestC
 TestSparseArrayPropertiesComparison = SparseArrayPropertiesComparisonMachine.TestCase
 
 
-def test_error() -> None:
-    state = SparseArrayPropertiesComparisonMachine()
-    state.init(initial_items=[])
-    state.implementations_equal()
-    state.teardown()
-
-
 @pytest.mark.parametrize(
     "args, kwargs, result",
     [
@@ -285,7 +304,6 @@ def test_DenseArrayProperties_init(
 def test_init_initial_state() -> None:
     array = DenseArrayProperties([JSHole, "a", JSHole, "b", JSHole])
     assert array.elements_used == 2
-    assert array.length == 5
     assert len(array) == 5
 
 
@@ -343,9 +361,9 @@ def test_SparseArrayProperties_init__(
 
 @pytest.mark.parametrize("impl", [DenseArrayProperties, SparseArrayProperties])
 @pytest.mark.parametrize("invalid_length", [-1, MAX_ARRAY_LENGTH + 1])
-def test_cannot_set_length_to_out_of_bounds_value(
+def test_cannot_resize_to_invalid_length(
     impl: type[ArrayProperties[object]], invalid_length: int
 ) -> None:
     arr = impl()
     with pytest.raises(ValueError, match=r"length must be >= 0 and < 2\*\*32 - 1"):
-        arr.length = invalid_length
+        arr.resize(invalid_length)
