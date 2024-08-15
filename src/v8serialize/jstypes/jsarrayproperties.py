@@ -99,6 +99,7 @@ class AbstractArrayProperties(  # type: ignore[misc]
             and (
                 len(self) == len(other)
                 and self.elements_used == other.elements_used
+                # todo: use unordered comparison
                 and all(
                     i == ii and self[i] == other[i]
                     for i, ii in zip(self.element_indexes(), other.element_indexes())
@@ -359,7 +360,7 @@ class DenseArrayProperties(AbstractArrayProperties[T]):
     def __iter__(self) -> Iterator[T | JSHoleType]:
         return iter(self._items)
 
-    def element_indexes(self, *, order: Order | None = None) -> Iterator[int]:
+    def element_indexes(self, *, order: Order = Order.ASCENDING) -> Iterator[int]:
         if order is not Order.DESCENDING:
             return (i for i, v in enumerate(self._items) if v is not JSHole)
         last_index = len(self) - 1
@@ -369,7 +370,7 @@ class DenseArrayProperties(AbstractArrayProperties[T]):
             if v is not JSHole
         )
 
-    def elements(self, *, order: Order | None = None) -> ElementsView[T]:
+    def elements(self, *, order: Order = Order.ASCENDING) -> ElementsView[T]:
         return ArrayPropertiesElementsView(self, order=order)
 
 
@@ -641,25 +642,23 @@ class SparseArrayProperties(AbstractArrayProperties[T]):
             else:
                 yield from region.items
 
-    def element_indexes(self, *, order: Order | None = None) -> Iterator[int]:
-        if order is Order.UNORDERED or order is None:
+    def element_indexes(self, *, order: Order = Order.ASCENDING) -> Iterator[int]:
+        if order is Order.UNORDERED:
             return iter(self._items)
 
         sorted_keys = self._get_sorted_keys()
         return reversed(sorted_keys) if order is Order.DESCENDING else iter(sorted_keys)
 
-    def elements(self, *, order: Order | None = None) -> ElementsView[T]:
+    def elements(self, *, order: Order = Order.ASCENDING) -> ElementsView[T]:
         return ArrayPropertiesElementsView(self, order=order)
 
 
 @dataclass(slots=True, init=False)
 class ArrayPropertiesElementsView(Mapping[int, T], ElementsView[T]):
     _array_properties: ArrayProperties[T]
-    order: Order | None
+    order: Order
 
-    def __init__(
-        self, array_properties: ArrayProperties[T], *, order: Order | None
-    ) -> None:
+    def __init__(self, array_properties: ArrayProperties[T], *, order: Order) -> None:
         self._array_properties = array_properties
         self.order = order
 

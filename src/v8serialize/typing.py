@@ -106,7 +106,12 @@ class ElementsView(MappingProtocol[int, _VT_co], Protocol):
     """
 
     @property
-    def order(self) -> Order | None: ...
+    def order(self) -> Order:
+        """The iteration order of the elements.
+
+        Corresponds to the `order` kwarg of `SparseSequence`'s `elements()` and
+        `element_indexes()`.
+        """
 
 
 class SparseSequence(SequenceProtocol[_T_co | _HoleT_co], Protocol):
@@ -131,13 +136,20 @@ class SparseSequence(SequenceProtocol[_T_co | _HoleT_co], Protocol):
     def elements_used(self) -> int:
         """The number of index positions that are not holes."""
 
-    def element_indexes(self, *, order: Order | None = ...) -> Iterator[int]:
-        """Iterate over the indexes in the sequence that are not holes."""
+    def element_indexes(self, *, order: Order = ...) -> Iterator[int]:
+        """Iterate over the indexes in the sequence that are not holes.
 
-    def elements(self, *, order: Order | None = ...) -> ElementsView[_T_co]:
+        `order` is `Order.ASCENDING` if not specified. `Order.UNORDERED` allows
+        the implementation to use whichever order is most efficient.
+        """
+
+    def elements(self, *, order: Order = ...) -> ElementsView[_T_co]:
         """
         Get a read-only Mapping containing a live view of the index elements
         with existant values.
+
+        `order` is `Order.ASCENDING` if not specified. `Order.UNORDERED` allows
+        the implementation to use whichever order is most efficient.
         """
 
 

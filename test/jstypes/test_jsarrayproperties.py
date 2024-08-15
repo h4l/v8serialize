@@ -78,13 +78,13 @@ class SimpleArrayProperties(  # type: ignore[misc]
     def elements_used(self) -> int:
         return len(self) - sum(1 for x in self if x is JSHole)
 
-    def element_indexes(self, *, order: Order | None = None) -> Iterator[int]:
+    def element_indexes(self, *, order: Order = Order.ASCENDING) -> Iterator[int]:
         if order is not Order.DESCENDING:
             return (i for i, v in enumerate(self) if v is not JSHole)
         last_index = len(self) - 1
         return (last_index - i for i, v in enumerate(reversed(self)) if v is not JSHole)
 
-    def elements(self, *, order: Order | None = None) -> ElementsView[T]:
+    def elements(self, *, order: Order = Order.ASCENDING) -> ElementsView[T]:
         return ArrayPropertiesElementsView(self, order=order)
 
     def __eq__(self, other: object) -> bool:
