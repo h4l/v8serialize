@@ -421,3 +421,28 @@ def test_cannot_resize_to_invalid_length(
     arr = impl()
     with pytest.raises(ValueError, match=r"length must be >= 0 and < 2\*\*32 - 1"):
         arr.resize(invalid_length)
+
+
+###############################
+# ArrayPropertiesElementsView #
+###############################
+
+
+def test_ArrayPropertiesElementsView_dunder_eq() -> None:
+    a = DenseArrayProperties(["a", JSHole, "b"])
+    b = DenseArrayProperties(["a", JSHole, "b"])
+    c = SparseArrayProperties(entries=[(2, "b"), (0, "a")])
+
+    assert a.elements() == b.elements()
+    assert a.elements() == c.elements()
+
+    # not eq when order is different, even when actual elements match (this
+    # avoids varying eq behaviour depending on unspecified ordering):
+    # In practice the elements happen to be in order because of c's entries order
+    assert list(a.elements(order=Order.UNORDERED).items()) == list(
+        c.elements(order=Order.ASCENDING).items()
+    )
+    # But not eq because of different order arg
+    assert a.elements(order=Order.UNORDERED) != c.elements(order=Order.ASCENDING)
+    # Eq with explicit unordered (even though though iteration order is different)
+    assert a.elements(order=Order.UNORDERED) == c.elements(order=Order.UNORDERED)
