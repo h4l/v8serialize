@@ -3,18 +3,45 @@ from __future__ import annotations
 from abc import ABC
 from dataclasses import dataclass
 from itertools import chain
-from typing import Iterator, MutableMapping, TypeVar
+from typing import (  # TypeVar,
+    TYPE_CHECKING,
+    Iterable,
+    Iterator,
+    MutableMapping,
+    TypeGuard,
+    Union,
+    cast,
+    overload,
+)
 
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
 from v8serialize.jstypes.jsarrayproperties import (
     ArrayProperties,
     DenseArrayProperties,
     JSHole,
+    JSHoleType,
     SparseArrayProperties,
 )
 
-KT = TypeVar("KT", bound=int | str)
-VT = TypeVar("VT")
+if TYPE_CHECKING:
+    # We use TypeVar's default param which isn't in stdlib yet.
+    from typing_extensions import TypeVar
+
+    from _typeshed import SupportsKeysAndGetItem
+
+    KT = TypeVar("KT", bound=int | str, default=int | str)
+    VT = TypeVar("VT", default=object)
+    T = TypeVar("T")
+
+    IntProperties = (
+        ArrayProperties[VT]
+        | Iterable[VT | JSHoleType]
+        | SupportsKeysAndGetItem[int, VT]
+    )
+    NameProperties = SupportsKeysAndGetItem[str, VT] | Iterable[tuple[str, VT]]
+    IntNamePropertiesPair = tuple[IntProperties[VT] | None, NameProperties[VT] | None]
+
+    MixedProperties = SupportsKeysAndGetItem[KT, VT] | Iterable[tuple[KT, VT]]
 
 
 # TODO: measure & adjust these
@@ -22,7 +49,25 @@ MIN_SPARSE_ARRAY_SIZE = 16
 MIN_DENSE_ARRAY_USED_RATIO = 1 / 4
 
 
-@dataclass(slots=True)
+def is_array_properties(o: object) -> TypeGuard[ArrayProperties[T]]:
+    if not all(callable(getattr(o, a, None)) for a in ["element_indexes", "elements"]):
+        return False
+    return hasattr(o, "elements_used") and getattr(o, "hole_value", None) is JSHole
+
+
+def supports_keys_and_get_item(
+    o: IntProperties[VT],
+) -> TypeGuard[SupportsKeysAndGetItem[int, VT]]:
+    return all(callable(getattr(o, a, None)) for a in ["keys", "__getitem__"])
+
+
+def is_int_name_properties_pair(
+    o: MixedProperties[KT, VT] | IntNamePropertiesPair[VT] | None,
+) -> TypeGuard[IntNamePropertiesPair[VT]]:
+    return isinstance(o, tuple) and len(o) == 2
+
+
+@dataclass(slots=True, init=False)
 class JSObject(MutableMapping[KT, VT], ABC):
     """A Python model of JavaScript plain objects, limited to the behaviour that
     can be transferred with V8 serialization (which is essentially the behaviour
@@ -43,9 +88,48 @@ https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
     properties: dict[str, VT]
     """Properties with string names."""
 
-    def __init__(self) -> None:
-        self.array = DenseArrayProperties()
-        self.properties = {}
+    def __init__(
+        self,  # TODO: detect instances of JSObject
+        properties: MixedProperties[KT, VT] | IntNamePropertiesPair[VT] | None = None,
+        /,
+        **kwarg_properties: VT,
+    ) -> None:
+        if properties is None:
+            self.array = DenseArrayProperties()
+            self.properties = {}
+        elif is_int_name_properties_pair(properties):
+            int_props, name_props = properties
+
+            # Allow callers to provide their own array implementation
+            if int_props is None:
+                self.array = DenseArrayProperties()
+            elif is_array_properties(int_props):
+                self.array = int_props
+            elif supports_keys_and_get_item(int_props):
+                self.array = SparseArrayProperties(entries=int_props)
+            else:
+                self.array = DenseArrayProperties(
+                    cast(Iterable[VT | JSHoleType], int_props)
+                )
+
+            self.properties = {}
+
+            if name_props is not None:
+                # MyPy thinks name_prop's key type str cannot be passed to
+                # update which takes str | int keys. 🤷
+                self.update(
+                    cast(
+                        SupportsKeysAndGetItem[KT, VT] | Iterable[tuple[KT, VT]],
+                        name_props,
+                    )
+                )
+        else:
+            self.array = DenseArrayProperties()
+            self.properties = {}
+            self.update(cast(MixedProperties[KT, VT], properties))
+
+        if kwarg_properties:
+            self.update(cast(dict[KT, VT], kwarg_properties))
 
     def __getitem__(self, key: KT, /) -> VT:
         k = normalise_property_key(key)
