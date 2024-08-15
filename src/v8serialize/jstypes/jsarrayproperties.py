@@ -676,3 +676,11 @@ class ArrayPropertiesElementsView(Mapping[int, T], ElementsView[T]):
 
     def __len__(self) -> int:
         return self._array_properties.elements_used
+
+    def __repr__(self) -> str:
+        return (
+            f"{type(self).__name__}("
+            f"{self._array_properties!r}"
+            f"order={self.order!r}"
+            f")"
+        )
