@@ -93,16 +93,17 @@ class AbstractArrayProperties(  # type: ignore[misc]
     hole_value: ClassVar[JSHoleType] = JSHole
 
     def __eq__(self, other: object) -> bool:
+        # TODO: override this per-implementation for better performance by
+        #   directly comparing impl data.
         return (
             other is self
             or isinstance(other, ArrayProperties)
             and (
                 len(self) == len(other)
                 and self.elements_used == other.elements_used
-                # todo: use unordered comparison
                 and all(
-                    i == ii and self[i] == other[i]
-                    for i, ii in zip(self.element_indexes(), other.element_indexes())
+                    self[i] == other[i]
+                    for i in self.element_indexes(order=Order.UNORDERED)
                 )
             )
         )
