@@ -1,18 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import (
-    Any,
-    ClassVar,
-    Generator,
-    Iterable,
-    Iterator,
-    Protocol,
-    Self,
-    Sequence,
-    TypeVar,
-    cast,
-)
+from typing import Any, ClassVar, Iterable, Iterator, Protocol, Sequence, TypeVar, cast
 
 import pytest
 from hypothesis import strategies as st
@@ -60,10 +49,6 @@ class SimpleArrayProperties(  # type: ignore[misc]
         if values is not None:
             super().__init__(values)
 
-    @classmethod
-    def create(cls, values: Iterable[T | JSHoleType]) -> Self:
-        return cls(values)
-
     def resize(self, length: int) -> None:
         if length < 0 or length > MAX_ARRAY_LENGTH:
             raise ValueError(f"length must be >= 0 and < {MAX_ARRAY_LENGTH_REPR}")
@@ -100,16 +85,29 @@ class SimpleArrayProperties(  # type: ignore[misc]
         )
 
 
+class ArrayPropertiesConstructor(Protocol[T]):
+    def __call__(
+        self, values: Iterable[T | JSHoleType] | None = None
+    ) -> ArrayProperties[T]: ...
+
+
+ARRAY_PROPERTIES_IMPLEMENTATIONS: Sequence[ArrayPropertiesConstructor[Any]] = (
+    SimpleArrayProperties,
+    DenseArrayProperties,
+    SparseArrayProperties,
+)
+
 values_or_gaps = st.one_of(st.integers(), st.just(JSHole))
 
 
-class ArrayPropertiesConstructor(Protocol):
-    def __call__(self, values: Iterable[T | JSHoleType]) -> ArrayProperties[T]: ...
+@pytest.fixture(scope="session", params=ARRAY_PROPERTIES_IMPLEMENTATIONS)
+def impl(request: pytest.FixtureRequest) -> ArrayPropertiesConstructor[Any]:
+    return cast(ArrayPropertiesConstructor[Any], request.param)
 
 
 class AbstractArrayPropertiesComparisonMachine(RuleBasedStateMachine):
-    actual_type: ClassVar[ArrayPropertiesConstructor]
-    reference_type: ClassVar[ArrayPropertiesConstructor] = SimpleArrayProperties.create
+    actual_type: ClassVar[ArrayPropertiesConstructor[object]]
+    reference_type: ClassVar[ArrayPropertiesConstructor[object]] = SimpleArrayProperties
 
     _actual: ArrayProperties[object] | None
     _reference: ArrayProperties[object] | None
@@ -416,10 +414,9 @@ def test_SparseArrayProperties_init__(
     assert list(SparseArrayProperties(*args, **kwargs)) == result
 
 
-@pytest.mark.parametrize("impl", [DenseArrayProperties, SparseArrayProperties])
 @pytest.mark.parametrize("invalid_length", [-1, MAX_ARRAY_LENGTH + 1])
 def test_cannot_resize_to_invalid_length(
-    impl: type[ArrayProperties[object]], invalid_length: int
+    impl: ArrayPropertiesConstructor[T], invalid_length: int
 ) -> None:
     arr = impl()
     with pytest.raises(ValueError, match=r"length must be >= 0 and < 2\*\*32 - 1"):
