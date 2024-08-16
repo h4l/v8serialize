@@ -446,3 +446,13 @@ def test_ArrayPropertiesElementsView_dunder_eq() -> None:
     assert a.elements(order=Order.UNORDERED) != c.elements(order=Order.ASCENDING)
     # Eq with explicit unordered (even though though iteration order is different)
     assert a.elements(order=Order.UNORDERED) == c.elements(order=Order.UNORDERED)
+
+
+###############################
+# JSHole #
+###############################
+
+
+def test_jshole_repr() -> None:
+    assert repr(JSHole) == "JSHole"
+    assert str(JSHole) == "JSHole"

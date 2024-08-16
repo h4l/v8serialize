@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABCMeta
 from bisect import bisect_left
 from dataclasses import dataclass, field
+from enum import Enum
 from itertools import groupby, repeat
 from typing import (
     TYPE_CHECKING,
@@ -12,11 +13,13 @@ from typing import (
     Generic,
     Iterable,
     Iterator,
+    Literal,
     Mapping,
     MutableSequence,
     Self,
     Sequence,
     Sized,
+    TypeAlias,
     TypeGuard,
     TypeVar,
     cast,
@@ -33,8 +36,7 @@ KT = TypeVar("KT", bound=int | str)
 T = TypeVar("T")
 
 
-@dataclass(slots=True, frozen=True)
-class JSHoleType:
+class JSHoleEnum(Enum):
     """Explicit representation of the empty elements in JavaScript arrays.
 
     JavaScript arrays are sparse, in that you can set the value of indexes
@@ -50,18 +52,19 @@ class JSHoleType:
     JSUndefined values.
     """
 
-    def __init__(self) -> None:
-        if "JSHole" in globals():
-            raise AssertionError("Cannot instantiate JSHoleType")
-
-    def isnot(self, value: T | JSHoleType) -> TypeGuard[T]:
-        return value is not JSHole
+    JSHole = "JSHole"
+    """Explicit representation of the empty elements in JavaScript arrays."""
 
     def __repr__(self) -> str:
-        return "JSHole"
+        return self.name
+
+    def __str__(self) -> str:
+        return self.name
 
 
-JSHole: Final = JSHoleType()
+JSHoleType: TypeAlias = Literal[JSHoleEnum.JSHole]
+JSHole: Final = JSHoleEnum.JSHole
+"""Explicit representation of the empty elements in JavaScript arrays."""
 
 
 class ArrayProperties(SparseMutableSequence[T, JSHoleType], metaclass=ABCMeta):
@@ -594,7 +597,7 @@ class SparseArrayProperties(AbstractArrayProperties[T]):
         }
         self._max_index += 1
         if value is not JSHole:
-            items[i] = cast(T, value)
+            items[i] = value
 
         if self._sorted_keys is None and len(items) <= 1:
             self._sorted_keys = list(items)
@@ -612,7 +615,7 @@ class SparseArrayProperties(AbstractArrayProperties[T]):
 
         items = self._items
         sorted_keys = self._sorted_keys
-        items[i] = cast(T, value)
+        items[i] = value
 
         if sorted_keys is None:
             if len(items) == 1:
@@ -667,7 +670,7 @@ class ArrayPropertiesElementsView(Mapping[int, T], ElementsView[T]):
         if not (0 <= key <= len(self._array_properties)):
             raise KeyError(key)
         value = self._array_properties[key]
-        if JSHole.isnot(value):
+        if value is not JSHole:
             return value
         raise KeyError(key)
 

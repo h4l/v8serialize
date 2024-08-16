@@ -104,7 +104,7 @@ https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
             array_properties = self.array
             if 0 <= k < len(array_properties):
                 value = array_properties[k]
-                if JSHole.isnot(value):
+                if value is not JSHole:
                     return value
             raise KeyError(key)  # preserve the non-normalised key
 
