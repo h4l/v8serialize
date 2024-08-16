@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterable, TypeGuard, overload
 
+from v8serialize.jstypes import _repr
 from v8serialize.jstypes.jsarrayproperties import JSHoleType
 from v8serialize.jstypes.jsobject import JSObject
 
@@ -79,15 +80,4 @@ class JSArray(JSObject["T"]):
         self.update(kwarg_properties)
 
     def __repr__(self) -> str:
-        arg_repr: list[str] = []
-
-        if isinstance(self.array, SparseArrayProperties):
-            if len(self) > 0:
-                arg_repr.append(f"**{repr({str(k): v for k, v in self.items()})}")
-        else:
-            if len(self.array) > 0:
-                arg_repr.append(repr(list(self.array)))
-            if len(self.properties) > 0:
-                arg_repr.append(f"**{repr(dict(self.properties))}")
-
-        return f"JSArray({', '.join(arg_repr)})"
+        return _repr.js_repr(self)

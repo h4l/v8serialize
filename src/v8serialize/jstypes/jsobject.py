@@ -14,6 +14,7 @@ from typing import (
     overload,
 )
 
+from v8serialize.jstypes import _repr
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
 from v8serialize.jstypes.jsarrayproperties import (
     ArrayProperties,
@@ -165,6 +166,9 @@ https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
 
     def __iter__(self) -> Iterator[str | int]:
         return chain(self.array.element_indexes(), self._properties)
+
+    def __repr__(self) -> str:
+        return _repr.js_repr(self)
 
     if TYPE_CHECKING:
         # Our Mapping key type is str | int. MyPy doesn't allow calling methods

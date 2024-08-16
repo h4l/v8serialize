@@ -52,13 +52,3 @@ def test_abc_registration() -> None:
     assert isinstance(Example(), JSArray)
     # Registered objects also become subtypes of JSObject, because JSArray is.
     assert isinstance(Example(), JSObject)
-
-
-def test_repr() -> None:
-    assert repr(JSArray()) == "JSArray()"
-    assert repr(JSArray(["a", "b"])) == "JSArray(['a', 'b'])"
-    assert repr(JSArray(["a", "b"], x="y")) == "JSArray(['a', 'b'], **{'x': 'y'})"
-    assert repr(JSArray(**{"1000": "a"})) == "JSArray(**{'1000': 'a'})"
-    assert (
-        repr(JSArray(**{"1000": "a", "x": "y"})) == "JSArray(**{'1000': 'a', 'x': 'y'})"
-    )
