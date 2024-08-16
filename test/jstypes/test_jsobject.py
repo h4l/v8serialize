@@ -35,3 +35,18 @@ def test_init__iterable_kv_pairs() -> None:
 
     with pytest.raises(ValueError, match=r"not enough values to unpack"):
         JSObject(["a", "b", "c"])  # type: ignore[list-item]
+
+
+def test_jshole_assignment() -> None:
+    # Properties created with JSHole values are the same as not providing them
+    obj = JSObject({0: "a", 1: JSHole, 2: "c", "x": "X", "y": JSHole})
+    assert dict(obj) == {0: "a", 2: "c", "x": "X"}
+
+    # Assigning JSHole values to existing keys removes them
+    assert 0 in obj
+    obj[0] = JSHole
+    assert 0 not in obj
+
+    assert "x" in obj
+    obj["x"] = JSHole
+    assert "x" not in obj

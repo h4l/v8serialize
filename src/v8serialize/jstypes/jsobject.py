@@ -110,7 +110,10 @@ https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
     def __setitem__(self, key: str | int, value: T, /) -> None:
         k = normalise_property_key(key)
         if type(k) is str:
-            self._properties[k] = value
+            if value is JSHole:
+                self._properties.pop(k, None)
+            else:
+                self._properties[k] = value
         else:
             assert isinstance(k, int)
             self._ensure_array_capacity(k)
