@@ -50,3 +50,13 @@ def test_jshole_assignment() -> None:
     assert "x" in obj
     obj["x"] = JSHole
     assert "x" not in obj
+
+
+def test_abc_registration() -> None:
+
+    class Example:
+        pass
+
+    assert not isinstance(Example(), JSObject)
+    JSObject.register(Example)
+    assert isinstance(Example(), JSObject)
