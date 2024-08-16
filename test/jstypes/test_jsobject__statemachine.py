@@ -43,7 +43,7 @@ class JSObjectComparisonMachine(RuleBasedStateMachine):
     model.
     """
 
-    actual: JSObject[int | str, object]
+    actual: JSObject
     reference_array: dict[int, object]
     reference_properties: dict[str, object]
 

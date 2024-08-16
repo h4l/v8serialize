@@ -350,7 +350,7 @@ def read_stream(rts_fn: ReadableTagStreamReadFunction) -> TagReader:
 
 JSMapType = Callable[[], MutableMapping[object, object]]
 JSSetType = Callable[[], MutableSet[object]]
-JSObjectType = Callable[[], JSObject[int | str, object]]
+JSObjectType = Callable[[], JSObject[object]]
 
 
 @dataclass(slots=True, init=False)
@@ -440,7 +440,7 @@ class TagMapper:
 
     def deserialize_js_object(
         self, tag: SerializationTag, stream: ReadableTagStream
-    ) -> JSObject[str | int, object]:
+    ) -> JSObject[object]:
         assert tag == SerializationTag.kBeginJSObject
         obj = self.js_object_type()
         obj.update(stream.read_js_object(self, identity=obj))

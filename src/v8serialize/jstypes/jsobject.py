@@ -3,14 +3,14 @@ from __future__ import annotations
 from abc import ABC
 from dataclasses import dataclass
 from itertools import chain
-from typing import (  # TypeVar,
+from types import MappingProxyType
+from typing import (
     TYPE_CHECKING,
+    Any,
     Iterable,
     Iterator,
+    Mapping,
     MutableMapping,
-    TypeGuard,
-    Union,
-    cast,
     overload,
 )
 
@@ -19,7 +19,6 @@ from v8serialize.jstypes.jsarrayproperties import (
     ArrayProperties,
     DenseArrayProperties,
     JSHole,
-    JSHoleType,
     SparseArrayProperties,
 )
 
@@ -29,19 +28,7 @@ if TYPE_CHECKING:
 
     from _typeshed import SupportsKeysAndGetItem
 
-    KT = TypeVar("KT", bound=int | str, default=int | str)
-    VT = TypeVar("VT", default=object)
-    T = TypeVar("T")
-
-    IntProperties = (
-        ArrayProperties[VT]
-        | Iterable[VT | JSHoleType]
-        | SupportsKeysAndGetItem[int, VT]
-    )
-    NameProperties = SupportsKeysAndGetItem[str, VT] | Iterable[tuple[str, VT]]
-    IntNamePropertiesPair = tuple[IntProperties[VT] | None, NameProperties[VT] | None]
-
-    MixedProperties = SupportsKeysAndGetItem[KT, VT] | Iterable[tuple[KT, VT]]
+    T = TypeVar("T", default=object)  # TODO: does default help in practice?
 
 
 # TODO: measure & adjust these
@@ -49,26 +36,8 @@ MIN_SPARSE_ARRAY_SIZE = 16
 MIN_DENSE_ARRAY_USED_RATIO = 1 / 4
 
 
-def is_array_properties(o: object) -> TypeGuard[ArrayProperties[T]]:
-    if not all(callable(getattr(o, a, None)) for a in ["element_indexes", "elements"]):
-        return False
-    return hasattr(o, "elements_used") and getattr(o, "hole_value", None) is JSHole
-
-
-def supports_keys_and_get_item(
-    o: IntProperties[VT],
-) -> TypeGuard[SupportsKeysAndGetItem[int, VT]]:
-    return all(callable(getattr(o, a, None)) for a in ["keys", "__getitem__"])
-
-
-def is_int_name_properties_pair(
-    o: MixedProperties[KT, VT] | IntNamePropertiesPair[VT] | None,
-) -> TypeGuard[IntNamePropertiesPair[VT]]:
-    return isinstance(o, tuple) and len(o) == 2
-
-
 @dataclass(slots=True, init=False)
-class JSObject(MutableMapping[KT, VT], ABC):
+class JSObject(MutableMapping[str | int, "T"], ABC):
     """A Python model of JavaScript plain objects, limited to the behaviour that
     can be transferred with V8 serialization (which is essentially the behaviour
     of [`structuredClone()`]).
@@ -83,58 +52,49 @@ https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
     in order to serialize themselves as JavaScript Objects.
     """
 
-    array: ArrayProperties[VT]
+    array: ArrayProperties[T]
     """Properties with integer names."""
-    properties: dict[str, VT]
+    properties: Mapping[str, T]
+    """Properties with string names."""
+    _properties: dict[str, T]
     """Properties with string names."""
 
+    @overload
+    def __init__(self, /, **kwargs: T) -> None: ...
+
+    @overload
     def __init__(
-        self,  # TODO: detect instances of JSObject
-        properties: MixedProperties[KT, VT] | IntNamePropertiesPair[VT] | None = None,
+        self, properties: SupportsKeysAndGetItem[str | int, T], /, **kwargs: T
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self, properties: Iterable[tuple[str | int, T]], /, **kwargs: T
+    ) -> None: ...
+
+    def __init__(
+        self,
+        properties: (
+            SupportsKeysAndGetItem[str | int, T] | Iterable[tuple[str | int, T]]
+        ) = (),
         /,
-        **kwarg_properties: VT,
+        **kwarg_properties: T,
     ) -> None:
-        if properties is None:
-            self.array = DenseArrayProperties()
-            self.properties = {}
-        elif is_int_name_properties_pair(properties):
-            int_props, name_props = properties
+        self.array = DenseArrayProperties()
+        self._properties = {}
+        # Read-only view of _properties. It's not safe provide direct access to
+        # the dict in our API as we need to ensure array index properties go to
+        # the array. Writing properties would bypass this.
+        self.properties = MappingProxyType(self._properties)
 
-            # Allow callers to provide their own array implementation
-            if int_props is None:
-                self.array = DenseArrayProperties()
-            elif is_array_properties(int_props):
-                self.array = int_props
-            elif supports_keys_and_get_item(int_props):
-                self.array = SparseArrayProperties(entries=int_props)
-            else:
-                self.array = DenseArrayProperties(
-                    cast(Iterable[VT | JSHoleType], int_props)
-                )
-
-            self.properties = {}
-
-            if name_props is not None:
-                # MyPy thinks name_prop's key type str cannot be passed to
-                # update which takes str | int keys. 🤷
-                self.update(
-                    cast(
-                        SupportsKeysAndGetItem[KT, VT] | Iterable[tuple[KT, VT]],
-                        name_props,
-                    )
-                )
-        else:
-            self.array = DenseArrayProperties()
-            self.properties = {}
-            self.update(cast(MixedProperties[KT, VT], properties))
-
+        self.update(properties)
         if kwarg_properties:
-            self.update(cast(dict[KT, VT], kwarg_properties))
+            self.update(kwarg_properties)
 
-    def __getitem__(self, key: KT, /) -> VT:
+    def __getitem__(self, key: str | int, /) -> T:
         k = normalise_property_key(key)
         if type(k) is str:
-            properties = self.properties
+            properties = self._properties
             if k in properties:
                 return properties[k]
             raise KeyError(key)  # preserve the non-normalised key
@@ -147,10 +107,10 @@ https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
                     return value
             raise KeyError(key)  # preserve the non-normalised key
 
-    def __setitem__(self, key: KT, value: VT, /) -> None:
+    def __setitem__(self, key: str | int, value: T, /) -> None:
         k = normalise_property_key(key)
         if type(k) is str:
-            self.properties[k] = value
+            self._properties[k] = value
         else:
             assert isinstance(k, int)
             self._ensure_array_capacity(k)
@@ -177,11 +137,11 @@ https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
                 return
         array.resize(new_length)
 
-    def __delitem__(self, key: KT, /) -> None:
+    def __delitem__(self, key: str | int, /) -> None:
         k = normalise_property_key(key)
         if type(k) is str:
-            if k in self.properties:
-                del self.properties[k]
+            if k in self._properties:
+                del self._properties[k]
                 return
             raise KeyError(key)  # preserve the non-normalised key
         else:
@@ -198,8 +158,38 @@ https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
             raise KeyError(key)  # preserve the non-normalised key
 
     def __len__(self) -> int:
-        return self.array.elements_used + len(self.properties)
+        return self.array.elements_used + len(self._properties)
 
-    def __iter__(self) -> Iterator[KT]:
-        it: Iterator[int | str] = chain(self.array.element_indexes(), self.properties)
-        return it  # type: ignore[return-value]
+    def __iter__(self) -> Iterator[str | int]:
+        return chain(self.array.element_indexes(), self._properties)
+
+    if TYPE_CHECKING:
+        # Our Mapping key type is str | int. MyPy doesn't allow calling methods
+        # accepting XXX[str | int, T] with XXX[str, T]. (I think because key
+        # type of MutableMapping is invariant). This is clearly fine in
+        # practice, so we overload the update method to allow this.
+
+        @overload  # type: ignore[override]
+        def update(self, m: SupportsKeysAndGetItem[str, T], /, **kwargs: T) -> None: ...
+
+        @overload
+        def update(self, m: SupportsKeysAndGetItem[int, T], /, **kwargs: T) -> None: ...
+
+        @overload
+        def update(
+            self, m: SupportsKeysAndGetItem[str | int, T], /, **kwargs: T
+        ) -> None: ...
+
+        @overload
+        def update(self, m: Iterable[tuple[str, T]], /, **kwargs: T) -> None: ...
+
+        @overload
+        def update(self, m: Iterable[tuple[int, T]], /, **kwargs: T) -> None: ...
+
+        @overload
+        def update(self, m: Iterable[tuple[str | int, T]], /, **kwargs: T) -> None: ...
+
+        @overload
+        def update(self, **kwargs: T) -> None: ...
+
+        def update(self, *args: Any, **kwargs: T) -> None: ...  # type: ignore[misc]
