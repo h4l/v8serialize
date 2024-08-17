@@ -52,6 +52,39 @@ def test_jshole_assignment() -> None:
     assert "x" not in obj
 
 
+def test_write_methods_accept_float_keys_for_compatibility_with_v8_serialized_data() -> (  # noqa: B950
+    None
+):
+    obj = JSObject()
+    obj[-0.0] = "foo"
+    assert obj["0"] == "foo"
+    assert obj[0] == "foo"
+    # works, but type error because I don't want to encourage using floats normally
+    assert obj[0.0] == "foo"  # type: ignore[index]
+    assert obj[-0.0] == "foo"  # type: ignore[index]
+
+    obj.setdefault(1.0, "one")
+    assert obj["1"] == "one"
+    assert obj[1] == "one"
+    assert obj[1.0] == "one"  # type: ignore[index]
+
+    obj.update({-0.0: "x", 1.0: "y", "2": "z"})
+    obj.update({3: "a", 4.0: "b"})
+    obj.update({"5": "c", 6.0: "d", -1.0: "!", "-0": "!!"})
+
+    assert dict(obj) == {
+        0: "x",
+        1: "y",
+        2: "z",
+        3: "a",
+        4: "b",
+        5: "c",
+        6: "d",
+        "-1": "!",
+        "-0": "!!",
+    }
+
+
 def test_abc_registration() -> None:
 
     class Example:

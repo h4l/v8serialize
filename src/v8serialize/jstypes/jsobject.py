@@ -109,7 +109,7 @@ https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
                     return value
             raise NormalizedKeyError(k, raw_key=key)
 
-    def __setitem__(self, key: str | int, value: T, /) -> None:
+    def __setitem__(self, key: str | int | float, value: T, /) -> None:
         k = normalise_property_key(key)
         if type(k) is str:
             if value is JSHole:
@@ -177,6 +177,12 @@ https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
         # type of MutableMapping is invariant). This is clearly fine in
         # practice, so we overload the update method to allow this.
 
+        # Also, we specialise __setitem__ to accept float, as well as str | int
+        # which other methods return. We also want to support this for update()
+        # and setdefault(). They are implemented in MutableMapping in terms
+        # of __setitem__(). So we just need to override the types to allow
+        # passing float.
+
         @overload  # type: ignore[override]
         def update(self, m: SupportsKeysAndGetItem[str, T], /, **kwargs: T) -> None: ...
 
@@ -185,7 +191,17 @@ https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
 
         @overload
         def update(
+            self, m: SupportsKeysAndGetItem[float, T], /, **kwargs: T
+        ) -> None: ...
+
+        @overload
+        def update(
             self, m: SupportsKeysAndGetItem[str | int, T], /, **kwargs: T
+        ) -> None: ...
+
+        @overload
+        def update(
+            self, m: SupportsKeysAndGetItem[str | int | float, T], /, **kwargs: T
         ) -> None: ...
 
         @overload
@@ -195,9 +211,27 @@ https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
         def update(self, m: Iterable[tuple[int, T]], /, **kwargs: T) -> None: ...
 
         @overload
+        def update(self, m: Iterable[tuple[float, T]], /, **kwargs: T) -> None: ...
+
+        @overload
         def update(self, m: Iterable[tuple[str | int, T]], /, **kwargs: T) -> None: ...
+
+        @overload
+        def update(
+            self, m: Iterable[tuple[str | int | float, T]], /, **kwargs: T
+        ) -> None: ...
 
         @overload
         def update(self, **kwargs: T) -> None: ...
 
         def update(self, *args: Any, **kwargs: T) -> None: ...  # type: ignore[misc]
+
+        @overload
+        def setdefault(
+            self, key: str | int | float, default: None = None, /
+        ) -> T | None: ...
+
+        @overload
+        def setdefault(self, key: str | int | float, default: T, /) -> T: ...
+
+        def setdefault(self, key: Any, default: Any = None, /) -> Any: ...
