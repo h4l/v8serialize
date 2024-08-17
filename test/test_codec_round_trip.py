@@ -208,12 +208,7 @@ def test_codec_rt_js_object(
     rts = ReadableTagStream(encode_ctx.stream.data)
     assert rts.read_tag(consume=False) == SerializationTag.kBeginJSObject
     result = JSObject[object]()
-    result.update(
-        (
-            (str(k) if isinstance(k, float) else k, v)
-            for k, v in rts.read_js_object(tag_mapper, identity=result)
-        )
-    )
+    result.update(rts.read_js_object(tag_mapper, identity=result))
     assert value == result
     assert rts.eof
 

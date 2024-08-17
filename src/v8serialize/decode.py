@@ -443,19 +443,7 @@ class TagMapper:
     ) -> JSObject[object]:
         assert tag == SerializationTag.kBeginJSObject
         obj = self.js_object_type()
-        obj.update(
-            (
-                # TODO: should we handle floats in JSObject? I think that'd be
-                #   cleaner than forcing them to be strings here.
-                #
-                # Serialized data can encode float values as keys, but floats
-                # are not valid in user-facing JavaScript object keys. V8
-                # converts float keys to strings when deserializing and
-                # re-serializing data with float keys.
-                (str(k) if isinstance(k, float) else k, v)
-                for k, v in stream.read_js_object(self, identity=obj)
-            )
-        )
+        obj.update(stream.read_js_object(self, identity=obj))
         return obj
 
     def deserialize_object_reference(
