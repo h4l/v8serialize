@@ -30,6 +30,7 @@ from v8serialize.constants import (
 )
 from v8serialize.errors import V8CodecError
 from v8serialize.jstypes import JSHole, JSObject, JSUndefined
+from v8serialize.jstypes.jsarray import JSArray
 from v8serialize.references import SerializedId, SerializedObjectLog
 
 if TYPE_CHECKING:
@@ -282,8 +283,18 @@ class ReadableTagStream:
     ) -> Generator[tuple[int | float | str, object], None, int]:
         self.read_tag(SerializationTag.kBeginJSObject)
         self.objects.record_reference(identity)
-        actual_count = 0
 
+        actual_count = yield from self._read_js_object_properties(tag_mapper)
+        return actual_count
+
+    def _read_js_object_properties(
+        self,
+        tag_mapper: TagMapper,
+        *,
+        end_tag: SerializationTag = SerializationTag.kEndJSObject,
+        enclosing_name: str = "JSObject",
+    ) -> Generator[tuple[int | float | str, object], None, int]:
+        actual_count = 0
         while True:
             tag = self.read_tag(consume=False)
             if tag in JS_OBJECT_KEY_TAGS:
@@ -291,26 +302,55 @@ class ReadableTagStream:
                 if not isinstance(key, (int, float, str)):
                     # TODO: more specific error
                     raise TypeError(
-                        f"JSObject key must deserialize to str, int or float: {key}"
+                        f"{enclosing_name} key must deserialize to str, int or "
+                        f"float: {key}"
                     )
                 yield key, self.read_object(tag_mapper)
                 actual_count += 1  # 1 per entry, unlike JSMap
-            elif tag == SerializationTag.kEndJSObject:
+            elif tag is end_tag:
                 break
             else:
                 self.throw(
-                    f"JSObject has a key encoded with tag {tag.name} that is "
-                    f"not a number or string tag. Valid {JS_OBJECT_KEY_TAGS}"
+                    f"{enclosing_name} has a key encoded with tag {tag.name} "
+                    f"that is not a number or string tag. Valid "
+                    f"{JS_OBJECT_KEY_TAGS}"
                 )
-        self.pos += 1  # advance over EndJSMap
+        self.pos += 1  # advance over end_tag
 
         expected_count = self.read_varint()
         if expected_count != actual_count:
             self.throw(
-                f"Expected count does not match actual count after reading "
-                f"JSMap: expected={expected_count}, actual={actual_count}"
+                f"Expected properties count does not match actual count after reading "
+                f"{enclosing_name}: expected={expected_count}, actual={actual_count}"
             )
         return actual_count
+
+    def read_js_array_dense(
+        self, tag_mapper: TagMapper, *, identity: object
+    ) -> Generator[tuple[int | float | str, object], None, tuple[int, int]]:
+        self.read_tag(SerializationTag.kBeginDenseJSArray)
+        self.objects.record_reference(identity)
+        current_array_el_count = 0
+        expected_array_el_count = self.read_varint()
+
+        for i in range(expected_array_el_count):
+            yield i, self.read_object(tag_mapper)
+            current_array_el_count += 1
+
+        actual_properties_count = yield from self._read_js_object_properties(
+            tag_mapper,
+            end_tag=SerializationTag.kEndDenseJSArray,
+            enclosing_name="DenseJSArray",
+        )
+        final_array_el_count = self.read_varint()
+
+        if expected_array_el_count != final_array_el_count:
+            self.throw(
+                "Expected array element count does not match the final count "
+                f"after reading DenseJSArray: expected={expected_array_el_count}"
+                f", final={final_array_el_count}"
+            )
+        return final_array_el_count, actual_properties_count
 
     def read_object_reference(self) -> tuple[SerializedId, object]:
         self.read_tag(SerializationTag.kObjectReference)
@@ -370,6 +410,7 @@ def read_stream(rts_fn: ReadableTagStreamReadFunction) -> TagReader:
 JSMapType = Callable[[], MutableMapping[object, object]]
 JSSetType = Callable[[], MutableSet[object]]
 JSObjectType = Callable[[], JSObject[object]]
+JSArrayType = Callable[[], JSArray[object]]
 
 
 @dataclass(slots=True, init=False)
@@ -381,6 +422,7 @@ class TagMapper:
     jsmap_type: JSMapType
     jsset_type: JSSetType
     js_object_type: JSObjectType
+    js_array_type: JSArrayType
     js_constants: Mapping[ConstantTags, object]
 
     def __init__(
@@ -394,12 +436,14 @@ class TagMapper:
         jsmap_type: JSMapType | None = None,
         jsset_type: JSSetType | None = None,
         js_object_type: JSObjectType | None = None,
+        js_array_type: JSArrayType | None = None,
         js_constants: Mapping[ConstantTags, object] | None = None,
     ) -> None:
         self.default_tag_mapper = default_tag_mapper
         self.jsmap_type = jsmap_type or dict
         self.jsset_type = jsset_type or set
         self.js_object_type = js_object_type or JSObject
+        self.js_array_type = js_array_type or JSArray
 
         _js_constants = dict(js_constants) if js_constants is not None else {}
         _js_constants.setdefault(SerializationTag.kTheHole, JSHole)
@@ -443,6 +487,7 @@ class TagMapper:
             SerializationTag.kBeginJSSet: TagMapper.deserialize_jsset,
             SerializationTag.kObjectReference: TagMapper.deserialize_object_reference,
             SerializationTag.kBeginJSObject: TagMapper.deserialize_js_object,
+            SerializationTag.kBeginDenseJSArray: TagMapper.deserialize_js_array_dense,
         }
 
         return {**primitive_tag_readers, **default_tag_readers, **(tag_readers or {})}
@@ -485,6 +530,14 @@ class TagMapper:
         assert tag == SerializationTag.kBeginJSObject
         obj = self.js_object_type()
         obj.update(stream.read_js_object(self, identity=obj))
+        return obj
+
+    def deserialize_js_array_dense(
+        self, tag: SerializationTag, stream: ReadableTagStream
+    ) -> JSArray[object]:
+        assert tag == SerializationTag.kBeginDenseJSArray
+        obj = self.js_array_type()
+        obj.update(stream.read_js_array_dense(self, identity=obj))
         return obj
 
     def deserialize_object_reference(

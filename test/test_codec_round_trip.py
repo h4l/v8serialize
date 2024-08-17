@@ -1,5 +1,5 @@
 import math
-from typing import Optional, TypeVar
+from typing import Optional, Sequence, TypeVar, cast
 
 import pytest
 from hypothesis import given
@@ -15,6 +15,7 @@ from v8serialize.encode import (
 )
 from v8serialize.jstypes import JSObject, JSUndefined
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
+from v8serialize.jstypes.jsarray import JSArray
 
 T = TypeVar("T")
 
@@ -37,7 +38,7 @@ def js_objects(
     *,
     keys: st.SearchStrategy[str | int] = any_int_or_text,
     min_size: int = 0,
-    max_size: Optional[int] = None,
+    max_size: int | None = None,
 ) -> st.SearchStrategy[JSObject[T]]:
     """Generates `JSObject` instances with keys drawn from `keys` argument
     and values drawn from `values` argument.
@@ -57,6 +58,37 @@ def js_objects(
         # would allow the obj to be less than min_size.
         unique_by=lambda kv: normalise_property_key(kv[0]),
     ).map(JSObject)
+
+
+def dense_js_arrays(
+    elements: st.SearchStrategy[T],
+    *,
+    min_size: int = 0,
+    max_size: Optional[int] = None,
+    properties: st.SearchStrategy[JSObject[T]] | None = None,
+) -> st.SearchStrategy[JSArray[T]]:
+
+    if (min_size < 0) if max_size is None else not (0 <= min_size <= max_size):
+        raise ValueError(
+            f"0 <= min_size <= max_size does not hold: {min_size=}, {max_size=}"
+        )
+
+    def create_array(content: tuple[list[T], JSObject[T] | None]) -> JSArray[T]:
+        elements, properties = content
+        js_array = JSArray[T]()
+        js_array.array.extend(elements)
+        if properties is not None:
+            js_array.update(properties)
+        return js_array
+
+    return st.tuples(
+        st.lists(
+            elements,
+            min_size=min_size,
+            max_size=max_size,
+        ),
+        st.none() if properties is None else properties,
+    ).map(create_array)
 
 
 any_atomic = st.one_of(
@@ -81,6 +113,17 @@ any_object = st.recursive(
             values=children,
         ),
         js_objects(values=children),
+        dense_js_arrays(
+            elements=children,
+            properties=js_objects(
+                # Prevent properties generating large int keys, which would make the
+                # dense array huge.
+                keys=st.one_of(st.integers(max_value=20), st.text()),
+                values=children,
+                max_size=10,
+            ),
+            max_size=10,
+        ),
         st.sets(elements=any_atomic),
     ),
     max_leaves=3,  # TODO: tune this, perhaps increase in CI
@@ -272,6 +315,38 @@ def test_codec_rt_js_object_raw_properties(
     assert rts.read_tag(consume=False) == SerializationTag.kBeginJSObject
     result: list[tuple[int | float | str, object]] = []
     result.extend(rts.read_js_object(tag_mapper, identity=result))
+    assert value == result
+    assert rts.eof
+
+
+@given(
+    value=dense_js_arrays(
+        elements=any_object,
+        properties=js_objects(
+            # Prevent properties generating large int keys, which would make the
+            # dense array huge.
+            keys=st.one_of(st.integers(max_value=20), st.text()),
+            values=any_atomic,
+            max_size=10,
+        ),
+        max_size=10,
+    )
+)
+def test_codec_rt_js_array_dense(
+    value: JSArray[object],
+    tag_mapper: TagMapper,
+) -> None:
+    encode_ctx = DefaultEncodeContext([ObjectMapper()])
+    encode_ctx.stream.write_js_array_dense(
+        cast(Sequence[object], value.array),
+        ctx=encode_ctx,
+        properties=value.properties.items(),
+        identity=value,
+    )
+    rts = ReadableTagStream(encode_ctx.stream.data)
+    assert rts.read_tag(consume=False) == SerializationTag.kBeginDenseJSArray
+    result = JSArray[object]()
+    result.update(rts.read_js_array_dense(tag_mapper, identity=result))
     assert value == result
     assert rts.eof
 

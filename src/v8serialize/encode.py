@@ -33,6 +33,7 @@ from v8serialize.constants import (
 from v8serialize.decorators import singledispatchmethod
 from v8serialize.errors import V8CodecError
 from v8serialize.jstypes import JSObject
+from v8serialize.jstypes.jsarray import JSArray
 from v8serialize.jstypes.jsarrayproperties import JSHoleEnum, JSHoleType
 from v8serialize.jstypes.jsundefined import JSUndefinedEnum, JSUndefinedType
 from v8serialize.references import SerializedId, SerializedObjectLog
@@ -324,6 +325,62 @@ class WritableTagStream:
         self.write_varint(count)
 
     @overload
+    def write_js_array_dense(
+        self,
+        array: Sequence[object],
+        ctx: EncodeContext,
+        *,
+        properties: Iterable[tuple[Any, Any]],
+        identity: object,
+    ) -> None: ...
+
+    @overload
+    def write_js_array_dense(
+        self,
+        array: Sequence[object],
+        ctx: EncodeContext,
+        *,
+        properties: None = ...,
+        identity: object | None = ...,
+    ) -> None: ...
+
+    def write_js_array_dense(
+        self,
+        array: Sequence[object],
+        ctx: EncodeContext,
+        *,
+        properties: Iterable[tuple[Any, Any]] | None = None,
+        identity: object | None = None,
+    ) -> None:
+        if identity is None:
+            if properties is not None:
+                raise ValueError(
+                    "identity is ambiguous: identity must be set when both "
+                    "array and properties are provided"
+                )
+            identity = array
+        self.objects.record_reference(identity)
+        self.write_tag(SerializationTag.kBeginDenseJSArray)
+        array_length = len(array)
+        self.write_varint(array_length)
+        array_el_count = 0
+
+        for el in array:
+            self.write_object(el, ctx)
+            array_el_count += 1
+        assert array_el_count == array_length
+
+        properties_count = 0
+        for key, value in [] if properties is None else properties:
+            with self.constrain_tags(JS_OBJECT_KEY_TAGS):
+                self.write_object(key, ctx=ctx)
+            self.write_object(value, ctx=ctx)
+            properties_count += 1
+        self.write_tag(SerializationTag.kEndDenseJSArray)
+        self.write_varint(properties_count)
+        self.write_varint(array_el_count)
+
+    @overload
     def write_object_reference(
         self, *, obj: object, serialized_id: None = None
     ) -> None: ...
@@ -513,6 +570,24 @@ class ObjectMapper(ObjectMapperObject):
         next: SerializeNextFn,
     ) -> None:
         ctx.stream.write_js_object(value.items(), ctx=ctx, identity=value)
+
+    @serialize.register(JSArray)
+    def serialize_js_array(
+        self,
+        value: JSArray[object],
+        /,
+        ctx: EncodeContext,
+        next: SerializeNextFn,
+    ) -> None:
+        # TODO check array length and used elements to decide whether to
+        # serialize dense or sparse.
+        ctx.stream.write_js_array_dense(
+            # FIXME: ArrayProperties is not recognised as a Sequence
+            cast(Sequence[object], value.array),
+            ctx=ctx,
+            properties=value.properties.items(),
+            identity=value,
+        )
 
     @serialize.register(abc.Mapping)
     def serialize_mapping(
