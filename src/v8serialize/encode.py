@@ -26,6 +26,7 @@ from v8serialize.constants import (
 )
 from v8serialize.decorators import singledispatchmethod
 from v8serialize.errors import V8CodecError
+from v8serialize.jstypes import JSObject
 from v8serialize.references import SerializedId, SerializedObjectLog
 
 
@@ -448,6 +449,16 @@ class ObjectMapper(ObjectMapperObject):
         self, value: float, /, ctx: EncodeContext, next: SerializeNextFn
     ) -> None:
         ctx.stream.write_double(value)
+
+    @serialize.register(JSObject)
+    def serialize_js_object(
+        self,
+        value: JSObject[object],
+        /,
+        ctx: EncodeContext,
+        next: SerializeNextFn,
+    ) -> None:
+        ctx.stream.write_js_object(value.items(), ctx=ctx, identity=value)
 
     @serialize.register(abc.Mapping)
     def serialize_mapping(

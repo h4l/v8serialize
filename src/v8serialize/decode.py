@@ -9,7 +9,6 @@ from typing import (
     AbstractSet,
     ByteString,
     Callable,
-    Final,
     Generator,
     Iterable,
     Mapping,
@@ -260,7 +259,7 @@ class ReadableTagStream:
 
     def read_js_object(
         self, tag_mapper: TagMapper, *, identity: object
-    ) -> Generator[tuple[int | str, object], None, int]:
+    ) -> Generator[tuple[int | float | str, object], None, int]:
         self.read_tag(SerializationTag.kBeginJSObject)
         self.objects.record_reference(identity)
         actual_count = 0
@@ -269,10 +268,10 @@ class ReadableTagStream:
             tag = self.read_tag(consume=False)
             if tag in JS_OBJECT_KEY_TAGS:
                 key = self.read_object(tag_mapper)
-                if not isinstance(key, (int, str)):
+                if not isinstance(key, (int, float, str)):
                     # TODO: more specific error
                     raise TypeError(
-                        f"JSObject key must deserialize to str or int: {key}"
+                        f"JSObject key must deserialize to str, int or float: {key}"
                     )
                 yield key, self.read_object(tag_mapper)
                 actual_count += 1  # 1 per entry, unlike JSMap
@@ -407,6 +406,7 @@ class TagMapper:
             SerializationTag.kBeginJSMap: TagMapper.deserialize_jsmap,
             SerializationTag.kBeginJSSet: TagMapper.deserialize_jsset,
             SerializationTag.kObjectReference: TagMapper.deserialize_object_reference,
+            SerializationTag.kBeginJSObject: TagMapper.deserialize_js_object,
         }
 
         return {**primitive_tag_readers, **default_tag_readers, **(tag_readers or {})}
@@ -443,7 +443,19 @@ class TagMapper:
     ) -> JSObject[object]:
         assert tag == SerializationTag.kBeginJSObject
         obj = self.js_object_type()
-        obj.update(stream.read_js_object(self, identity=obj))
+        obj.update(
+            (
+                # TODO: should we handle floats in JSObject? I think that'd be
+                #   cleaner than forcing them to be strings here.
+                #
+                # Serialized data can encode float values as keys, but floats
+                # are not valid in user-facing JavaScript object keys. V8
+                # converts float keys to strings when deserializing and
+                # re-serializing data with float keys.
+                (str(k) if isinstance(k, float) else k, v)
+                for k, v in stream.read_js_object(self, identity=obj)
+            )
+        )
         return obj
 
     def deserialize_object_reference(
