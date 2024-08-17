@@ -19,3 +19,19 @@ class V8CodecError(BaseException):
         values_fmt = ", ".join(f"{f}={v!r}" for (f, v) in field_values.items())
 
         return f"{message}{": " if values_fmt else ""}{values_fmt}"
+
+
+@dataclass(slots=True, init=False)
+class NormalizedKeyError(KeyError):
+    """A key was not found, but the searched-for key was a normalized version of
+    the provided key."""
+
+    normalized_key: object
+    raw_key: object
+
+    def __init__(self, normalized_key: object, raw_key: object) -> None:
+        self.normalized_key = normalized_key
+        self.raw_key = raw_key
+        super(NormalizedKeyError, self).__init__(
+            f"{self.normalized_key!r} (normalized from {self.raw_key!r})"
+        )

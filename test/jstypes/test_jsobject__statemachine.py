@@ -10,6 +10,7 @@ from hypothesis.stateful import (
     rule,
 )
 
+from v8serialize.errors import NormalizedKeyError
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
 from v8serialize.jstypes.jsarrayproperties import (
     MAX_ARRAY_LENGTH,
@@ -139,10 +140,10 @@ class JSObjectComparisonMachine(RuleBasedStateMachine):
 
         assert index not in self.reference_array
 
-        with pytest.raises(KeyError) as exc_info:
+        with pytest.raises(NormalizedKeyError) as exc_info:
             self.actual[key]
 
-        assert exc_info.value.args[0] == key
+        assert exc_info.value.raw_key == key
 
     @rule(index=st.runner().flatmap(get_existant_array_indexes), via_str=st.booleans())
     @precondition(array_not_empty)
@@ -171,10 +172,10 @@ class JSObjectComparisonMachine(RuleBasedStateMachine):
     def getitem_properties_non_existant(self, name: str) -> None:
         assert name not in self.reference_properties
 
-        with pytest.raises(KeyError) as exc_info:
+        with pytest.raises(NormalizedKeyError) as exc_info:
             self.actual[name]
 
-        assert exc_info.value.args[0] == name
+        assert exc_info.value.raw_key == name
 
         # Verify that names that are also ints are treated as name properties
         try:
@@ -182,10 +183,10 @@ class JSObjectComparisonMachine(RuleBasedStateMachine):
         except ValueError:
             return
 
-        with pytest.raises(KeyError) as exc_info:
+        with pytest.raises(NormalizedKeyError) as exc_info:
             self.actual[index]
 
-        assert exc_info.value.args[0] == index
+        assert exc_info.value.raw_key == index
 
     ###################
     # Rule: __setitem__
@@ -231,10 +232,10 @@ class JSObjectComparisonMachine(RuleBasedStateMachine):
 
         assert index not in self.reference_array
 
-        with pytest.raises(KeyError) as exc_info:
+        with pytest.raises(NormalizedKeyError) as exc_info:
             del self.actual[key]
 
-        assert exc_info.value.args[0] == key
+        assert exc_info.value.raw_key == key
 
     @rule(index=st.runner().flatmap(get_existant_array_indexes), via_str=st.booleans())
     @precondition(array_not_empty)
@@ -258,10 +259,10 @@ class JSObjectComparisonMachine(RuleBasedStateMachine):
     def delitem_properties_non_existant(self, name: str) -> None:
         assert name not in self.reference_properties
 
-        with pytest.raises(KeyError) as exc_info:
+        with pytest.raises(NormalizedKeyError) as exc_info:
             del self.actual[name]
 
-        assert exc_info.value.args[0] == name
+        assert exc_info.value.raw_key == name
 
     ############
     # Invariants

@@ -14,6 +14,7 @@ from typing import (
     overload,
 )
 
+from v8serialize.errors import NormalizedKeyError
 from v8serialize.jstypes import _repr
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
 from v8serialize.jstypes.jsarrayproperties import (
@@ -98,7 +99,7 @@ https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
             properties = self._properties
             if k in properties:
                 return properties[k]
-            raise KeyError(key)  # preserve the non-normalised key
+            raise NormalizedKeyError(k, raw_key=key)
         else:
             assert isinstance(k, int)
             array_properties = self.array
@@ -106,7 +107,7 @@ https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
                 value = array_properties[k]
                 if value is not JSHole:
                     return value
-            raise KeyError(key)  # preserve the non-normalised key
+            raise NormalizedKeyError(k, raw_key=key)
 
     def __setitem__(self, key: str | int, value: T, /) -> None:
         k = normalise_property_key(key)
@@ -147,7 +148,7 @@ https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
             if k in self._properties:
                 del self._properties[k]
                 return
-            raise KeyError(key)  # preserve the non-normalised key
+            raise NormalizedKeyError(k, raw_key=key)
         else:
             assert isinstance(k, int)
             array = self.array
@@ -159,7 +160,7 @@ https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
                 if self.array[k] is not JSHole:
                     self.array[k] = JSHole
                     return
-            raise KeyError(key)  # preserve the non-normalised key
+            raise NormalizedKeyError(k, raw_key=key)
 
     def __len__(self) -> int:
         return self.array.elements_used + len(self._properties)

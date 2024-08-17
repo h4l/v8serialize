@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from v8serialize.errors import V8CodecError
+from v8serialize.errors import NormalizedKeyError, V8CodecError
 
 
 @dataclass(init=False)
@@ -23,3 +23,13 @@ def test_v8codecerror_str_with_fields() -> None:
 
 def test_v8codecerror_str_without_fields() -> None:
     assert str(V8CodecError("Something went wrong")) == "Something went wrong"
+
+
+def test_NormalizedKeyError() -> None:
+    nke = NormalizedKeyError(0, "0")
+
+    assert nke.normalized_key == 0
+    assert nke.raw_key == "0"
+    assert repr(nke) == "NormalizedKeyError(normalized_key=0, raw_key='0')"
+    # str being the repr of a str is kind of weird, but this is what all errors do
+    assert str(nke) == repr("0 (normalized from '0')")
