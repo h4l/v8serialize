@@ -20,6 +20,7 @@ isort = "^5.13.2"
 mypy = "^1.11.1"
 flake8-bugbear = "^24.4.26"
 frozendict = "^2.4.4"
+pytest-cov = "^5.0.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -40,3 +41,6 @@ extra_standard_library = ["typing_extensions"]
 
 [tool.mypy]
 strict = true
+
+[tool.coverage.report]
+exclude_also = ["if TYPE_CHECKING:"]

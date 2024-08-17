@@ -6,3 +6,4 @@
 !.git*
 !.prettierrc
 __pycache__
+/htmlcov

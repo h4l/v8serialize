@@ -25,6 +25,10 @@ test:
 > pytest
 .PHONY: test
 
+test-cov:
+> pytest --cov=v8serialize --cov-report=html
+.PHONY: test
+
 out/:
 > mkdir out
 
