@@ -20,6 +20,7 @@ from typing import (
 )
 
 from v8serialize.constants import (
+    FLOAT64_SAFE_INT_RANGE,
     INT32_RANGE,
     JS_CONSTANT_TAGS,
     JS_OBJECT_KEY_TAGS,
@@ -165,7 +166,7 @@ class WritableTagStream:
 
     def write_double(
         self,
-        value: float,
+        value: float | int,
         *,
         tag: Literal[SerializationTag.kDouble] | None = SerializationTag.kDouble,
     ) -> None:
@@ -456,6 +457,8 @@ class ObjectMapper(ObjectMapperObject):
             ctx.stream.write_uint32(value)
         elif value in INT32_RANGE:
             ctx.stream.write_int32(value)
+        elif value in FLOAT64_SAFE_INT_RANGE:
+            ctx.stream.write_double(value)
         else:
             # Can't use bigints for object keys, so write large ints as strings
             if ctx.stream.allowed_tags is JS_OBJECT_KEY_TAGS:

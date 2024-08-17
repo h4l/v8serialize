@@ -8,6 +8,12 @@ kLatestVersion: Final = 15
 INT32_RANGE: Final = range(-(2**31), 2**31)
 UINT32_RANGE: Final = range(0, 2**32)
 # The range of MAX_SAFE_INTEGER
+FLOAT64_SAFE_INT_RANGE: Final = range(-(2**53 - 1), 2**53)
+"""The range of integers which a JavaScript number (64-bit float) can represent
+without loss.
+
+Same as Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER JavaScript constants.
+"""
 
 
 class SerializationTag(IntEnum):
