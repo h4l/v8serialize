@@ -19,12 +19,17 @@ def canonical_numeric_index_string(value: str) -> int | None:
     return None
 
 
-def normalise_property_key(key: str | int) -> str | int:
+def normalise_property_key(key: str | int | float) -> str | int:
     """Get the canonical representation of a JavaScript property key as int or str.
 
     A key is an int if the str value is the base10 representation of the same
     integer and falls in the inclusive range 0..2**32-2 (which is the max
     JavaScript array index).
+
+    We support floats as input as well as ints, because V8-serialized JSObject
+    data can store keys as floating point values. Handling these in the same way
+    as JavaScript requires some care, so by doing it here we can remove the need
+    for users or other parts of the API to know about the differences.
 
     >>> normalise_property_key('3')
     3
@@ -32,6 +37,16 @@ def normalise_property_key(key: str | int) -> str | int:
     'A'
     >>> normalise_property_key('-3')
     '-3'
+    >>> normalise_property_key(1.0)
+    1
+    >>> normalise_property_key("-0")
+    '-0'
+    >>> normalise_property_key(-0.0)
+    0
+    >>> normalise_property_key(-1.0)
+    '-1'
+    >>> normalise_property_key(-1.5)
+    '-1.5'
 
     This reflects the behaviour defined in: https://tc39.es/ecma262/#integer-index
     """
@@ -41,6 +56,10 @@ def normalise_property_key(key: str | int) -> str | int:
             return key
         key = int_value
 
-    if 0 <= key < MAX_ARRAY_LENGTH:
-        return key
+    if key.is_integer():
+        if 0 <= key < MAX_ARRAY_LENGTH:
+            return int(key)
+        # Format out-of-range integer floats without decimal point, as JS does
+        # not use them for integer numbers.
+        key = int(key)
     return str(key)
