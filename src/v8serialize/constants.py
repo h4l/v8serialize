@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import AbstractSet, Final
+from typing import AbstractSet, Final, Literal
 
 kLatestVersion: Final = 15
 """The current supported serialization format implemented here."""
@@ -181,3 +181,24 @@ JS_OBJECT_KEY_TAGS: Final = TagConstraint(
 
 Numbers (except bigint) and strings.
 """
+
+ConstantTags = Literal[
+    SerializationTag.kTheHole,
+    SerializationTag.kUndefined,
+    SerializationTag.kNull,
+    SerializationTag.kTrue,
+    SerializationTag.kFalse,
+]
+
+JS_CONSTANT_TAGS: Final = TagConstraint(
+    name="JavaScript Constants",
+    allowed_tags=frozenset(
+        {
+            SerializationTag.kTheHole,
+            SerializationTag.kUndefined,
+            SerializationTag.kNull,
+            SerializationTag.kTrue,
+            SerializationTag.kFalse,
+        }
+    ),
+)

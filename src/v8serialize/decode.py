@@ -21,12 +21,14 @@ from typing import (
 
 from v8serialize.constants import (
     INT32_RANGE,
+    JS_CONSTANT_TAGS,
     JS_OBJECT_KEY_TAGS,
+    ConstantTags,
     SerializationTag,
     kLatestVersion,
 )
 from v8serialize.errors import V8CodecError
-from v8serialize.jstypes import JSObject
+from v8serialize.jstypes import JSHole, JSObject, JSUndefined
 from v8serialize.references import SerializedId, SerializedObjectLog
 
 if TYPE_CHECKING:
@@ -160,6 +162,16 @@ class ReadableTagStream:
         if version > kLatestVersion:
             self.throw(f"Unsupported version {version}")
         return version
+
+    def read_constant(self, expected: ConstantTags | None = None) -> ConstantTags:
+        tag = self.read_tag(expected)
+        if expected is None and tag not in JS_CONSTANT_TAGS.allowed_tags:
+            self.throw(
+                f"Expected a constant tag from "
+                f"{", ".join(t.name for t in JS_CONSTANT_TAGS.allowed_tags)} "
+                f"but found {tag.name}"
+            )
+        return cast(ConstantTags, tag)
 
     def read_double(self) -> float:
         self.read_tag(tag=SerializationTag.kDouble)
@@ -361,6 +373,7 @@ class TagMapper:
     jsmap_type: JSMapType
     jsset_type: JSSetType
     js_object_type: JSObjectType
+    js_constants: Mapping[ConstantTags, object]
 
     def __init__(
         self,
@@ -373,11 +386,20 @@ class TagMapper:
         jsmap_type: JSMapType | None = None,
         jsset_type: JSSetType | None = None,
         js_object_type: JSObjectType | None = None,
+        js_constants: Mapping[ConstantTags, object] | None = None,
     ) -> None:
         self.default_tag_mapper = default_tag_mapper
         self.jsmap_type = jsmap_type or dict
         self.jsset_type = jsset_type or set
         self.js_object_type = js_object_type or JSObject
+
+        _js_constants = dict(js_constants) if js_constants is not None else {}
+        _js_constants.setdefault(SerializationTag.kTheHole, JSHole)
+        _js_constants.setdefault(SerializationTag.kUndefined, JSUndefined)
+        _js_constants.setdefault(SerializationTag.kNull, None)
+        _js_constants.setdefault(SerializationTag.kTrue, True)
+        _js_constants.setdefault(SerializationTag.kFalse, False)
+        self.js_constants = _js_constants
 
         if tag_readers is not None:
             tag_readers = dict(tag_readers)
@@ -403,6 +425,11 @@ class TagMapper:
         #       with @singledispatchmethod? (Can't use that directly a it
         #       doesn't dispatch on values or Literal annotations.)
         default_tag_readers: dict[SerializationTag, TagReader] = {
+            SerializationTag.kTheHole: TagMapper.deserialize_constant,
+            SerializationTag.kUndefined: TagMapper.deserialize_constant,
+            SerializationTag.kNull: TagMapper.deserialize_constant,
+            SerializationTag.kTrue: TagMapper.deserialize_constant,
+            SerializationTag.kFalse: TagMapper.deserialize_constant,
             SerializationTag.kBeginJSMap: TagMapper.deserialize_jsmap,
             SerializationTag.kBeginJSSet: TagMapper.deserialize_jsset,
             SerializationTag.kObjectReference: TagMapper.deserialize_object_reference,
@@ -417,6 +444,11 @@ class TagMapper:
             # FIXME: more specific error
             stream.throw(f"No reader is implemented for tag {tag.name}")
         return read_tag(self, tag, stream)
+
+    def deserialize_constant(
+        self, tag: SerializationTag, stream: ReadableTagStream
+    ) -> object:
+        return self.js_constants[stream.read_constant(cast(ConstantTags, tag))]
 
     def deserialize_jsmap(
         self, tag: SerializationTag, stream: ReadableTagStream

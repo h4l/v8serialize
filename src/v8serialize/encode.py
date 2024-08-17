@@ -5,21 +5,25 @@ from collections import abc
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from functools import partial
-from types import TracebackType
+from types import NoneType, TracebackType
 from typing import (
     AbstractSet,
+    Any,
     Iterable,
     Literal,
     Mapping,
     Never,
     Protocol,
     Sequence,
+    cast,
     overload,
 )
 
 from v8serialize.constants import (
     INT32_RANGE,
+    JS_CONSTANT_TAGS,
     JS_OBJECT_KEY_TAGS,
+    ConstantTags,
     SerializationTag,
     TagConstraint,
     kLatestVersion,
@@ -27,6 +31,8 @@ from v8serialize.constants import (
 from v8serialize.decorators import singledispatchmethod
 from v8serialize.errors import V8CodecError
 from v8serialize.jstypes import JSObject
+from v8serialize.jstypes.jsarrayproperties import JSHoleEnum, JSHoleType
+from v8serialize.jstypes.jsundefined import JSUndefinedEnum, JSUndefinedType
 from v8serialize.references import SerializedId, SerializedObjectLog
 
 
@@ -146,6 +152,10 @@ class WritableTagStream:
 
     def write_zigzag(self, n: int) -> None:
         self.write_varint(_encode_zigzag(n))
+
+    def write_constant(self, constant: ConstantTags) -> None:
+        with self.constrain_tags(JS_CONSTANT_TAGS):
+            self.write_tag(constant)
 
     def write_header(self) -> None:
         """Write the V8 serialization stream header."""
@@ -437,6 +447,32 @@ class ObjectMapper(ObjectMapperObject):
                 ctx.stream.write_object(str(value), ctx=ctx)
             else:
                 ctx.stream.write_bigint(value)
+
+    @serialize.register(JSHoleEnum)
+    def serialize_hole(
+        self, value: JSHoleType, /, ctx: EncodeContext, next: SerializeNextFn
+    ) -> None:
+        ctx.stream.write_constant(SerializationTag.kTheHole)
+
+    @serialize.register(JSUndefinedEnum)
+    def serialize_undefined(
+        self, value: JSUndefinedType, /, ctx: EncodeContext, next: SerializeNextFn
+    ) -> None:
+        ctx.stream.write_constant(SerializationTag.kUndefined)
+
+    @serialize.register(bool)
+    def serialize_bool(
+        self, value: bool, /, ctx: EncodeContext, next: SerializeNextFn
+    ) -> None:
+        ctx.stream.write_constant(
+            SerializationTag.kTrue if value else SerializationTag.kFalse
+        )
+
+    @serialize.register(cast(Any, NoneType))  # None confuses the register() type
+    def serialize_none(
+        self, value: None, /, ctx: EncodeContext, next: SerializeNextFn
+    ) -> None:
+        ctx.stream.write_constant(SerializationTag.kNull)
 
     @serialize.register(str)
     def serialize_str(

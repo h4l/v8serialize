@@ -5,7 +5,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from v8serialize.constants import SerializationTag
+from v8serialize.constants import JS_CONSTANT_TAGS, ConstantTags, SerializationTag
 from v8serialize.decode import ReadableTagStream, TagMapper
 from v8serialize.encode import (
     DefaultEncodeContext,
@@ -13,7 +13,7 @@ from v8serialize.encode import (
     WritableTagStream,
     serialize_object_references,
 )
-from v8serialize.jstypes import JSObject
+from v8serialize.jstypes import JSObject, JSUndefined
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
 
 T = TypeVar("T")
@@ -65,6 +65,10 @@ any_atomic = st.one_of(
     # test_codec_rt_double.
     st.floats(allow_nan=False),
     st.text(),
+    st.just(JSUndefined),
+    st.just(None),
+    st.just(True),
+    st.just(False),
 )
 
 
@@ -165,6 +169,16 @@ def test_codec_rt_int32(value: int) -> None:
     wts.write_int32(value)
     rts = ReadableTagStream(wts.data)
     result = rts.read_int32()
+    assert value == result
+    assert rts.eof
+
+
+@given(st.sampled_from(sorted(JS_CONSTANT_TAGS.allowed_tags)))
+def test_codec_rt_constants(value: ConstantTags) -> None:
+    wts = WritableTagStream()
+    wts.write_constant(value)
+    rts = ReadableTagStream(wts.data)
+    result = rts.read_constant(value)
     assert value == result
     assert rts.eof
 
