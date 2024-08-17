@@ -23,6 +23,7 @@ from v8serialize.constants import (
     INT32_RANGE,
     JS_CONSTANT_TAGS,
     JS_OBJECT_KEY_TAGS,
+    UINT32_RANGE,
     ConstantTags,
     SerializationTag,
     TagConstraint,
@@ -258,6 +259,18 @@ class WritableTagStream:
         self.write_tag(tag)
         self.write_zigzag(value)
 
+    def write_uint32(
+        self,
+        value: int,
+    ) -> None:
+        if value not in UINT32_RANGE:
+            raise ValueError(
+                f"Python int is too large to represent as Uint32: value must be "
+                f"in {UINT32_RANGE}"
+            )
+        self.write_tag(SerializationTag.kUint32)
+        self.write_varint(value)
+
     def write_jsmap(
         self,
         items: Iterable[tuple[object, object]],
@@ -439,7 +452,9 @@ class ObjectMapper(ObjectMapperObject):
     def serialize_int(
         self, value: int, /, ctx: EncodeContext, next: SerializeNextFn
     ) -> None:
-        if value in INT32_RANGE:
+        if value in UINT32_RANGE:
+            ctx.stream.write_uint32(value)
+        elif value in INT32_RANGE:
             ctx.stream.write_int32(value)
         else:
             # Can't use bigints for object keys, so write large ints as strings

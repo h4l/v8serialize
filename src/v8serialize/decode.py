@@ -23,6 +23,7 @@ from v8serialize.constants import (
     INT32_RANGE,
     JS_CONSTANT_TAGS,
     JS_OBJECT_KEY_TAGS,
+    UINT32_RANGE,
     ConstantTags,
     SerializationTag,
     kLatestVersion,
@@ -229,6 +230,13 @@ class ReadableTagStream:
             return value
         self.throw(f"Serialized value is out of {INT32_RANGE} for Int32: {value}")
 
+    def read_uint32(self) -> int:
+        self.read_tag(tag=SerializationTag.kUint32)
+        value = self.read_varint()
+        if value in UINT32_RANGE:
+            return value
+        self.throw(f"Serialized value is out of {UINT32_RANGE} for UInt32: {value}")
+
     def read_jsmap(
         self, tag_mapper: TagMapper, *, identity: object
     ) -> Generator[tuple[object, object], None, int]:
@@ -418,6 +426,7 @@ class TagMapper:
             (SerializationTag.kUtf8String, ReadableTagStream.read_string_utf8),
             (SerializationTag.kBigInt, ReadableTagStream.read_bigint),
             (SerializationTag.kInt32, ReadableTagStream.read_int32),
+            (SerializationTag.kUint32, ReadableTagStream.read_uint32),
         ]
         primitive_tag_readers = {t: read_stream(read_fn) for (t, read_fn) in primitives}
 

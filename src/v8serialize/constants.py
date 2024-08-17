@@ -6,6 +6,8 @@ kLatestVersion: Final = 15
 """The current supported serialization format implemented here."""
 
 INT32_RANGE: Final = range(-(2**31), 2**31)
+UINT32_RANGE: Final = range(0, 2**32)
+# The range of MAX_SAFE_INTEGER
 
 
 class SerializationTag(IntEnum):

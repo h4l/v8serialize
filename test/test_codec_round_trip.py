@@ -173,6 +173,16 @@ def test_codec_rt_int32(value: int) -> None:
     assert rts.eof
 
 
+@given(st.integers(min_value=0, max_value=2**32 - 1))
+def test_codec_rt_uint32(value: int) -> None:
+    wts = WritableTagStream()
+    wts.write_uint32(value)
+    rts = ReadableTagStream(wts.data)
+    result = rts.read_uint32()
+    assert value == result
+    assert rts.eof
+
+
 @given(st.sampled_from(sorted(JS_CONSTANT_TAGS.allowed_tags)))
 def test_codec_rt_constants(value: ConstantTags) -> None:
     wts = WritableTagStream()
