@@ -31,14 +31,8 @@ from v8serialize.typing import ElementsView, Order
 T = TypeVar("T")
 
 
-# The ignore[misc] here is for the same reason as for AbstractArrayProperties in
-# jsarrayproperties.py.
-
-
 @ArrayProperties.register
-class SimpleArrayProperties(  # type: ignore[misc]
-    list[T | JSHoleType], ArrayProperties[T]
-):
+class SimpleArrayProperties(list[T | JSHoleType], ArrayProperties[T]):
     """Very simple but inefficient implementation of ArrayProperties to compare
     against real implementations.
     """

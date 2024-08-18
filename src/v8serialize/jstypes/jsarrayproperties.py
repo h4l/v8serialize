@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import ABCMeta
 from bisect import bisect_left
 from dataclasses import dataclass, field
 from enum import Enum
@@ -16,6 +15,7 @@ from typing import (
     Literal,
     Mapping,
     MutableSequence,
+    Protocol,
     Self,
     Sequence,
     Sized,
@@ -24,6 +24,7 @@ from typing import (
     TypeVar,
     cast,
     overload,
+    runtime_checkable,
 )
 
 from v8serialize.typing import ElementsView, Order, SparseMutableSequence
@@ -67,32 +68,22 @@ JSHole: Final = JSHoleEnum.JSHole
 """Explicit representation of the empty elements in JavaScript arrays."""
 
 
-class ArrayProperties(SparseMutableSequence[T, JSHoleType], metaclass=ABCMeta):
-    pass
+if TYPE_CHECKING:
+
+    class ArrayProperties(SparseMutableSequence[T, JSHoleType]):
+        pass
+
+else:
+
+    @runtime_checkable
+    class ArrayProperties(SparseMutableSequence[T, JSHoleType], Protocol):
+        pass
+
+    SparseMutableSequence.register(ArrayProperties)
 
 
-# The ignore[misc] on AbstractArrayProperties ignores this MyPy error:
-#
-#   > Definition of "__getitem__" in base class "Sequence" is incompatible with
-#   > definition in base class "MutableSequenceProtocol"
-#
-#  This is because __getitem__(slice) on Sequence returns a Sequence, whereas
-# __getitem__(slice) on MutableSequence returns a MutableSequence. This error
-# also occurred in v8serialize.jstypes when I copied in the Sequence and
-# MutableSequence protocols verbatim from typeshed, so I assume there must be
-# some special casing going on somewhere to suppress this error. In practice
-# it's not a problem. Also in v8serialize.jstypes we type __getitem__ to return
-# Self, which satisfies MyPy when combining our own copies of Sequence and
-# MutableSequence, but here we're using the default types from
-# collections.abc/typing.
-
-
-@ArrayProperties.register
 @dataclass(slots=True)
-class AbstractArrayProperties(  # type: ignore[misc]
-    MutableSequence[T | JSHoleType],
-    ArrayProperties[T],
-):
+class AbstractArrayProperties(ArrayProperties[T], MutableSequence[T | JSHoleType]):
     hole_value: ClassVar[JSHoleType] = JSHole
 
     def __eq__(self, other: object) -> bool:
@@ -658,7 +649,7 @@ class SparseArrayProperties(AbstractArrayProperties[T]):
 
 
 @dataclass(slots=True, init=False)
-class ArrayPropertiesElementsView(Mapping[int, T], ElementsView[T]):
+class ArrayPropertiesElementsView(ElementsView[T], Mapping[int, T]):
     _array_properties: ArrayProperties[T]
     order: Order
 

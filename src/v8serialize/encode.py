@@ -582,11 +582,7 @@ class ObjectMapper(ObjectMapperObject):
         # TODO check array length and used elements to decide whether to
         # serialize dense or sparse.
         ctx.stream.write_js_array_dense(
-            # FIXME: ArrayProperties is not recognised as a Sequence
-            cast(Sequence[object], value.array),
-            ctx=ctx,
-            properties=value.properties.items(),
-            identity=value,
+            value.array, ctx=ctx, properties=value.properties.items(), identity=value
         )
 
     @serialize.register(abc.Mapping)

@@ -1,3 +1,5 @@
+"""This is a simplified demo of the protocols defined in v8serialize.typing."""
+
 from typing import (
     TYPE_CHECKING,
     Protocol,

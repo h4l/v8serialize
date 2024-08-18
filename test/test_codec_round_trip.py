@@ -1,5 +1,5 @@
 import math
-from typing import Optional, Sequence, TypeVar, cast
+from typing import Optional, TypeVar
 
 import pytest
 from hypothesis import given
@@ -338,10 +338,7 @@ def test_codec_rt_js_array_dense(
 ) -> None:
     encode_ctx = DefaultEncodeContext([ObjectMapper()])
     encode_ctx.stream.write_js_array_dense(
-        cast(Sequence[object], value.array),
-        ctx=encode_ctx,
-        properties=value.properties.items(),
-        identity=value,
+        value.array, ctx=encode_ctx, properties=value.properties.items(), identity=value
     )
     rts = ReadableTagStream(encode_ctx.stream.data)
     assert rts.read_tag(consume=False) == SerializationTag.kBeginDenseJSArray

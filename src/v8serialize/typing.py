@@ -2,155 +2,129 @@ from __future__ import annotations
 
 from enum import Enum, auto
 from typing import (
-    Any,
-    Collection,
-    ItemsView,
-    Iterable,
+    TYPE_CHECKING,
+    Generic,
     Iterator,
-    KeysView,
+    Mapping,
+    MutableSequence,
     Protocol,
-    Self,
+    Sequence,
     TypeVar,
-    ValuesView,
-    overload,
+    runtime_checkable,
 )
 
-_T = TypeVar("_T")
-_KT = TypeVar("_KT")
 _T_co = TypeVar("_T_co", covariant=True)
 _VT_co = TypeVar("_VT_co", covariant=True)
 _HoleT_co = TypeVar("_HoleT_co", covariant=True)
 
-# These definitions are based on:
-# https://github.com/python/typeshed/blob/8a7f09e3511f3a1d0428/stdlib/typing.pyi
+if not TYPE_CHECKING:
+    # The runtime Protocol classes need to use the right number of type args,
+    # but they're not type checked so their names don't matter.
+    _Dummy = TypeVar("_Dummy")
+    _Dummy2 = TypeVar("_Dummy2")
 
 
-# Same as typing.Reversible — if we use that directly it results in an error at
-# runtime: TypeError: Cannot create a consistent method resolution
-class Reversible(Iterable[_T_co], Protocol[_T_co]):
-    def __reversed__(self) -> Iterator[_T_co]: ...
+# The type definitions here all have TYPE_CHECKING and runtime versions. This is
+# because of the fact that Sequence and MutableSequence are ABC classes, and
+# it's not allowed to have a derived class inherit both an ABC and Protocol.
+# We need to define our own specialised extension protocols of Sequence and
+# MutableSequence, and we want other classes to be able to extend our protocols
+# without also inheriting the ABC implementations of Sequence. e.g. so that you
+# can extend the list class plus our protocol and manually add our methods,
+# while using list's Sequence implementation.
 
+# The general rule here is that the TYPE_CHECKING version should inherit the
+# actual typing.XXX type we want, e.g. Mapping. The runtime version should only
+# inherit Protocol, plus perhaps any of our similarly-defined protocols it
+# needs.
+#
+# The runtime version needs to use @runtime_checkable plus stub method
+# definitions, so that isinstance checks know which callable properties to look
+# for. Also use typing.XXX.register() on the runtime version so that it becomes
+# a virtual subclass of the intended type, so that
+# isinstance(typing.XXX, runtime_instance) works at runtime.
 
-class SequenceProtocol(
-    Collection[_T_co],
-    Reversible[_T_co],
-    Protocol,
-):
-    """The same interface as typing.Sequence, but actually a Protocol, not an ABC."""
+if TYPE_CHECKING:
 
-    @overload
-    def __getitem__(self, index: int, /) -> _T_co: ...
-
-    @overload
-    def __getitem__(self, index: slice, /) -> Self: ...
-
-    # Mixin methods
-    def index(self, value: Any, start: int = 0, stop: int = ...) -> int: ...
-    def count(self, value: Any) -> int: ...
-    def __contains__(self, value: object) -> bool: ...
-    def __iter__(self) -> Iterator[_T_co]: ...
-    def __reversed__(self) -> Iterator[_T_co]: ...
-
-
-class MutableSequenceProtocol(SequenceProtocol[_T], Protocol):
-    """Same interface as typing.MutableSequence, but actually a Protocol, not an ABC."""
-
-    def insert(self, index: int, value: _T) -> None: ...
-
-    @overload
-    def __getitem__(self, index: int) -> _T: ...
-    @overload
-    def __getitem__(self, index: slice) -> Self: ...
-
-    @overload
-    def __setitem__(self, index: int, value: _T) -> None: ...
-    @overload
-    def __setitem__(self, index: slice, value: Iterable[_T]) -> None: ...
-
-    @overload
-    def __delitem__(self, index: int) -> None: ...
-    @overload
-    def __delitem__(self, index: slice) -> None: ...
-
-    # Mixin methods
-    def append(self, value: _T) -> None: ...
-    def clear(self) -> None: ...
-    def extend(self, values: Iterable[_T]) -> None: ...
-    def reverse(self) -> None: ...
-    def pop(self, index: int = -1) -> _T: ...
-    def remove(self, value: _T) -> None: ...
-    def __iadd__(self, values: Iterable[_T]) -> Self: ...
-
-
-class MappingProtocol(Collection[_KT], Protocol[_KT, _VT_co]):
-    # TODO: We wish the key type could also be covariant, but that doesn't work,
-    # see discussion in https://github.com/python/typing/pull/273.
-    def __getitem__(self, key: _KT, /) -> _VT_co: ...
-
-    # Mixin methods
-    @overload
-    def get(self, key: _KT, /) -> _VT_co | None: ...
-    @overload
-    def get(self, key: _KT, /, default: _VT_co | _T) -> _VT_co | _T: ...
-    def items(self) -> ItemsView[_KT, _VT_co]: ...
-    def keys(self) -> KeysView[_KT]: ...
-    def values(self) -> ValuesView[_VT_co]: ...
-    def __contains__(self, key: object, /) -> bool: ...
-    def __eq__(self, other: object, /) -> bool: ...
-
-
-class ElementsView(MappingProtocol[int, _VT_co], Protocol):
-    """
-    A read-only live view of the index elements in a SparseSequence with
-    existant values.
-    """
-
-    @property
-    def order(self) -> Order:
-        """The iteration order of the elements.
-
-        Corresponds to the `order` kwarg of `SparseSequence`'s `elements()` and
-        `element_indexes()`.
+    class ElementsView(Mapping[int, _VT_co]):
+        """
+        A read-only live view of the index elements in a SparseSequence with
+        existant values.
         """
 
+        @property
+        def order(self) -> Order:
+            """The iteration order of the elements.
 
-class SparseSequence(SequenceProtocol[_T_co | _HoleT_co], Protocol):
-    """A Sequence that can have holes — indexes with no value present.
+            Corresponds to the `order` kwarg of `SparseSequence`'s `elements()` and
+            `element_indexes()`.
+            """
 
-    Similar to an ordered dict with int keys, but the empty values have a type
-    that need not be None — the `hole_value` property — with type `_HoleT_co`.
+else:
 
-    Unlike a dict, the bounds are defined — __len__() is the length including
-    holes. Indexing with __getitem__ returns the hole value instead of raising a
-    KeyError as dict does. Accessing out-of-bound values raises an IndexError as
-    other Sequences do.
+    @runtime_checkable
+    class ElementsView(Protocol[_Dummy]):
 
-    `elements()` provides a view of the non-hole values as a Mapping.
-    """
+        @property
+        def order(self) -> Order: ...
 
-    @property
-    def hole_value(self) -> _HoleT_co:
-        """Get the empty value used by the sequence to represent holes."""
+    Mapping.register(ElementsView)
 
-    @property
-    def elements_used(self) -> int:
-        """The number of index positions that are not holes."""
+if TYPE_CHECKING:
 
-    def element_indexes(self, *, order: Order = ...) -> Iterator[int]:
-        """Iterate over the indexes in the sequence that are not holes.
+    class SparseSequence(Sequence[_T_co | _HoleT_co], Generic[_T_co, _HoleT_co]):
+        """A Sequence that can have holes — indexes with no value present.
 
-        `order` is `Order.ASCENDING` if not specified. `Order.UNORDERED` allows
-        the implementation to use whichever order is most efficient.
+        Similar to an ordered dict with int keys, but the empty values have a type
+        that need not be None — the `hole_value` property — with type `_HoleT_co`.
+
+        Unlike a dict, the bounds are defined — __len__() is the length including
+        holes. Indexing with __getitem__ returns the hole value instead of raising a
+        KeyError as dict does. Accessing out-of-bound values raises an IndexError as
+        other Sequences do.
+
+        `elements()` provides a view of the non-hole values as a Mapping.
         """
 
-    def elements(self, *, order: Order = ...) -> ElementsView[_T_co]:
-        """
-        Get a read-only Mapping containing a live view of the index elements
-        with existant values.
+        @property
+        def hole_value(self) -> _HoleT_co:
+            """Get the empty value used by the sequence to represent holes."""
 
-        `order` is `Order.ASCENDING` if not specified. `Order.UNORDERED` allows
-        the implementation to use whichever order is most efficient.
-        """
+        @property
+        def elements_used(self) -> int:
+            """The number of index positions that are not holes."""
+
+        def element_indexes(self, *, order: Order = ...) -> Iterator[int]:
+            """Iterate over the indexes in the sequence that are not holes.
+
+            `order` is `Order.ASCENDING` if not specified. `Order.UNORDERED` allows
+            the implementation to use whichever order is most efficient.
+            """
+
+        def elements(self, *, order: Order = ...) -> ElementsView[_T_co]:
+            """
+            Get a read-only Mapping containing a live view of the index elements
+            with existant values.
+
+            `order` is `Order.ASCENDING` if not specified. `Order.UNORDERED` allows
+            the implementation to use whichever order is most efficient.
+            """
+
+else:
+
+    @runtime_checkable
+    class SparseSequence(Protocol[_Dummy, _Dummy2]):
+        @property
+        def hole_value(self) -> _HoleT_co: ...
+
+        @property
+        def elements_used(self) -> int: ...
+
+        def element_indexes(self, *, order: Order = ...) -> Iterator[int]: ...
+
+        def elements(self, *, order: Order = ...) -> ElementsView[_T_co]: ...
+
+    Sequence.register(SparseSequence)
 
 
 class Order(Enum):
@@ -159,18 +133,24 @@ class Order(Enum):
     DESCENDING = auto()
 
 
-# A read-only live view of the index elements in a SparseSequence with existant values.
+if TYPE_CHECKING:
 
+    class SparseMutableSequence(
+        MutableSequence[_T_co | _HoleT_co], SparseSequence[_T_co, _HoleT_co]
+    ):
+        """A writable extension of SparseSequence."""
 
-class SparseMutableSequence(
-    MutableSequenceProtocol[_T_co | _HoleT_co],
-    SparseSequence[_T_co, _HoleT_co],
-    Protocol,
-):
-    """A writable extension of SparseSequence."""
+        def resize(self, length: int) -> None:
+            """
+            Change the length of the array. Elements are dropped if the length is
+            reduced, or gaps are created at the end if the length is increased.
+            """
 
-    def resize(self, length: int) -> None:
-        """
-        Change the length of the array. Elements are dropped if the length is
-        reduced, or gaps are created at the end if the length is increased.
-        """
+else:
+
+    @runtime_checkable
+    class SparseMutableSequence(SparseSequence[_Dummy, _Dummy2], Protocol):
+
+        def resize(self, length: int) -> None: ...
+
+    MutableSequence.register(SparseMutableSequence)
