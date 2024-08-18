@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from enum import IntEnum
+from enum import IntEnum, IntFlag
 from typing import AbstractSet, Final, Literal
 
 kLatestVersion: Final = 15
@@ -150,6 +150,27 @@ class SerializationTag(IntEnum):
     kLegacyReservedOffscreenCanvas = ord("H")
     kLegacyReservedCryptoKey = ord("K")
     kLegacyReservedRTCCertificate = ord("k")
+
+
+class ArrayBufferViewTag(IntEnum):
+    kInt8Array = ord("b")
+    kUint8Array = ord("B")
+    kUint8ClampedArray = ord("C")
+    kInt16Array = ord("w")
+    kUint16Array = ord("W")
+    kInt32Array = ord("d")
+    kUint32Array = ord("D")
+    kFloat16Array = ord("h")
+    kFloat32Array = ord("f")
+    kFloat64Array = ord("F")
+    kBigInt64Array = ord("q")
+    kBigUint64Array = ord("Q")
+    kDataView = ord("?")
+
+
+class ArrayBufferViewFlags(IntFlag):
+    IsLengthTracking = 1
+    IsBufferResizable = 2
 
 
 TagSet = AbstractSet[SerializationTag]

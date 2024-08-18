@@ -16,6 +16,7 @@ from typing import (
     MutableSet,
     NamedTuple,
     Never,
+    NewType,
     Protocol,
     cast,
 )
@@ -25,6 +26,8 @@ from v8serialize.constants import (
     JS_CONSTANT_TAGS,
     JS_OBJECT_KEY_TAGS,
     UINT32_RANGE,
+    ArrayBufferViewFlags,
+    ArrayBufferViewTag,
     ConstantTags,
     SerializationTag,
     kLatestVersion,
@@ -75,6 +78,26 @@ class ArrayReadResult(NamedTuple):
     """
     items: Generator[tuple[int | float | str, object], None, int]
     """The array and object properties."""
+
+
+@dataclass(frozen=True, slots=True)
+class ArrayBufferResizableReadResult:
+    max_byte_length: int
+    """The maximum sie the buffer may be resized to."""
+    data: memoryview
+    """The data exposed by the buffer at its current size."""
+
+
+SharedArrayBufferId = NewType("SharedArrayBufferId", int)
+TransferId = NewType("TransferId", int)
+
+
+@dataclass(frozen=True, slots=True)
+class ArrayBufferViewReadResult:
+    view_tag: ArrayBufferViewTag
+    byte_offset: int
+    byte_length: int
+    flags: ArrayBufferViewFlags
 
 
 @dataclass(slots=True)
@@ -344,7 +367,9 @@ class ReadableTagStream:
 
     def read_js_array_dense(
         self, tag_mapper: TagMapper, *, identity: object
-    ) -> Generator[tuple[int | float | str, object], None, tuple[int, int]]:
+    ) -> Generator[
+        tuple[int | float | str, object], None, tuple[int, int]
+    ]:  # TODO: return tuple of (length: int, items: Generator) ?
         self.read_tag(SerializationTag.kBeginDenseJSArray)
         self.objects.record_reference(identity)
         current_array_el_count = 0
@@ -405,6 +430,66 @@ class ReadableTagStream:
                 "deserialized",
                 cause=e,
             )
+
+    def read_js_array_buffer(self) -> memoryview:
+        self.read_tag(SerializationTag.kArrayBuffer)
+        byte_length = self.read_varint()
+        if self.pos + byte_length >= len(self.data):
+            self.throw(
+                f"ArrayBuffer byte length exceeds available data: {byte_length=}"
+            )
+
+        with memoryview(self.data)[self.pos : self.pos + byte_length] as mv:
+            buffer_data = mv.toreadonly()
+            self.objects.record_reference(buffer_data)  # TODO: push to exit stack?
+            return buffer_data
+
+    def read_js_array_buffer_resizable(self) -> memoryview:
+        self.read_tag(SerializationTag.kResizableArrayBuffer)
+        byte_length = self.read_varint()
+        if self.pos + byte_length >= len(self.data):
+            self.throw(
+                f"ArrayBuffer byte length exceeds available data: {byte_length=}"
+            )
+        max_byte_length = self.read_varint()
+        if max_byte_length < byte_length:
+            self.throw(
+                f"ResizableArrayBuffer max byte length is less than current "
+                f"byte length: {byte_length=}, {max_byte_length=}"
+            )
+
+        with memoryview(self.data)[self.pos : self.pos + byte_length] as mv:
+            result = ArrayBufferResizableReadResult(
+                max_byte_length=max_byte_length, data=mv.toreadonly()
+            )
+            self.objects.record_reference(result)  # TODO: push to exit stack?
+            return result
+
+    def read_js_array_buffer_shared(self) -> SharedArrayBufferId:
+        self.read_tag(SerializationTag.kSharedArrayBuffer)
+        index = self.read_varint()
+        return SharedArrayBufferId(index)
+
+    def read_js_array_buffer_transfer(self) -> TransferId:
+        self.read_tag(SerializationTag.kArrayBufferTransfer)
+        transfer_id = self.read_varint()
+        return TransferId(transfer_id)
+
+    def read_js_array_buffer_view(self) -> ArrayBufferViewReadResult:
+        self.read_tag(SerializationTag.kArrayBufferView)
+        raw_view_tag = self.read_varint()
+        if raw_view_tag not in ArrayBufferViewTag:
+            self.throw(
+                f"ArrayBufferView view type {hex(raw_view_tag)} is not a known type"
+            )
+        result = ArrayBufferViewReadResult(
+            view_tag=ArrayBufferViewTag(raw_view_tag),
+            byte_offset=self.read_varint(),
+            byte_length=self.read_varint(),
+            flags=ArrayBufferViewFlags(self.read_varint()),
+        )
+        self.objects.record_reference(result)
+        return result
 
     def read_object(self, tag_mapper: TagMapper) -> object:
         tag = self.read_tag(consume=False)
