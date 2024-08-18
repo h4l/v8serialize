@@ -24,6 +24,8 @@ from v8serialize.constants import (
     INT32_RANGE,
     JS_CONSTANT_TAGS,
     JS_OBJECT_KEY_TAGS,
+    MAX_ARRAY_LENGTH,
+    MAX_ARRAY_LENGTH_REPR,
     UINT32_RANGE,
     ConstantTags,
     SerializationTag,
@@ -315,13 +317,22 @@ class WritableTagStream:
     ) -> None:
         self.objects.record_reference(items if identity is None else identity)
         self.write_tag(SerializationTag.kBeginJSObject)
+        self._write_js_object_properties(items, ctx)
+
+    def _write_js_object_properties(
+        self,
+        items: Iterable[tuple[object, object]],
+        ctx: EncodeContext,
+        *,
+        end_tag: SerializationTag = SerializationTag.kEndJSObject,
+    ) -> None:
         count = 0
         for key, value in items:
             with self.constrain_tags(JS_OBJECT_KEY_TAGS):
                 self.write_object(key, ctx=ctx)
             self.write_object(value, ctx=ctx)
             count += 1
-        self.write_tag(SerializationTag.kEndJSObject)
+        self.write_tag(end_tag)
         self.write_varint(count)
 
     @overload
@@ -330,7 +341,7 @@ class WritableTagStream:
         array: Sequence[object],
         ctx: EncodeContext,
         *,
-        properties: Iterable[tuple[Any, Any]],
+        properties: Iterable[tuple[Any, Any]],  # FIXME: [object, object]
         identity: object,
     ) -> None: ...
 
@@ -379,6 +390,26 @@ class WritableTagStream:
         self.write_tag(SerializationTag.kEndDenseJSArray)
         self.write_varint(properties_count)
         self.write_varint(array_el_count)
+
+    def write_js_array_sparse(
+        self,
+        items: Iterable[tuple[object, object]],
+        ctx: EncodeContext,
+        *,
+        length: int,
+        identity: object | None = None,
+    ) -> None:
+        if not (0 <= length <= MAX_ARRAY_LENGTH):
+            raise ValueError(
+                f"length must be >= 0 and <= ${MAX_ARRAY_LENGTH_REPR}: {length=}"
+            )
+        self.objects.record_reference(items if identity is None else identity)
+        self.write_tag(SerializationTag.kBeginSparseJSArray)
+        self.write_varint(length)
+        self._write_js_object_properties(
+            items, ctx, end_tag=SerializationTag.kEndSparseJSArray
+        )
+        self.write_varint(length)
 
     @overload
     def write_object_reference(
@@ -579,11 +610,25 @@ class ObjectMapper(ObjectMapperObject):
         ctx: EncodeContext,
         next: SerializeNextFn,
     ) -> None:
-        # TODO check array length and used elements to decide whether to
-        # serialize dense or sparse.
-        ctx.stream.write_js_array_dense(
-            value.array, ctx=ctx, properties=value.properties.items(), identity=value
-        )
+        # Dense hole tags take 1 byte for the hole tag
+        elements_used, length = value.array.elements_used, len(value.array)
+        dense_hole_bytes = length - elements_used
+        # Sparse key indexes take 1 + 1-2 bytes for indexes up to 2**14 - 1
+        # (key type tag + 1-2 bytes varint). 1 + 3 up to 2**21 - 1.
+        sparse_key_bytes = elements_used * (3 if length < 2**14 else 4)
+        sparse_is_smaller = sparse_key_bytes < dense_hole_bytes
+
+        if sparse_is_smaller:
+            ctx.stream.write_js_array_sparse(
+                value.items(), ctx=ctx, length=length, identity=value
+            )
+        else:
+            ctx.stream.write_js_array_dense(
+                value.array,
+                ctx=ctx,
+                properties=value.properties.items(),
+                identity=value,
+            )
 
     @serialize.register(abc.Mapping)
     def serialize_mapping(

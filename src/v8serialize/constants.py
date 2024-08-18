@@ -15,6 +15,9 @@ without loss.
 Same as Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER JavaScript constants.
 """
 
+MAX_ARRAY_LENGTH: Final = 2**32 - 1
+MAX_ARRAY_LENGTH_REPR: Final = "2**32 - 1"
+
 
 class SerializationTag(IntEnum):
     """1-byte tags used to identify the type of the next value.

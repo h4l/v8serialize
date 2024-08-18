@@ -1,11 +1,16 @@
 import math
-from typing import Optional, TypeVar
+from typing import Optional, TypeVar, cast
 
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from v8serialize.constants import JS_CONSTANT_TAGS, ConstantTags, SerializationTag
+from v8serialize.constants import (
+    JS_CONSTANT_TAGS,
+    MAX_ARRAY_LENGTH,
+    ConstantTags,
+    SerializationTag,
+)
 from v8serialize.decode import ReadableTagStream, TagMapper
 from v8serialize.encode import (
     DefaultEncodeContext,
@@ -16,6 +21,7 @@ from v8serialize.encode import (
 from v8serialize.jstypes import JSObject, JSUndefined
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
 from v8serialize.jstypes.jsarray import JSArray
+from v8serialize.jstypes.jsarrayproperties import JSHole
 
 T = TypeVar("T")
 
@@ -31,6 +37,11 @@ def tag_mapper() -> TagMapper:
 
 
 any_int_or_text = st.one_of(st.integers(), st.text())
+
+name_properties = st.text().filter(
+    lambda name: isinstance(normalise_property_key(name), str)
+)
+"""Generate JavaScript object property strings which aren't array indexes."""
 
 
 def js_objects(
@@ -91,6 +102,55 @@ def dense_js_arrays(
     ).map(create_array)
 
 
+def sparse_js_arrays(
+    elements: st.SearchStrategy[T],
+    *,
+    min_element_count: int = 0,
+    max_element_count: int = 512,
+    max_size: int = MAX_ARRAY_LENGTH,
+    properties: st.SearchStrategy[JSObject[T]] | None = None,
+) -> st.SearchStrategy[JSArray[T]]:
+
+    if (
+        max_size is not None
+        and max_element_count is not None
+        and max_size < max_element_count
+    ):
+        raise ValueError("max_size must be >= max_element_count when both are set")
+    if max_size is not None and not (0 <= max_size <= MAX_ARRAY_LENGTH):
+        raise ValueError(f"max_size must be >=0 and <= {MAX_ARRAY_LENGTH}")
+
+    def create_array(
+        content: tuple[st.DataObject, list[T], JSObject[T] | None]
+    ) -> JSArray[T]:
+        data, values, properties = content
+        length = data.draw(st.integers(min_value=len(values), max_value=max_size))
+        possible_indexes = st.lists(
+            st.integers(min_value=0, max_value=max(0, length - 1)),
+            unique=True,
+            min_size=len(values),
+            max_size=len(values),
+        )
+
+        indexes = data.draw(possible_indexes)
+        items = zip(indexes, values)
+
+        js_array = JSArray[T]()
+        if length > 0:
+            js_array[length - 1] = cast(T, JSHole)
+        js_array.update(items)
+        assert js_array.array.elements_used == len(values)
+        if properties:
+            js_array.update(properties.items())
+        return js_array
+
+    return st.tuples(
+        st.data(),
+        st.lists(elements, min_size=min_element_count, max_size=max_element_count),
+        properties if properties is not None else st.none(),
+    ).map(create_array)
+
+
 any_atomic = st.one_of(
     st.integers(),
     # NaN breaks equality when nested inside objects. We test with nan in
@@ -116,13 +176,22 @@ any_object = st.recursive(
         dense_js_arrays(
             elements=children,
             properties=js_objects(
-                # Prevent properties generating large int keys, which would make the
-                # dense array huge.
-                keys=st.one_of(st.integers(max_value=20), st.text()),
+                # Extra properties should only be names, not extra array indexes
+                keys=name_properties,
                 values=children,
                 max_size=10,
             ),
             max_size=10,
+        ),
+        sparse_js_arrays(
+            elements=children,
+            max_element_count=32,
+            properties=js_objects(
+                # Extra properties should only be names, not extra array indexes
+                keys=name_properties,
+                values=children,
+                max_size=10,
+            ),
         ),
         st.sets(elements=any_atomic),
     ),
@@ -321,11 +390,10 @@ def test_codec_rt_js_object_raw_properties(
 
 @given(
     value=dense_js_arrays(
-        elements=any_object,
+        elements=st.one_of(st.just(JSHole), any_object),
         properties=js_objects(
-            # Prevent properties generating large int keys, which would make the
-            # dense array huge.
-            keys=st.one_of(st.integers(max_value=20), st.text()),
+            # Extra properties should only be names, not extra array indexes
+            keys=name_properties,
             values=any_atomic,
             max_size=10,
         ),
@@ -344,6 +412,40 @@ def test_codec_rt_js_array_dense(
     assert rts.read_tag(consume=False) == SerializationTag.kBeginDenseJSArray
     result = JSArray[object]()
     result.update(rts.read_js_array_dense(tag_mapper, identity=result))
+    assert value == result
+    assert rts.eof
+
+
+@given(
+    value=sparse_js_arrays(
+        elements=any_object,
+        properties=js_objects(
+            # Extra properties should only be names, not extra array indexes
+            keys=name_properties,
+            values=any_atomic,
+            max_size=10,
+        ),
+        max_element_count=64,
+    )
+)
+def test_codec_rt_js_array_sparse(
+    value: JSArray[object],
+    tag_mapper: TagMapper,
+) -> None:
+    encode_ctx = DefaultEncodeContext([ObjectMapper()])
+    encode_ctx.stream.write_js_array_sparse(
+        value.items(),
+        ctx=encode_ctx,
+        length=len(value.array),
+        identity=value,
+    )
+    rts = ReadableTagStream(encode_ctx.stream.data)
+    assert rts.read_tag(consume=False) == SerializationTag.kBeginSparseJSArray
+    result = JSArray[object]()
+    length, items = rts.read_js_array_sparse(tag_mapper, identity=result)
+    if length > 0:
+        result[length - 1] = JSHole
+    result.update(items)
     assert value == result
     assert rts.eof
 

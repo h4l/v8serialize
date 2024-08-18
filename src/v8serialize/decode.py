@@ -14,6 +14,7 @@ from typing import (
     Mapping,
     MutableMapping,
     MutableSet,
+    NamedTuple,
     Never,
     Protocol,
     cast,
@@ -58,6 +59,22 @@ def _decode_zigzag(n: int) -> int:
     if n % 2:
         return -((n + 1) // 2)
     return n // 2
+
+
+class ArrayReadResult(NamedTuple):
+    """The data being deserialized from a dense or sparse array."""
+
+    length: int
+    """The length of the array being deserialized.
+
+    Dense arrays will contain this many items indexed from 0..length -1, plus 0
+    or more additional object properties.
+
+    Sparse arrays will contain any number of array items, plus 0 or more
+    additional object properties.
+    """
+    items: Generator[tuple[int | float | str, object], None, int]
+    """The array and object properties."""
 
 
 @dataclass(slots=True)
@@ -346,11 +363,35 @@ class ReadableTagStream:
 
         if expected_array_el_count != final_array_el_count:
             self.throw(
-                "Expected array element count does not match the final count "
-                f"after reading DenseJSArray: expected={expected_array_el_count}"
+                "Expected array length does not match the final length after "
+                f"reading DenseJSArray: expected={expected_array_el_count}"
                 f", final={final_array_el_count}"
             )
         return final_array_el_count, actual_properties_count
+
+    def read_js_array_sparse(
+        self, tag_mapper: TagMapper, *, identity: object
+    ) -> ArrayReadResult:
+        self.read_tag(SerializationTag.kBeginSparseJSArray)
+        self.objects.record_reference(identity)
+        expected_array_length = self.read_varint()
+
+        def read_items() -> Generator[tuple[int | float | str, object], None, int]:
+            actual_properties_count = yield from self._read_js_object_properties(
+                tag_mapper,
+                end_tag=SerializationTag.kEndSparseJSArray,
+                enclosing_name="SparseJSArray",
+            )
+            final_array_length = self.read_varint()
+            if expected_array_length != final_array_length:
+                self.throw(
+                    "Expected array length does not match the final length "
+                    f"after reading SparseJSArray: expected={expected_array_length}"
+                    f", final={final_array_length}"
+                )
+            return actual_properties_count
+
+        return ArrayReadResult(length=expected_array_length, items=read_items())
 
     def read_object_reference(self) -> tuple[SerializedId, object]:
         self.read_tag(SerializationTag.kObjectReference)
@@ -488,6 +529,7 @@ class TagMapper:
             SerializationTag.kObjectReference: TagMapper.deserialize_object_reference,
             SerializationTag.kBeginJSObject: TagMapper.deserialize_js_object,
             SerializationTag.kBeginDenseJSArray: TagMapper.deserialize_js_array_dense,
+            SerializationTag.kBeginSparseJSArray: TagMapper.deserialize_js_array_sparse,
         }
 
         return {**primitive_tag_readers, **default_tag_readers, **(tag_readers or {})}
@@ -538,6 +580,21 @@ class TagMapper:
         assert tag == SerializationTag.kBeginDenseJSArray
         obj = self.js_array_type()
         obj.update(stream.read_js_array_dense(self, identity=obj))
+        return obj
+
+    def deserialize_js_array_sparse(
+        self, tag: SerializationTag, stream: ReadableTagStream
+    ) -> JSArray[object]:
+        assert tag == SerializationTag.kBeginSparseJSArray
+        obj = self.js_array_type()
+        length, items = stream.read_js_array_sparse(self, identity=obj)
+        if length > 0:
+            # TODO: obj.array.resize() does not swap dense to sparse, so we
+            #   can't use it to resize here. Maybe we should push the storage
+            #   method choice into ArrayProperties so that it can manage the
+            #   switch instead of JSObject/JSArray.
+            obj[length - 1] = JSHole  # resize to length
+        obj.update(items)
         return obj
 
     def deserialize_object_reference(
