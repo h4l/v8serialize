@@ -19,6 +19,14 @@ from typing import (
     overload,
 )
 
+from v8serialize._values import (
+    AnyArrayBufferData,
+    ArrayBufferData,
+    ArrayBufferTransferData,
+    ArrayBufferViewData,
+    ResizableArrayBufferData,
+    SharedArrayBufferData,
+)
 from v8serialize.constants import (
     FLOAT64_SAFE_INT_RANGE,
     INT32_RANGE,
@@ -435,6 +443,86 @@ class WritableTagStream:
 
         self.write_tag(SerializationTag.kObjectReference)
         self.write_varint(serialized_id)
+
+    def write_js_array_buffer(
+        self,
+        buffer: AnyArrayBufferData | ArrayBufferViewData,
+        *,
+        identity: object | None = None,
+    ) -> None:
+        if isinstance(buffer, ArrayBufferData):
+            self._write_js_array_buffer(buffer, identity=identity)
+        elif isinstance(buffer, ResizableArrayBufferData):
+            self._write_js_array_buffer_resizable(buffer, identity=identity)
+        elif isinstance(buffer, SharedArrayBufferData):
+            self._write_js_array_buffer_shared(buffer, identity=identity)
+        elif isinstance(buffer, ArrayBufferTransferData):
+            self._write_js_array_buffer_transfer(buffer, identity=identity)
+        elif isinstance(buffer, ArrayBufferViewData):
+            self._write_js_array_buffer_view(buffer, identity=identity)
+        else:
+            raise AssertionError(f"Unknown array buffer data: {buffer}")
+
+    def _write_js_array_buffer(
+        self, buffer: ArrayBufferData, *, identity: object | None = None
+    ) -> None:
+        self.objects.record_reference(buffer if identity is None else identity)
+        self.write_tag(SerializationTag.kArrayBuffer)
+        self.write_varint(len(buffer.data))
+        self.data.extend(buffer.data)
+
+    def _write_js_array_buffer_resizable(
+        self, buffer: ResizableArrayBufferData, *, identity: object | None = None
+    ) -> None:
+        if buffer.max_byte_length < len(buffer.data):
+            raise ValueError(
+                f"max_byte_length must be >= len(data): "
+                f"{buffer.max_byte_length=}, {len(buffer.data)=}"
+            )
+        self.objects.record_reference(buffer if identity is None else identity)
+        self.write_tag(SerializationTag.kResizableArrayBuffer)
+        self.write_varint(len(buffer.data))
+        self.write_varint(buffer.max_byte_length)
+        self.data.extend(buffer.data)
+
+    def _write_js_array_buffer_shared(
+        self, buffer: SharedArrayBufferData, *, identity: object | None = None
+    ) -> None:
+        if buffer.buffer_id < 0:
+            raise ValueError(f"buffer_id cannot be negative: {buffer.buffer_id=}")
+        self.objects.record_reference(buffer if identity is None else identity)
+        self.write_tag(SerializationTag.kSharedArrayBuffer)
+        self.write_varint(buffer.buffer_id)
+
+    def _write_js_array_buffer_transfer(
+        self, buffer: ArrayBufferTransferData, *, identity: object | None = None
+    ) -> None:
+        if buffer.transfer_id < 0:
+            raise ValueError(f"transfer_id cannot be negative: {buffer.transfer_id=}")
+        self.objects.record_reference(buffer if identity is None else identity)
+        self.write_tag(SerializationTag.kArrayBufferTransfer)
+        self.write_varint(buffer.transfer_id)
+
+    def _write_js_array_buffer_view(
+        self, buffer_view: ArrayBufferViewData, *, identity: object | None = None
+    ) -> None:
+        # The view must be preceded by the buffer itself, or an object reference
+        # to the buffer.
+        if buffer_view.buffer not in self.objects:
+            self.write_js_array_buffer(buffer_view.buffer)
+        else:
+            # TODO: do we need a way to setup reference aliases so that a
+            # different object can be stored for the buffer, but we can still
+            # resolve it from this buffer data object?
+            # Or, we could return a handle from the write functions that would
+            # allow a caller to register an alias after writing.
+            self.write_object_reference(obj=buffer_view)
+        self.objects.record_reference(buffer_view if identity is None else identity)
+        self.write_tag(SerializationTag.kArrayBufferView)
+        self.write_varint(buffer_view.view_tag.value)
+        self.write_varint(buffer_view.byte_offset)
+        self.write_varint(buffer_view.byte_length)
+        self.write_varint(buffer_view.flags)
 
     # TODO: should this just be a method of EncodeContext, not here?
     def write_object(self, value: object, ctx: EncodeContext) -> None:

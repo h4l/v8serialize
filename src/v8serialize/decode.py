@@ -16,11 +16,20 @@ from typing import (
     MutableSet,
     NamedTuple,
     Never,
-    NewType,
     Protocol,
     cast,
 )
 
+from v8serialize._values import (
+    AnyArrayBufferData,
+    ArrayBufferData,
+    ArrayBufferTransferData,
+    ArrayBufferViewData,
+    ResizableArrayBufferData,
+    SharedArrayBufferData,
+    SharedArrayBufferId,
+    TransferId,
+)
 from v8serialize.constants import (
     INT32_RANGE,
     JS_CONSTANT_TAGS,
@@ -86,18 +95,6 @@ class ArrayBufferResizableReadResult:
     """The maximum sie the buffer may be resized to."""
     data: memoryview
     """The data exposed by the buffer at its current size."""
-
-
-SharedArrayBufferId = NewType("SharedArrayBufferId", int)
-TransferId = NewType("TransferId", int)
-
-
-@dataclass(frozen=True, slots=True)
-class ArrayBufferViewReadResult:
-    view_tag: ArrayBufferViewTag
-    byte_offset: int
-    byte_length: int
-    flags: ArrayBufferViewFlags
 
 
 @dataclass(slots=True)
@@ -431,7 +428,30 @@ class ReadableTagStream:
                 cause=e,
             )
 
-    def read_js_array_buffer(self) -> memoryview:
+    def read_js_array_buffer(self) -> AnyArrayBufferData | ArrayBufferViewData:
+        tag = self.read_tag()
+        buffer: AnyArrayBufferData
+        if tag is SerializationTag.kArrayBuffer:
+            buffer = self._read_js_array_buffer()
+        elif tag is SerializationTag.kResizableArrayBuffer:
+            buffer = self._read_js_array_buffer_resizable()
+        elif tag is SerializationTag.kSharedArrayBuffer:
+            buffer = self._read_js_array_buffer_shared()
+        elif tag is SerializationTag.kArrayBufferTransfer:
+            buffer = self._read_js_array_buffer_transfer()
+        else:
+            self.pos -= 1
+            self.throw(f"Expected an ArrayBuffer tag but found {tag.name}")
+
+        self.objects.record_reference(buffer)
+        if (
+            not self.eof
+            and self.read_tag(consume=False) is SerializationTag.kArrayBufferView
+        ):
+            return self.read_js_array_buffer_view(buffer)
+        return buffer
+
+    def _read_js_array_buffer(self) -> ArrayBufferData:
         self.read_tag(SerializationTag.kArrayBuffer)
         byte_length = self.read_varint()
         if self.pos + byte_length >= len(self.data):
@@ -442,9 +462,9 @@ class ReadableTagStream:
         with memoryview(self.data)[self.pos : self.pos + byte_length] as mv:
             buffer_data = mv.toreadonly()
             self.objects.record_reference(buffer_data)  # TODO: push to exit stack?
-            return buffer_data
+            return ArrayBufferData(data=buffer_data)
 
-    def read_js_array_buffer_resizable(self) -> memoryview:
+    def _read_js_array_buffer_resizable(self) -> ResizableArrayBufferData:
         self.read_tag(SerializationTag.kResizableArrayBuffer)
         byte_length = self.read_varint()
         if self.pos + byte_length >= len(self.data):
@@ -459,30 +479,36 @@ class ReadableTagStream:
             )
 
         with memoryview(self.data)[self.pos : self.pos + byte_length] as mv:
-            result = ArrayBufferResizableReadResult(
+            result = ResizableArrayBufferData(
                 max_byte_length=max_byte_length, data=mv.toreadonly()
             )
             self.objects.record_reference(result)  # TODO: push to exit stack?
             return result
 
-    def read_js_array_buffer_shared(self) -> SharedArrayBufferId:
+    def _read_js_array_buffer_shared(self) -> SharedArrayBufferData:
         self.read_tag(SerializationTag.kSharedArrayBuffer)
         index = self.read_varint()
-        return SharedArrayBufferId(index)
+        return SharedArrayBufferData(buffer_id=SharedArrayBufferId(index))
 
-    def read_js_array_buffer_transfer(self) -> TransferId:
+    def _read_js_array_buffer_transfer(self) -> ArrayBufferTransferData:
         self.read_tag(SerializationTag.kArrayBufferTransfer)
         transfer_id = self.read_varint()
-        return TransferId(transfer_id)
+        return ArrayBufferTransferData(transfer_id=TransferId(transfer_id))
 
-    def read_js_array_buffer_view(self) -> ArrayBufferViewReadResult:
+    def read_js_array_buffer_view(
+        self, buffer: AnyArrayBufferData
+    ) -> ArrayBufferViewData:
         self.read_tag(SerializationTag.kArrayBufferView)
         raw_view_tag = self.read_varint()
         if raw_view_tag not in ArrayBufferViewTag:
             self.throw(
                 f"ArrayBufferView view type {hex(raw_view_tag)} is not a known type"
             )
-        result = ArrayBufferViewReadResult(
+        # TODO: should it be this method's responsibility to bounds-check the
+        #   view? I'm leaning towards no, as we can't check the two reference
+        #   buffer types anyway.
+        result = ArrayBufferViewData(
+            buffer=buffer,
             view_tag=ArrayBufferViewTag(raw_view_tag),
             byte_offset=self.read_varint(),
             byte_length=self.read_varint(),
