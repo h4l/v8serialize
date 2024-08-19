@@ -428,7 +428,7 @@ class ReadableTagStream:
                 cause=e,
             )
 
-    def read_js_array_buffer(self) -> AnyArrayBufferData | ArrayBufferViewData:
+    def read_js_array_buffer(self) -> AnyArrayBufferData:
         tag = self.read_tag()
         buffer: AnyArrayBufferData
         if tag is SerializationTag.kArrayBuffer:
@@ -442,13 +442,6 @@ class ReadableTagStream:
         else:
             self.pos -= 1
             self.throw(f"Expected an ArrayBuffer tag but found {tag.name}")
-
-        self.objects.record_reference(buffer)
-        if (
-            not self.eof
-            and self.read_tag(consume=False) is SerializationTag.kArrayBufferView
-        ):
-            return self.read_js_array_buffer_view(buffer)
         return buffer
 
     def _read_js_array_buffer(self) -> ArrayBufferData:
@@ -641,6 +634,11 @@ class TagMapper:
             SerializationTag.kBeginJSObject: TagMapper.deserialize_js_object,
             SerializationTag.kBeginDenseJSArray: TagMapper.deserialize_js_array_dense,
             SerializationTag.kBeginSparseJSArray: TagMapper.deserialize_js_array_sparse,
+            SerializationTag.kArrayBuffer: TagMapper.deserialize_js_array_buffer,
+            SerializationTag.kResizableArrayBuffer: TagMapper.deserialize_js_array_buffer,
+            SerializationTag.kSharedArrayBuffer: TagMapper.deserialize_js_array_buffer,
+            SerializationTag.kArrayBufferTransfer: TagMapper.deserialize_js_array_buffer,
+            SerializationTag.kArrayBufferView: TagMapper.deserialize_js_array_buffer,
         }
 
         return {**primitive_tag_readers, **default_tag_readers, **(tag_readers or {})}
@@ -708,11 +706,51 @@ class TagMapper:
         obj.update(items)
         return obj
 
+    def deserialize_js_array_buffer(
+        self,
+        tag: SerializationTag,
+        stream: ReadableTagStream,
+    ) -> AnyArrayBufferData | ArrayBufferViewData:
+        buffer = stream.read_js_array_buffer()
+
+        # Buffers can be followed by a BufferView which wraps the buffer.
+        if (
+            not self.eof
+            and self.read_tag(consume=False) is SerializationTag.kArrayBufferView
+        ):
+            return stream.read_js_array_buffer_view(buffer)
+        return buffer
+
     def deserialize_object_reference(
         self, tag: SerializationTag, stream: ReadableTagStream
     ) -> object:
         assert tag == SerializationTag.kObjectReference
         serialized_id, obj = stream.read_object_reference()
+
+        if isinstance(
+            obj,
+            (
+                ArrayBufferData,
+                ResizableArrayBufferData,
+                SharedArrayBufferData,
+                ArrayBufferTransferData,
+            ),
+        ):
+            # Object references can be followed by a ArrayBufferView that
+            # wraps the buffer referenced by the reference.
+            #
+            # This is kind of messy. What if we tracked the preceding
+            # buffer/object ref and checked that in deserialize_js_array_buffer() ?
+            # OTOH then we'd return this buffer and then the view instead of a single result...
+            # Maybe this should be handled by the reader?
+            # Use a bubbling model that allows each layer to handle and modify
+            # the result, with the bottom layer doing low-level reads like this.
+            if (
+                not stream.eof
+                and stream.read_tag(consume=False) is SerializationTag.kArrayBufferView
+            ):
+                return stream.read_js_array_buffer_view(obj)
+
         return obj
 
 
