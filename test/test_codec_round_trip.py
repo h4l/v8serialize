@@ -5,6 +5,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+from v8serialize._values import SharedArrayBufferId, TransferId
 from v8serialize.constants import (
     JS_CONSTANT_TAGS,
     MAX_ARRAY_LENGTH,
@@ -22,6 +23,16 @@ from v8serialize.jstypes import JSObject, JSUndefined
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
 from v8serialize.jstypes.jsarray import JSArray
 from v8serialize.jstypes.jsarrayproperties import JSHole
+from v8serialize.jstypes.jsbuffers import (
+    ArrayBufferViewStructFormat,
+    JSArrayBuffer,
+    JSArrayBufferTransfer,
+    JSDataView,
+    JSSharedArrayBuffer,
+    JSTypedArray,
+    ViewFormat,
+    create_view,
+)
 
 T = TypeVar("T")
 
@@ -151,6 +162,70 @@ def sparse_js_arrays(
     ).map(create_array)
 
 
+fixed_js_array_buffers = st.binary().map(lambda data: JSArrayBuffer(data))
+
+resizable_js_array_buffers = st.builds(
+    lambda data, headroom_byte_length: JSArrayBuffer(
+        data, max_byte_length=len(data) + headroom_byte_length, resizable=True
+    ),
+    st.binary(),
+    st.integers(min_value=0),
+)
+
+normal_js_array_buffers = st.one_of(fixed_js_array_buffers, resizable_js_array_buffers)
+
+shared_array_buffers = st.integers(min_value=0, max_value=2**32 - 1).map(
+    lambda value: JSSharedArrayBuffer(SharedArrayBufferId(value))
+)
+array_buffer_transfers = st.integers(min_value=0, max_value=2**32 - 1).map(
+    lambda value: JSArrayBufferTransfer(TransferId(value))
+)
+
+js_array_buffers = st.one_of(
+    fixed_js_array_buffers,
+    resizable_js_array_buffers,
+    shared_array_buffers,
+    array_buffer_transfers,
+)
+
+
+def js_array_buffer_views(
+    backing_buffers: st.SearchStrategy[
+        JSArrayBuffer | JSSharedArrayBuffer | JSArrayBufferTransfer
+    ] = js_array_buffers,
+    view_formats: st.SearchStrategy[ViewFormat] | None = None,
+) -> st.SearchStrategy[JSTypedArray | JSDataView]:
+    if view_formats is None:
+        view_formats = st.sampled_from(ArrayBufferViewStructFormat)
+
+    def create(
+        data: st.DataObject,
+        view_format: ViewFormat,
+        backing_buffer: JSArrayBuffer | JSSharedArrayBuffer | JSArrayBufferTransfer,
+    ) -> JSTypedArray | JSDataView:
+
+        if isinstance(backing_buffer, JSArrayBuffer):
+            buffer_byte_length = len(backing_buffer.data)
+        else:
+            # make up a length — the buffer is not connected
+            buffer_byte_length = data.draw(
+                st.integers(min_value=0, max_value=2**32 - 1)
+            )
+
+        byte_offset = data.draw(st.integers(min_value=0, max_value=buffer_byte_length))
+        byte_length = data.draw(
+            st.integers(min_value=0, max_value=buffer_byte_length - byte_offset)
+        )
+
+        return view_format.view_type(
+            backing_buffer, byte_offset=byte_offset, byte_length=byte_length
+        )
+
+    return st.builds(
+        create, data=st.data(), view_format=view_formats, backing_buffer=backing_buffers
+    )
+
+
 any_atomic = st.one_of(
     st.integers(),
     # NaN breaks equality when nested inside objects. We test with nan in
@@ -161,6 +236,8 @@ any_atomic = st.one_of(
     st.just(None),
     st.just(True),
     st.just(False),
+    # FIXME: non-hashable objects are a problem for maps/sets
+    # js_array_buffers,
 )
 
 
@@ -450,6 +527,47 @@ def test_codec_rt_js_array_sparse(
     assert rts.eof
 
 
+@given(value=js_array_buffers)
+def test_codec_rt_js_array_buffer(
+    value: JSArrayBuffer | JSSharedArrayBuffer | JSArrayBufferTransfer,
+    object_mapper: ObjectMapper,
+) -> None:
+    encode_ctx = DefaultEncodeContext([object_mapper])
+    encode_ctx.stream.write_js_array_buffer(value)
+    rts = ReadableTagStream(encode_ctx.stream.data)
+    assert rts.read_tag(consume=False) in {
+        SerializationTag.kArrayBuffer,
+        SerializationTag.kResizableArrayBuffer,
+        SerializationTag.kSharedArrayBuffer,
+        SerializationTag.kArrayBufferTransfer,
+    }
+    result: JSArrayBuffer | JSSharedArrayBuffer | JSArrayBufferTransfer = (
+        rts.read_js_array_buffer(
+            array_buffer=JSArrayBuffer,
+            shared_array_buffer=JSSharedArrayBuffer,
+            array_buffer_transfer=JSArrayBufferTransfer,
+        )
+    )
+    assert value == result
+    assert rts.eof
+
+
+@given(value=js_array_buffer_views())
+def test_codec_rt_js_array_buffer_view(
+    value: JSTypedArray | JSDataView,
+    object_mapper: ObjectMapper,
+) -> None:
+    encode_ctx = DefaultEncodeContext([object_mapper])
+    encode_ctx.stream.write_js_array_buffer_view(value)
+    rts = ReadableTagStream(encode_ctx.stream.data)
+    assert rts.read_tag(consume=False) == SerializationTag.kArrayBufferView
+    result: JSTypedArray | JSDataView = rts.read_js_array_buffer_view(
+        backing_buffer=value.backing_buffer, array_buffer_view=create_view
+    )
+    assert value == result
+    assert rts.eof
+
+
 def test_codec_rt_object_identity__simple(
     object_mapper: ObjectMapper, tag_mapper: TagMapper
 ) -> None:
@@ -480,4 +598,28 @@ def test_codec_rt_object(
     rts = ReadableTagStream(encode_ctx.stream.data)
     result = rts.read_object(tag_mapper)
     assert value == result
+    assert rts.eof
+
+
+python_binary_types = st.builds(
+    lambda binary_type, data: binary_type(data),
+    st.sampled_from([bytes, bytearray, memoryview]),
+    st.binary(),
+)
+
+
+@given(value=python_binary_types)
+def test_codec_rt_object__encodes_python_binary_types_as_array_buffers(
+    value: bytes | bytearray | memoryview,
+    object_mapper: ObjectMapper,
+    tag_mapper: TagMapper,
+) -> None:
+    encode_ctx = DefaultEncodeContext([object_mapper])
+    encode_ctx.stream.write_object(value, ctx=encode_ctx)
+
+    rts = ReadableTagStream(encode_ctx.stream.data)
+    result = rts.read_object(tag_mapper)
+
+    assert isinstance(result, JSArrayBuffer)
+    assert bytes(result.data) == bytes(result)
     assert rts.eof

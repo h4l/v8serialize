@@ -21,14 +21,14 @@ from typing import (
 )
 
 from v8serialize._values import (
-    AnyArrayBufferData,
-    ArrayBufferData,
-    ArrayBufferTransferData,
-    ArrayBufferViewData,
-    ResizableArrayBufferData,
-    SharedArrayBufferData,
+    ArrayBufferConstructor,
+    ArrayBufferTransferConstructor,
+    ArrayBufferViewConstructor,
+    BufferT,
+    SharedArrayBufferConstructor,
     SharedArrayBufferId,
     TransferId,
+    ViewT,
 )
 from v8serialize.constants import (
     INT32_RANGE,
@@ -44,6 +44,14 @@ from v8serialize.constants import (
 from v8serialize.errors import V8CodecError
 from v8serialize.jstypes import JSHole, JSObject, JSUndefined
 from v8serialize.jstypes.jsarray import JSArray
+from v8serialize.jstypes.jsbuffers import (
+    JSArrayBuffer,
+    JSArrayBufferTransfer,
+    JSDataView,
+    JSSharedArrayBuffer,
+    JSTypedArray,
+    create_view,
+)
 from v8serialize.references import SerializedId, SerializedObjectLog
 
 if TYPE_CHECKING:
@@ -428,36 +436,54 @@ class ReadableTagStream:
                 cause=e,
             )
 
-    def read_js_array_buffer(self) -> AnyArrayBufferData:
-        tag = self.read_tag()
-        buffer: AnyArrayBufferData
+    def read_js_array_buffer(
+        self,
+        *,
+        array_buffer: ArrayBufferConstructor[BufferT],
+        shared_array_buffer: SharedArrayBufferConstructor[BufferT],
+        array_buffer_transfer: ArrayBufferTransferConstructor[BufferT],
+    ) -> BufferT | ViewT:
+        tag = self.read_tag(consume=False)
+        buffer: BufferT
         if tag is SerializationTag.kArrayBuffer:
-            buffer = self._read_js_array_buffer()
+            buffer = self._read_js_array_buffer(array_buffer=array_buffer)
         elif tag is SerializationTag.kResizableArrayBuffer:
-            buffer = self._read_js_array_buffer_resizable()
+            buffer = self._read_js_array_buffer_resizable(array_buffer=array_buffer)
         elif tag is SerializationTag.kSharedArrayBuffer:
-            buffer = self._read_js_array_buffer_shared()
+            buffer = self._read_js_array_buffer_shared(
+                shared_array_buffer=shared_array_buffer
+            )
         elif tag is SerializationTag.kArrayBufferTransfer:
-            buffer = self._read_js_array_buffer_transfer()
+            buffer = self._read_js_array_buffer_transfer(
+                array_buffer_transfer=array_buffer_transfer
+            )
         else:
-            self.pos -= 1
             self.throw(f"Expected an ArrayBuffer tag but found {tag.name}")
         return buffer
 
-    def _read_js_array_buffer(self) -> ArrayBufferData:
+    def _read_js_array_buffer(
+        self, array_buffer: ArrayBufferConstructor[BufferT]
+    ) -> BufferT:
         self.read_tag(SerializationTag.kArrayBuffer)
         byte_length = self.read_varint()
-        if self.pos + byte_length >= len(self.data):
+        if self.pos + byte_length > len(self.data):
             self.throw(
                 f"ArrayBuffer byte length exceeds available data: {byte_length=}"
             )
 
-        with memoryview(self.data)[self.pos : self.pos + byte_length] as mv:
-            buffer_data = mv.toreadonly()
-            self.objects.record_reference(buffer_data)  # TODO: push to exit stack?
-            return ArrayBufferData(data=buffer_data)
+        with memoryview(self.data)[
+            self.pos : self.pos + byte_length
+        ].toreadonly() as buffer_data:
+            result = array_buffer(
+                data=buffer_data, max_byte_length=None, resizable=False
+            )
+            self.objects.record_reference(result)
+        self.pos += byte_length
+        return result
 
-    def _read_js_array_buffer_resizable(self) -> ResizableArrayBufferData:
+    def _read_js_array_buffer_resizable(
+        self, *, array_buffer: ArrayBufferConstructor[BufferT]
+    ) -> BufferT:
         self.read_tag(SerializationTag.kResizableArrayBuffer)
         byte_length = self.read_varint()
         if self.pos + byte_length >= len(self.data):
@@ -471,26 +497,36 @@ class ReadableTagStream:
                 f"byte length: {byte_length=}, {max_byte_length=}"
             )
 
-        with memoryview(self.data)[self.pos : self.pos + byte_length] as mv:
-            result = ResizableArrayBufferData(
-                max_byte_length=max_byte_length, data=mv.toreadonly()
+        with memoryview(self.data)[
+            self.pos : self.pos + byte_length
+        ].toreadonly() as buffer_data:
+            result = array_buffer(
+                data=buffer_data, max_byte_length=max_byte_length, resizable=True
             )
-            self.objects.record_reference(result)  # TODO: push to exit stack?
-            return result
+            self.objects.record_reference(result)
+        self.pos += byte_length
+        return result
 
-    def _read_js_array_buffer_shared(self) -> SharedArrayBufferData:
+    def _read_js_array_buffer_shared(
+        self, *, shared_array_buffer: SharedArrayBufferConstructor[BufferT]
+    ) -> BufferT:
         self.read_tag(SerializationTag.kSharedArrayBuffer)
         index = self.read_varint()
-        return SharedArrayBufferData(buffer_id=SharedArrayBufferId(index))
+        return shared_array_buffer(buffer_id=SharedArrayBufferId(index))
 
-    def _read_js_array_buffer_transfer(self) -> ArrayBufferTransferData:
+    def _read_js_array_buffer_transfer(
+        self, *, array_buffer_transfer: ArrayBufferTransferConstructor[BufferT]
+    ) -> BufferT:
         self.read_tag(SerializationTag.kArrayBufferTransfer)
         transfer_id = self.read_varint()
-        return ArrayBufferTransferData(transfer_id=TransferId(transfer_id))
+        return array_buffer_transfer(transfer_id=TransferId(transfer_id))
 
     def read_js_array_buffer_view(
-        self, buffer: AnyArrayBufferData
-    ) -> ArrayBufferViewData:
+        self,
+        backing_buffer: BufferT,
+        *,
+        array_buffer_view: ArrayBufferViewConstructor[BufferT, ViewT],
+    ) -> ViewT:
         self.read_tag(SerializationTag.kArrayBufferView)
         raw_view_tag = self.read_varint()
         if raw_view_tag not in ArrayBufferViewTag:
@@ -500,9 +536,9 @@ class ReadableTagStream:
         # TODO: should it be this method's responsibility to bounds-check the
         #   view? I'm leaning towards no, as we can't check the two reference
         #   buffer types anyway.
-        result = ArrayBufferViewData(
-            buffer=buffer,
-            view_tag=ArrayBufferViewTag(raw_view_tag),
+        result = array_buffer_view(
+            buffer=backing_buffer,
+            format=ArrayBufferViewTag(raw_view_tag),
             byte_offset=self.read_varint(),
             byte_length=self.read_varint(),
             flags=ArrayBufferViewFlags(self.read_varint()),
@@ -635,9 +671,9 @@ class TagMapper:
             SerializationTag.kBeginDenseJSArray: TagMapper.deserialize_js_array_dense,
             SerializationTag.kBeginSparseJSArray: TagMapper.deserialize_js_array_sparse,
             SerializationTag.kArrayBuffer: TagMapper.deserialize_js_array_buffer,
-            SerializationTag.kResizableArrayBuffer: TagMapper.deserialize_js_array_buffer,
+            SerializationTag.kResizableArrayBuffer: TagMapper.deserialize_js_array_buffer,  # noqa: B950
             SerializationTag.kSharedArrayBuffer: TagMapper.deserialize_js_array_buffer,
-            SerializationTag.kArrayBufferTransfer: TagMapper.deserialize_js_array_buffer,
+            SerializationTag.kArrayBufferTransfer: TagMapper.deserialize_js_array_buffer,  # noqa: B950
             SerializationTag.kArrayBufferView: TagMapper.deserialize_js_array_buffer,
         }
 
@@ -710,15 +746,30 @@ class TagMapper:
         self,
         tag: SerializationTag,
         stream: ReadableTagStream,
-    ) -> AnyArrayBufferData | ArrayBufferViewData:
-        buffer = stream.read_js_array_buffer()
+    ) -> (
+        JSArrayBuffer
+        | JSSharedArrayBuffer
+        | JSArrayBufferTransfer
+        | JSTypedArray
+        | JSDataView
+    ):
+        buffer: JSArrayBuffer | JSSharedArrayBuffer | JSArrayBufferTransfer = (
+            stream.read_js_array_buffer(
+                array_buffer=JSArrayBuffer,
+                shared_array_buffer=JSSharedArrayBuffer,
+                array_buffer_transfer=JSArrayBufferTransfer,
+            )
+        )
 
         # Buffers can be followed by a BufferView which wraps the buffer.
         if (
-            not self.eof
-            and self.read_tag(consume=False) is SerializationTag.kArrayBufferView
+            not stream.eof
+            and stream.read_tag(consume=False) is SerializationTag.kArrayBufferView
         ):
-            return stream.read_js_array_buffer_view(buffer)
+            view: JSTypedArray | JSDataView = stream.read_js_array_buffer_view(
+                backing_buffer=buffer, array_buffer_view=create_view
+            )
+            return view
         return buffer
 
     def deserialize_object_reference(
@@ -729,27 +780,17 @@ class TagMapper:
 
         if isinstance(
             obj,
-            (
-                ArrayBufferData,
-                ResizableArrayBufferData,
-                SharedArrayBufferData,
-                ArrayBufferTransferData,
-            ),
+            (JSArrayBuffer, JSSharedArrayBuffer, JSArrayBufferTransfer),
         ):
             # Object references can be followed by a ArrayBufferView that
             # wraps the buffer referenced by the reference.
-            #
-            # This is kind of messy. What if we tracked the preceding
-            # buffer/object ref and checked that in deserialize_js_array_buffer() ?
-            # OTOH then we'd return this buffer and then the view instead of a single result...
-            # Maybe this should be handled by the reader?
-            # Use a bubbling model that allows each layer to handle and modify
-            # the result, with the bottom layer doing low-level reads like this.
             if (
                 not stream.eof
                 and stream.read_tag(consume=False) is SerializationTag.kArrayBufferView
             ):
-                return stream.read_js_array_buffer_view(obj)
+                return stream.read_js_array_buffer_view(
+                    backing_buffer=obj, array_buffer_view=create_view
+                )
 
         return obj
 

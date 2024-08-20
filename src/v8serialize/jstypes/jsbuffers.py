@@ -14,11 +14,20 @@ from typing import (
     ByteString,
     Generic,
     Literal,
-    NewType,
     Self,
+    Sized,
     TypeAlias,
+    overload,
 )
 
+from v8serialize._values import (
+    AnyArrayBuffer,
+    AnyArrayBufferTransfer,
+    AnyArrayBufferView,
+    AnySharedArrayBuffer,
+    SharedArrayBufferId,
+    TransferId,
+)
 from v8serialize.constants import ArrayBufferViewFlags, ArrayBufferViewTag
 from v8serialize.errors import V8CodecError
 
@@ -26,13 +35,13 @@ if TYPE_CHECKING:
     from typing_extensions import Buffer, TypeVar
 
     AnyBuffer: TypeAlias = ByteString | Buffer
-    BufferT = TypeVar("BufferT", bound=AnyBuffer, default=AnyBuffer)
-    _I = TypeVar("_I", default=int)
+    AnyBufferT = TypeVar("AnyBufferT", bound=AnyBuffer, default=AnyBuffer)
+    BufferT = TypeVar("BufferT", bound=ByteString, default=ByteString)
 else:
     from typing import TypeVar
 
+    AnyBufferT = TypeVar("AnyBufferT")
     BufferT = TypeVar("BufferT")
-    _I = TypeVar("_I")
 
 TypeT = TypeVar("TypeT", bound=type)
 
@@ -45,56 +54,6 @@ def frozen(cls: TypeT) -> TypeT:
     """Disable `__setattr__`, much like @dataclass(frozen=True)."""
     cls.__setattr__ = frozen_setattr  # type: ignore[method-assign,assignment]
     return cls
-
-
-@dataclass(slots=True, unsafe_hash=True)
-class StructFormat:
-    view_tag: ArrayBufferViewTag
-    struct_format: str
-    itemsize: int = field(init=False)
-
-    def __post_init__(self) -> None:
-        self.itemsize = struct.calcsize(self.struct_format)
-
-
-@frozen
-class ArrayBufferViewStructFormat(StructFormat, Enum):
-    Int8Array = ArrayBufferViewTag.kInt8Array, "b"
-    Uint8Array = ArrayBufferViewTag.kUint8Array, "B"
-    # Python doesn't distinguish between wrapping and clamped views, because
-    # setting out-of-range values throws an error.
-    Uint8ClampedArray = ArrayBufferViewTag.kUint8ClampedArray, "B"
-    Int16Array = ArrayBufferViewTag.kInt16Array, "h"
-    Uint16Array = ArrayBufferViewTag.kUint16Array, "H"
-    Int32Array = ArrayBufferViewTag.kInt32Array, "i"
-    Uint32Array = ArrayBufferViewTag.kUint32Array, "I"
-    Float16Array = ArrayBufferViewTag.kFloat16Array, "e"
-    Float32Array = ArrayBufferViewTag.kFloat32Array, "f"
-    Float64Array = ArrayBufferViewTag.kFloat64Array, "d"
-    BigInt64Array = ArrayBufferViewTag.kBigInt64Array, "q"
-    BigUint64Array = ArrayBufferViewTag.kBigUint64Array, "Q"
-    # DataView doesn't have a single format, we use bytes format as a default.
-    # As in accessing the buffer provides actual bytes objects, not integers.
-    DataView = ArrayBufferViewTag.kDataView, "c"
-
-    @functools.lru_cache  # noqa: B019
-    @staticmethod
-    def _missing_(arg: object) -> ArrayBufferViewStructFormat | None:
-        # Allow looking up values by ArrayBufferViewTag enum value
-        for value in ArrayBufferViewStructFormat:
-            if value.view_tag is arg:
-                return value
-        return None
-
-    if TYPE_CHECKING:
-
-        def __init__(
-            self, value: ArrayBufferViewTag | ArrayBufferViewStructFormat
-        ) -> None: ...
-
-
-SharedArrayBufferId = NewType("SharedArrayBufferId", int)
-TransferId = NewType("TransferId", int)
 
 
 def get_buffer(buffer: Buffer, flags: int | inspect.BufferFlags = 0) -> memoryview:
@@ -110,21 +69,154 @@ class BaseJSArrayBuffer(ABC):
     def __buffer__(self, flags: int) -> memoryview: ...
 
 
-@dataclass(frozen=True, slots=True)
-class JSArrayBuffer(Generic[BufferT], ABC):
-    data: BufferT
-
-    def __buffer__(self, flags: int) -> memoryview:
-        return get_buffer(self.data, flags)
-
-
-@dataclass(frozen=True, slots=True)
-class JSResizableArrayBuffer(JSArrayBuffer):
+@dataclass(frozen=True, slots=True, init=False)
+class JSArrayBuffer(
+    AnyArrayBuffer,
+    Generic[BufferT],
+    AbstractContextManager["JSArrayBuffer[BufferT]"],
+    ABC,
+):
+    _data: BufferT
     max_byte_length: int
+    resizable: bool
+
+    @overload
+    def __init__(
+        self,
+        data: AnyBuffer | None = None,
+        *,
+        max_byte_length: int | None = None,
+        resizable: bool | None = None,
+        copy_data: bool | None = None,
+        readonly: bool | None = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        byte_length: int | None = None,
+        /,
+        *,
+        max_byte_length: int | None = None,
+        resizable: bool | None = None,
+        copy_data: bool | None = None,
+        readonly: bool | None = None,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        data: AnyBuffer | None | int = None,
+        byte_length: int | None = None,
+        *,
+        max_byte_length: int | None = None,
+        resizable: bool | None = None,
+        copy_data: bool | None = None,
+        readonly: bool | None = None,
+    ) -> None:
+        if isinstance(data, int):
+            byte_length = data
+            data = None
+        if byte_length is not None:  # one of byte_length and data can be set
+            data = None
+
+        resizable = resizable is True or max_byte_length is not None
+        copy_data = True if copy_data is None else copy_data
+        readonly = False if copy_data is None else readonly
+
+        if resizable is True and readonly is True:
+            raise ValueError("JSArrayBuffer cannot be both resizable and readonly")
+
+        if data is not None:
+            if isinstance(data, memoryview):
+                # Open our own memoryview of the source so that the caller can
+                # be responsible for releasing their memoryview without
+                # affecting us.
+                data = data[:]
+
+            if copy_data:
+                data = bytes(data) if readonly else bytearray(data)
+            elif readonly and not isinstance(data, bytes):
+                data = memoryview(data).toreadonly()
+        else:
+            byte_length = byte_length or 0
+            data = b"\x00" * byte_length if readonly else bytearray(byte_length)
+
+        assert isinstance(data, Sized)
+        max_byte_length = len(data) if max_byte_length is None else max_byte_length
+
+        if resizable:
+            if not isinstance(data, bytearray):
+                assert not copy_data
+                raise ValueError(
+                    "data must be a bytearray when copy_data is False and "
+                    "resizable is True"
+                )
+            assert isinstance(data, bytearray)
+        if readonly:
+            assert isinstance(data, bytes) or (
+                isinstance(data, memoryview) and data.readonly
+            )
+
+        if len(data) > max_byte_length:
+            raise ByteLengthJSArrayBufferError(
+                "max_byte_length cannot be less than initial byte_length",
+                byte_length=len(data),
+                max_byte_length=max_byte_length,
+            )
+
+        # Need to borrow object's __setattr__, our frozen type disables ours.
+        object.__setattr__(self, "_data", data)
+        object.__setattr__(self, "max_byte_length", max_byte_length)
+        object.__setattr__(self, "resizable", resizable)
+
+    def resize(self, byte_length: int) -> None:
+        if not self.resizable:
+            raise ByteLengthJSArrayBufferError(
+                "This JSArrayBuffer is not resizable",
+                byte_length=byte_length,
+                max_byte_length=self.max_byte_length,
+            )
+        if not (0 <= byte_length <= self.max_byte_length):
+            raise ByteLengthJSArrayBufferError(
+                "byte_length must be >= 0 and <= max_byte_length",
+                byte_length=byte_length,
+                max_byte_length=self.max_byte_length,
+            )
+        assert isinstance(self._data, bytearray)
+        current_byte_length = len(self._data)
+
+        if byte_length > current_byte_length:
+            added_byte_count = byte_length - current_byte_length
+            self._data.extend(bytearray(added_byte_count))
+        else:
+            del self._data[byte_length:]
+
+    @property
+    def data(self) -> memoryview:
+        return self.__buffer__(inspect.BufferFlags.SIMPLE)
+
+    def __enter__(self) -> JSArrayBuffer[BufferT]:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        self.close()
+        return None
+
+    def close(self) -> None:
+        if isinstance(self.data, memoryview):
+            self.data.release()
+
+    def __buffer__(self, flags: int | inspect.BufferFlags) -> memoryview:
+        return get_buffer(self._data, flags)[: self.max_byte_length]
 
 
 @dataclass(frozen=True, slots=True)
-class JSSharedArrayBuffer(ABC):
+class JSSharedArrayBuffer(AnySharedArrayBuffer, ABC):
     buffer_id: SharedArrayBufferId
 
     def __buffer__(self, flags: int) -> memoryview:
@@ -132,29 +224,33 @@ class JSSharedArrayBuffer(ABC):
 
 
 @dataclass(frozen=True, slots=True)
-class JSArrayBufferTransfer(ABC):
+class JSArrayBufferTransfer(AnyArrayBufferTransfer, ABC):
     transfer_id: TransferId
 
     def __buffer__(self, flags: int) -> memoryview:
         raise NotImplementedError("Cannot access ArrayBufferTransfer from Python")
 
 
-AnyArrayBufferData: TypeAlias = (
-    JSArrayBuffer | JSResizableArrayBuffer | JSSharedArrayBuffer | JSArrayBufferTransfer
-)
-
-JSArrayBufferT = TypeVar("JSArrayBufferT", bound=AnyArrayBufferData)
+if TYPE_CHECKING:
+    AnyArrayBufferData: TypeAlias = (
+        AnyBuffer | JSArrayBuffer | JSSharedArrayBuffer | JSArrayBufferTransfer
+    )
+    JSArrayBufferT = TypeVar(
+        "JSArrayBufferT", bound=AnyArrayBufferData, default=AnyArrayBufferData
+    )
+else:
+    JSArrayBufferT = TypeVar("JSArrayBufferT")
 
 
 @dataclass(slots=True, init=False)
-class JSArrayBufferView(Generic[JSArrayBufferT, BufferT]):
+class JSArrayBufferView(Generic[JSArrayBufferT, AnyBufferT]):
     backing_buffer: JSArrayBufferT
     view_tag: ArrayBufferViewTag
     byte_offset: int
     byte_length: int | None
     flags: ArrayBufferViewFlags
     readonly: bool
-    struct_format: StructFormat
+    view_format: ViewFormat
 
     def __init__(
         self,
@@ -172,30 +268,35 @@ class JSArrayBufferView(Generic[JSArrayBufferT, BufferT]):
         self.view_tag = view_tag
         self.byte_offset = byte_offset
         self.byte_length = byte_length
-        self.struct_format = ArrayBufferViewStructFormat(view_tag)
+        self.view_format = ArrayBufferViewStructFormat(view_tag)
 
-        # FIXME: can't access some backing buffers
-        with memoryview(backing_buffer) as mv:
-            if flags is None:
-                self.flags = ArrayBufferViewFlags(0)
-                if not mv.readonly:
-                    self.flags |= ArrayBufferViewFlags.IsBufferResizable
-                if byte_length is None:
-                    self.flags |= ArrayBufferViewFlags.IsLengthTracking
-            else:
-                self.flags = ArrayBufferViewFlags(flags)
-            self.readonly = mv.readonly if readonly is None else readonly
+        # Can't access some backing buffers — they may raise NotImplementedError
+        try:
+            with memoryview(backing_buffer) as mv:
+                buffer_readonly = mv.readonly
+        except NotImplementedError:
+            buffer_readonly = True
+
+        if flags is None:
+            self.flags = ArrayBufferViewFlags(0)
+            if not buffer_readonly:
+                self.flags |= ArrayBufferViewFlags.IsBufferResizable
+            if byte_length is None:
+                self.flags |= ArrayBufferViewFlags.IsLengthTracking
+        else:
+            self.flags = ArrayBufferViewFlags(flags)
+        self.readonly = buffer_readonly if readonly is None else readonly
 
     @abstractmethod
-    def get_buffer(self) -> BufferT: ...
+    def get_buffer(self) -> AnyBufferT: ...
 
     def get_buffer_as_memoryview(self) -> memoryview:
         mv = memoryview(self.backing_buffer)
         if self.readonly:
             mv = mv.toreadonly()
 
-        itemsize = self.struct_format.itemsize
-        struct_format = self.struct_format.struct_format
+        itemsize = self.view_format.itemsize
+        struct_format = self.view_format.struct_format
 
         if self.byte_length is not None:
             # Fixed-length views must have a length that's multiple of the
@@ -234,29 +335,32 @@ class JSArrayBufferView(Generic[JSArrayBufferT, BufferT]):
         return mv
 
 
-ViewTagT = TypeVar(
-    "ViewTagT",
-    bound=Literal[
-        ArrayBufferViewTag.kInt8Array,
-        ArrayBufferViewTag.kUint8Array,
-        ArrayBufferViewTag.kUint8ClampedArray,
-        ArrayBufferViewTag.kInt16Array,
-        ArrayBufferViewTag.kUint16Array,
-        ArrayBufferViewTag.kInt32Array,
-        ArrayBufferViewTag.kUint32Array,
-        ArrayBufferViewTag.kFloat16Array,
-        ArrayBufferViewTag.kFloat32Array,
-        ArrayBufferViewTag.kFloat64Array,
-        ArrayBufferViewTag.kBigInt64Array,
-        ArrayBufferViewTag.kBigUint64Array,
-    ],
-)
+TypedViewTag = Literal[
+    ArrayBufferViewTag.kInt8Array,
+    ArrayBufferViewTag.kUint8Array,
+    ArrayBufferViewTag.kUint8ClampedArray,
+    ArrayBufferViewTag.kInt16Array,
+    ArrayBufferViewTag.kUint16Array,
+    ArrayBufferViewTag.kInt32Array,
+    ArrayBufferViewTag.kUint32Array,
+    ArrayBufferViewTag.kFloat16Array,
+    ArrayBufferViewTag.kFloat32Array,
+    ArrayBufferViewTag.kFloat64Array,
+    ArrayBufferViewTag.kBigInt64Array,
+    ArrayBufferViewTag.kBigUint64Array,
+]
 
-ElementT = TypeVar("ElementT", int, float)
+if TYPE_CHECKING:
+    ViewTagT = TypeVar("ViewTagT", bound=TypedViewTag, default=TypedViewTag)
+    ElementT = TypeVar("ElementT", bound=int | float, default=int | float)
+else:
+    ViewTagT = TypeVar("ViewTagT")
+    ElementT = TypeVar("ElementT")
 
 
 class JSTypedArray(
     JSArrayBufferView[JSArrayBufferT, memoryview],
+    AnyArrayBufferView,
     Generic[JSArrayBufferT, ViewTagT, ElementT],
 ):
     element_type: type[ElementT]
@@ -267,11 +371,13 @@ class JSTypedArray(
         backing_buffer: JSArrayBufferT,
         *,
         byte_offset: int = 0,
-        byte_length: int | None = None,
+        byte_length: (
+            int | None
+        ) = None,  # TODO: serialized  data uses 0 when flags are resizable
         flags: ArrayBufferViewFlags | None = None,
         readonly: bool = False,
     ) -> None:
-        super().__init__(
+        super(JSTypedArray, self).__init__(
             backing_buffer,
             view_tag=self.view_tag,
             byte_offset=byte_offset,
@@ -525,9 +631,88 @@ class JSDataView(JSArrayBufferView[JSArrayBufferT, DataViewBuffer]):
         return DataViewBuffer(self.get_buffer_as_memoryview())
 
 
-@dataclass
+@dataclass(slots=True, unsafe_hash=True, order=True)
+class ViewFormat:
+    view_tag: ArrayBufferViewTag
+    struct_format: str
+    view_type: type[JSTypedArray] | type[JSDataView]
+    itemsize: int = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.itemsize = struct.calcsize(self.struct_format)
+
+
+@frozen
+class ArrayBufferViewStructFormat(ViewFormat, Enum):
+    Int8Array = ArrayBufferViewTag.kInt8Array, "b", JSInt8Array
+    Uint8Array = ArrayBufferViewTag.kUint8Array, "B", JSUint8Array
+    # Python doesn't distinguish between wrapping and clamped views, because
+    # setting out-of-range values throws an error.
+    Uint8ClampedArray = ArrayBufferViewTag.kUint8ClampedArray, "B", JSUint8ClampedArray
+    Int16Array = ArrayBufferViewTag.kInt16Array, "h", JSInt16Array
+    Uint16Array = ArrayBufferViewTag.kUint16Array, "H", JSUint16Array
+    Int32Array = ArrayBufferViewTag.kInt32Array, "i", JSInt32Array
+    Uint32Array = ArrayBufferViewTag.kUint32Array, "I", JSUint32Array
+    Float16Array = ArrayBufferViewTag.kFloat16Array, "e", JSFloat16Array
+    Float32Array = ArrayBufferViewTag.kFloat32Array, "f", JSFloat32Array
+    Float64Array = ArrayBufferViewTag.kFloat64Array, "d", JSFloat64Array
+    BigInt64Array = ArrayBufferViewTag.kBigInt64Array, "q", JSBigInt64Array
+    BigUint64Array = ArrayBufferViewTag.kBigUint64Array, "Q", JSBigUint64Array
+    # DataView doesn't have a single format, we use bytes format as a default.
+    # As in accessing the buffer provides actual bytes objects, not integers.
+    DataView = ArrayBufferViewTag.kDataView, "c", JSDataView
+
+    @functools.lru_cache  # noqa: B019 # OK because static method
+    @staticmethod
+    def _missing_(arg: object) -> ArrayBufferViewStructFormat | None:
+        # Allow looking up values by ArrayBufferViewTag enum value
+        for value in ArrayBufferViewStructFormat:
+            if value.view_tag is arg:
+                return value
+        return None
+
+    if TYPE_CHECKING:
+
+        def __init__(
+            self, value: ArrayBufferViewTag | ArrayBufferViewStructFormat
+        ) -> None: ...
+
+
+def create_view(
+    buffer: JSArrayBufferT,
+    format: ArrayBufferViewTag | ArrayBufferViewStructFormat,
+    *,
+    byte_offset: int = 0,
+    byte_length: int | None = None,
+    flags: ArrayBufferViewFlags | None = None,
+    readonly: bool = False,
+) -> JSTypedArray | JSDataView:
+    if isinstance(format, ArrayBufferViewTag):
+        format = ArrayBufferViewStructFormat(format)
+    return format.view_type(
+        buffer,
+        byte_offset=byte_offset,
+        byte_length=byte_length,
+        readonly=readonly,
+    )
+
+
+@dataclass(init=False)
 class JSArrayBufferError(V8CodecError):
     pass
+
+
+@dataclass(init=False)
+class ByteLengthJSArrayBufferError(V8CodecError, ValueError):
+    byte_length: int
+    max_byte_length: int | None
+
+    def __init__(
+        self, message: str, *, byte_length: int, max_byte_length: int | None
+    ) -> None:
+        super(ByteLengthJSArrayBufferError, self).__init__(message)
+        self.byte_length = byte_length
+        self.max_byte_length = max_byte_length
 
 
 @dataclass(init=False)

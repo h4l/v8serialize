@@ -4,9 +4,10 @@ import struct
 from collections import abc
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
-from functools import partial
+from functools import lru_cache, partial
 from types import NoneType, TracebackType
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Any,
     Iterable,
@@ -15,17 +16,16 @@ from typing import (
     Never,
     Protocol,
     Sequence,
+    TypeVar,
     cast,
     overload,
 )
 
 from v8serialize._values import (
-    AnyArrayBufferData,
-    ArrayBufferData,
-    ArrayBufferTransferData,
-    ArrayBufferViewData,
-    ResizableArrayBufferData,
-    SharedArrayBufferData,
+    AnyArrayBuffer,
+    AnyArrayBufferTransfer,
+    AnyArrayBufferView,
+    AnySharedArrayBuffer,
 )
 from v8serialize.constants import (
     FLOAT64_SAFE_INT_RANGE,
@@ -45,8 +45,20 @@ from v8serialize.errors import V8CodecError
 from v8serialize.jstypes import JSObject
 from v8serialize.jstypes.jsarray import JSArray
 from v8serialize.jstypes.jsarrayproperties import JSHoleEnum, JSHoleType
+from v8serialize.jstypes.jsbuffers import (
+    BaseJSArrayBuffer,
+    JSArrayBuffer,
+    JSArrayBufferTransfer,
+    JSArrayBufferView,
+    JSSharedArrayBuffer,
+)
 from v8serialize.jstypes.jsundefined import JSUndefinedEnum, JSUndefinedType
 from v8serialize.references import SerializedId, SerializedObjectLog
+
+if TYPE_CHECKING:
+    from functools import _lru_cache_wrapper
+
+T = TypeVar("T")
 
 
 @dataclass(init=False)
@@ -98,6 +110,12 @@ class TagConstraintRemover(AbstractContextManager[None, None]):
         /,
     ) -> None:
         self.stream.allowed_tags = None
+
+
+@dataclass(slots=True, frozen=True)
+class SerializedObjectReference:
+    serialized_tag: SerializationTag
+    serialized_id: SerializedId
 
 
 @dataclass(slots=True)
@@ -446,47 +464,51 @@ class WritableTagStream:
 
     def write_js_array_buffer(
         self,
-        buffer: AnyArrayBufferData | ArrayBufferViewData,
+        buffer: AnyArrayBuffer | AnySharedArrayBuffer | AnyArrayBufferTransfer,
         *,
         identity: object | None = None,
     ) -> None:
-        if isinstance(buffer, ArrayBufferData):
-            self._write_js_array_buffer(buffer, identity=identity)
-        elif isinstance(buffer, ResizableArrayBufferData):
-            self._write_js_array_buffer_resizable(buffer, identity=identity)
-        elif isinstance(buffer, SharedArrayBufferData):
+        if isinstance(buffer, AnyArrayBuffer):
+            if buffer.resizable:
+                self._write_js_array_buffer_resizable(buffer, identity=identity)
+            else:
+                self._write_js_array_buffer(buffer, identity=identity)
+        elif isinstance(buffer, AnySharedArrayBuffer):
             self._write_js_array_buffer_shared(buffer, identity=identity)
-        elif isinstance(buffer, ArrayBufferTransferData):
+        elif isinstance(buffer, AnyArrayBufferTransfer):
             self._write_js_array_buffer_transfer(buffer, identity=identity)
-        elif isinstance(buffer, ArrayBufferViewData):
-            self._write_js_array_buffer_view(buffer, identity=identity)
         else:
             raise AssertionError(f"Unknown array buffer data: {buffer}")
 
     def _write_js_array_buffer(
-        self, buffer: ArrayBufferData, *, identity: object | None = None
+        self, buffer: AnyArrayBuffer, *, identity: object | None = None
     ) -> None:
+        assert not buffer.resizable
         self.objects.record_reference(buffer if identity is None else identity)
         self.write_tag(SerializationTag.kArrayBuffer)
-        self.write_varint(len(buffer.data))
-        self.data.extend(buffer.data)
+        with memoryview(buffer.data) as buffer_data:
+            self.write_varint(len(buffer_data))
+            self.data.extend(buffer_data)
 
     def _write_js_array_buffer_resizable(
-        self, buffer: ResizableArrayBufferData, *, identity: object | None = None
+        self, buffer: AnyArrayBuffer, *, identity: object | None = None
     ) -> None:
-        if buffer.max_byte_length < len(buffer.data):
-            raise ValueError(
-                f"max_byte_length must be >= len(data): "
-                f"{buffer.max_byte_length=}, {len(buffer.data)=}"
-            )
-        self.objects.record_reference(buffer if identity is None else identity)
-        self.write_tag(SerializationTag.kResizableArrayBuffer)
-        self.write_varint(len(buffer.data))
-        self.write_varint(buffer.max_byte_length)
-        self.data.extend(buffer.data)
+        assert buffer.resizable
+        with memoryview(buffer.data) as buffer_data:
+            if buffer.max_byte_length < len(buffer_data):
+                raise ValueError(
+                    f"max_byte_length must be >= len(data): "
+                    f"{buffer.max_byte_length=}, {len(buffer_data)=}"
+                )
+            self.objects.record_reference(buffer if identity is None else identity)
+            self.write_tag(SerializationTag.kResizableArrayBuffer)
+            # TODO: validate uint32
+            self.write_varint(len(buffer_data))
+            self.write_varint(buffer.max_byte_length)
+            self.data.extend(buffer_data)
 
     def _write_js_array_buffer_shared(
-        self, buffer: SharedArrayBufferData, *, identity: object | None = None
+        self, buffer: AnySharedArrayBuffer, *, identity: object | None = None
     ) -> None:
         if buffer.buffer_id < 0:
             raise ValueError(f"buffer_id cannot be negative: {buffer.buffer_id=}")
@@ -495,7 +517,7 @@ class WritableTagStream:
         self.write_varint(buffer.buffer_id)
 
     def _write_js_array_buffer_transfer(
-        self, buffer: ArrayBufferTransferData, *, identity: object | None = None
+        self, buffer: AnyArrayBufferTransfer, *, identity: object | None = None
     ) -> None:
         if buffer.transfer_id < 0:
             raise ValueError(f"transfer_id cannot be negative: {buffer.transfer_id=}")
@@ -503,25 +525,15 @@ class WritableTagStream:
         self.write_tag(SerializationTag.kArrayBufferTransfer)
         self.write_varint(buffer.transfer_id)
 
-    def _write_js_array_buffer_view(
-        self, buffer_view: ArrayBufferViewData, *, identity: object | None = None
+    def write_js_array_buffer_view(
+        self, buffer_view: AnyArrayBufferView, *, identity: object | None = None
     ) -> None:
-        # The view must be preceded by the buffer itself, or an object reference
-        # to the buffer.
-        if buffer_view.buffer not in self.objects:
-            self.write_js_array_buffer(buffer_view.buffer)
-        else:
-            # TODO: do we need a way to setup reference aliases so that a
-            # different object can be stored for the buffer, but we can still
-            # resolve it from this buffer data object?
-            # Or, we could return a handle from the write functions that would
-            # allow a caller to register an alias after writing.
-            self.write_object_reference(obj=buffer_view)
         self.objects.record_reference(buffer_view if identity is None else identity)
         self.write_tag(SerializationTag.kArrayBufferView)
         self.write_varint(buffer_view.view_tag.value)
         self.write_varint(buffer_view.byte_offset)
-        self.write_varint(buffer_view.byte_length)
+        # 0 / None when flags.IsBufferResizable
+        self.write_varint(buffer_view.byte_length or 0)
         self.write_varint(buffer_view.flags)
 
     # TODO: should this just be a method of EncodeContext, not here?
@@ -540,6 +552,12 @@ class EncodeContext(Protocol):
 
         The object_mappers convert the Python value to JavaScript representation,
         and the stream writes out V8 serialization format tagged data.
+        """
+
+    def deduplicate(self, value: T) -> T:
+        """Look up and return a previously seen value equal to this value.
+
+        If value is not hashable or not found, it's returned as-is.
         """
 
 
@@ -564,17 +582,23 @@ AnyObjectMapper = ObjectMapperObject | SerializeObjectFn
 class DefaultEncodeContext(EncodeContext):
     object_mappers: Sequence[ObjectMapperObject | SerializeObjectFn]
     stream: WritableTagStream
+    _memoized: _lru_cache_wrapper[Any]
 
     def __init__(
         self,
         object_mappers: Iterable[ObjectMapperObject | SerializeObjectFn] | None = None,
         *,
         stream: WritableTagStream | None = None,
+        deduplicate_max_size: int | None = None,
     ) -> None:
         self.object_mappers = list(
             default_object_mappers if object_mappers is None else object_mappers
         )
         self.stream = WritableTagStream() if stream is None else stream
+
+        self._memoized = lru_cache(maxsize=deduplicate_max_size, typed=True)(
+            lambda x: x
+        )
 
     def __serialize(self, value: object, *, i: int) -> None:
         if i < len(self.object_mappers):
@@ -599,6 +623,11 @@ class DefaultEncodeContext(EncodeContext):
         raise UnmappedValueEncodeV8CodecError(
             "No object mapper was able to write the value", value=value
         )
+
+    def deduplicate(self, value: T) -> T:
+        if getattr(value, "__hash__", None) is not None:
+            return self._memoized(value)  # type: ignore[no-any-return]
+        return value
 
 
 @dataclass(slots=True)
@@ -734,6 +763,42 @@ class ObjectMapper(ObjectMapperObject):
     ) -> None:
         ctx.stream.write_jsset(value, ctx=ctx)
 
+    @serialize.register(BaseJSArrayBuffer)
+    def serialize_js_array_buffer(
+        self,
+        value: JSArrayBuffer | JSSharedArrayBuffer | JSArrayBufferTransfer,
+        /,
+        ctx: EncodeContext,
+        next: SerializeNextFn,
+    ) -> None:
+        ctx.stream.write_js_array_buffer(value)
+
+    @serialize.register(bytes)
+    @serialize.register(bytearray)
+    @serialize.register(memoryview)
+    def serialize_buffer(
+        self,
+        value: bytes | bytearray,
+        /,
+        ctx: EncodeContext,
+        next: SerializeNextFn,
+    ) -> None:
+        with memoryview(value) as data:
+            ctx.stream.write_js_array_buffer(
+                buffer=JSArrayBuffer(data), identity=ctx.deduplicate(value)
+            )
+
+    @serialize.register(JSArrayBufferView)
+    def serialize_buffer_view(
+        self,
+        value: JSArrayBufferView,
+        /,
+        ctx: EncodeContext,
+        next: SerializeNextFn,
+    ) -> None:
+        ctx.serialize(value.backing_buffer)
+        ctx.stream.write_js_array_buffer_view(value)
+
 
 def serialize_object_references(
     value: object, /, ctx: EncodeContext, next: SerializeNextFn
@@ -744,6 +809,7 @@ def serialize_object_references(
     references to the original instance, which avoids duplication of data and
     preserves object identity after de-serializing.
     """
+    value = ctx.deduplicate(value)
     if value in ctx.stream.objects:
         ctx.stream.write_object_reference(obj=value)
     else:
