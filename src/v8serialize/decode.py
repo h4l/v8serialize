@@ -17,7 +17,9 @@ from typing import (
     NamedTuple,
     Never,
     Protocol,
+    TypeVar,
     cast,
+    runtime_checkable,
 )
 
 from v8serialize._values import (
@@ -57,6 +59,8 @@ from v8serialize.references import SerializedId, SerializedObjectLog
 if TYPE_CHECKING:
     from _typeshed import SupportsKeysAndGetItem, SupportsRead
 
+T = TypeVar("T")
+T_co = TypeVar("T_co", covariant=True)
 
 
 def _decode_zigzag(n: int) -> int:
@@ -539,9 +543,30 @@ class ReadableTagStream:
         self.objects.record_reference(result)
         return result
 
+    def read_host_object(self, deserializer: HostObjectDeserializer[T]) -> T:
+        self.read_tag(SerializationTag.kHostObject)
+        if isinstance(deserializer, HostObjectDeserializerObj):
+            return deserializer.deserialize_host_object(stream=self)
+        return deserializer(stream=self)
+
     def read_object(self, tag_mapper: TagMapper) -> object:
         tag = self.read_tag(consume=False)
         return tag_mapper.deserialize(tag, self)
+
+
+class HostObjectDeserializerFn(Protocol[T_co]):
+    def __call__(self, *, stream: ReadableTagStream) -> T_co: ...
+
+
+@runtime_checkable
+class HostObjectDeserializerObj(Protocol[T_co]):
+    @property
+    def deserialize_host_object(self) -> HostObjectDeserializerFn[T_co]: ...
+
+
+HostObjectDeserializer = (
+    HostObjectDeserializerObj[T_co] | HostObjectDeserializerFn[T_co]
+)
 
 
 class TagReader(Protocol):
@@ -598,6 +623,7 @@ class TagMapper:
     js_object_type: JSObjectType
     js_array_type: JSArrayType
     js_constants: Mapping[ConstantTags, object]
+    host_object_deserializer: HostObjectDeserializer[object] | None
 
     def __init__(
         self,
@@ -612,12 +638,14 @@ class TagMapper:
         js_object_type: JSObjectType | None = None,
         js_array_type: JSArrayType | None = None,
         js_constants: Mapping[ConstantTags, object] | None = None,
+        host_object_deserializer: HostObjectDeserializer[object] | None = None,
     ) -> None:
         self.default_tag_mapper = default_tag_mapper
         self.jsmap_type = jsmap_type or dict
         self.jsset_type = jsset_type or set
         self.js_object_type = js_object_type or JSObject
         self.js_array_type = js_array_type or JSArray
+        self.host_object_deserializer = host_object_deserializer
 
         _js_constants = dict(js_constants) if js_constants is not None else {}
         _js_constants.setdefault(SerializationTag.kTheHole, JSHole)
@@ -764,6 +792,17 @@ class TagMapper:
             )
             return view
         return buffer
+
+    def deserialize_host_object(
+        self, tag: SerializationTag, stream: ReadableTagStream
+    ) -> object:
+        if self.host_object_deserializer is None:
+            stream.throw(
+                "Stream contains HostObject data without deserializer available "
+                "to handle it. TagMapper needs a host_object_deserializer set "
+                "to read this serialized data."
+            )
+        return stream.read_host_object(self.host_object_deserializer)
 
     def deserialize_object_reference(
         self, tag: SerializationTag, stream: ReadableTagStream

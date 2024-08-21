@@ -16,9 +16,11 @@ from typing import (
     Never,
     Protocol,
     Sequence,
+    TypeAlias,
     TypeVar,
     cast,
     overload,
+    runtime_checkable,
 )
 
 from v8serialize._values import (
@@ -60,6 +62,7 @@ if TYPE_CHECKING:
     from functools import _lru_cache_wrapper
 
 T = TypeVar("T")
+T_con = TypeVar("T_con", contravariant=True)
 
 
 @dataclass(init=False)
@@ -544,9 +547,33 @@ class WritableTagStream:
 
         self.write_varint(flags)
 
+    def write_host_object(
+        self, value: T, *, serializer: HostObjectSerializer[T]
+    ) -> None:
+        self.write_tag(SerializationTag.kHostObject)
+        if isinstance(serializer, HostObjectSerializerObj):
+            serializer.serialize_host_object(value=value, stream=self)
+        else:
+            serializer(value=value, stream=self)
+
     # TODO: should this just be a method of EncodeContext, not here?
     def write_object(self, value: object, ctx: EncodeContext) -> None:
         ctx.serialize(value)
+
+
+class HostObjectSerializerFn(Protocol[T_con]):
+    def __call__(self, *, stream: WritableTagStream, value: T_con) -> None: ...
+
+
+@runtime_checkable
+class HostObjectSerializerObj(Protocol[T_con]):
+    @property
+    def serialize_host_object(self) -> HostObjectSerializerFn[T_con]: ...
+
+
+HostObjectSerializer: TypeAlias = (
+    HostObjectSerializerObj[T_con] | HostObjectSerializerFn[T_con]
+)
 
 
 class EncodeContext(Protocol):
