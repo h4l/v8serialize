@@ -5,7 +5,7 @@ import inspect
 import struct
 from abc import ABC, abstractmethod
 from contextlib import AbstractContextManager
-from dataclasses import FrozenInstanceError, dataclass, field
+from dataclasses import dataclass, field
 from enum import Enum
 from types import TracebackType
 from typing import (
@@ -20,6 +20,7 @@ from typing import (
     overload,
 )
 
+from v8serialize._enums import frozen
 from v8serialize._values import (
     AnyArrayBuffer,
     AnyArrayBufferTransfer,
@@ -42,18 +43,6 @@ else:
 
     AnyBufferT = TypeVar("AnyBufferT")
     BufferT = TypeVar("BufferT")
-
-TypeT = TypeVar("TypeT", bound=type)
-
-
-def frozen_setattr(cls: type, name: str, value: object) -> None:
-    raise FrozenInstanceError(f"Cannot assign to field {name!r}")
-
-
-def frozen(cls: TypeT) -> TypeT:
-    """Disable `__setattr__`, much like @dataclass(frozen=True)."""
-    cls.__setattr__ = frozen_setattr  # type: ignore[method-assign,assignment]
-    return cls
 
 
 def get_buffer(buffer: Buffer, flags: int | inspect.BufferFlags = 0) -> memoryview:
