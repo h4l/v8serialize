@@ -4,8 +4,9 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from v8serialize.decode import DecodeV8CodecError, ReadableTagStream, loads
+from v8serialize.decode import ReadableTagStream, loads
 from v8serialize.encode import WritableTagStream
+from v8serialize.errors import DecodeV8CodecError
 
 
 @given(st.integers(min_value=1))

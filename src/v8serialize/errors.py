@@ -1,5 +1,5 @@
 from dataclasses import asdict, dataclass
-from typing import cast
+from typing import ByteString, cast
 
 
 @dataclass(init=False)
@@ -19,6 +19,19 @@ class V8CodecError(BaseException):
         values_fmt = ", ".join(f"{f}={v!r}" for (f, v) in field_values.items())
 
         return f"{message}{": " if values_fmt else ""}{values_fmt}"
+
+
+@dataclass(init=False)
+class DecodeV8CodecError(V8CodecError, ValueError):
+    position: int
+    data: ByteString
+
+    def __init__(
+        self, message: str, *args: object, position: int, data: ByteString
+    ) -> None:
+        super().__init__(message, *args)
+        self.position = position
+        self.data = data
 
 
 @dataclass(slots=True, init=False)

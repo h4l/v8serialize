@@ -41,7 +41,7 @@ from v8serialize.constants import (
     SerializationTag,
     kLatestVersion,
 )
-from v8serialize.errors import V8CodecError
+from v8serialize.errors import DecodeV8CodecError, V8CodecError
 from v8serialize.jstypes import JSHole, JSObject, JSUndefined
 from v8serialize.jstypes.jsarray import JSArray
 from v8serialize.jstypes.jsbuffers import (
@@ -57,18 +57,6 @@ from v8serialize.references import SerializedId, SerializedObjectLog
 if TYPE_CHECKING:
     from _typeshed import SupportsKeysAndGetItem, SupportsRead
 
-
-@dataclass(init=False)
-class DecodeV8CodecError(V8CodecError, ValueError):
-    position: int
-    data: ByteString
-
-    def __init__(
-        self, message: str, *args: object, position: int, data: ByteString
-    ) -> None:
-        super().__init__(message, *args)
-        self.position = position
-        self.data = data
 
 
 def _decode_zigzag(n: int) -> int:
