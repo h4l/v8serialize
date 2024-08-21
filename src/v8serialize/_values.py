@@ -12,7 +12,7 @@ from typing import (
     runtime_checkable,
 )
 
-from v8serialize.constants import ArrayBufferViewFlags, ArrayBufferViewTag
+from v8serialize.constants import ArrayBufferViewTag
 
 if TYPE_CHECKING:
     from typing_extensions import Buffer
@@ -53,8 +53,6 @@ class AnyArrayBufferView(Protocol):
     def byte_offset(self) -> int: ...
     @property
     def byte_length(self) -> int | None: ...
-    @property
-    def flags(self) -> ArrayBufferViewFlags: ...
 
 
 AnyArrayBufferData: TypeAlias = (
@@ -96,5 +94,4 @@ class ArrayBufferViewConstructor(Protocol[BufferT_con, ViewT_co]):
         *,
         byte_offset: int,
         byte_length: int | None,
-        flags: ArrayBufferViewFlags,
     ) -> ViewT_co: ...

@@ -536,12 +536,17 @@ class ReadableTagStream:
         # TODO: should it be this method's responsibility to bounds-check the
         #   view? I'm leaning towards no, as we can't check the two reference
         #   buffer types anyway.
+        byte_offset = self.read_varint()
+        byte_length = self.read_varint()
+        flags = ArrayBufferViewFlags(self.read_varint())
+
         result = array_buffer_view(
             buffer=backing_buffer,
             format=ArrayBufferViewTag(raw_view_tag),
-            byte_offset=self.read_varint(),
-            byte_length=self.read_varint(),
-            flags=ArrayBufferViewFlags(self.read_varint()),
+            byte_offset=byte_offset,
+            byte_length=(
+                None if ArrayBufferViewFlags.IsLengthTracking in flags else byte_length
+            ),
         )
         self.objects.record_reference(result)
         return result

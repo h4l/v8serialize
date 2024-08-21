@@ -28,7 +28,7 @@ from v8serialize._values import (
     SharedArrayBufferId,
     TransferId,
 )
-from v8serialize.constants import ArrayBufferViewFlags, ArrayBufferViewTag
+from v8serialize.constants import ArrayBufferViewTag
 from v8serialize.errors import V8CodecError
 
 if TYPE_CHECKING:
@@ -248,7 +248,6 @@ class JSArrayBufferView(Generic[JSArrayBufferT, AnyBufferT]):
     view_tag: ArrayBufferViewTag
     byte_offset: int
     byte_length: int | None
-    flags: ArrayBufferViewFlags
     readonly: bool
     view_format: ViewFormat
 
@@ -259,7 +258,6 @@ class JSArrayBufferView(Generic[JSArrayBufferT, AnyBufferT]):
         view_tag: ArrayBufferViewTag = ArrayBufferViewTag.kUint8Array,
         byte_offset: int = 0,
         byte_length: int | None = None,
-        flags: ArrayBufferViewFlags | None = None,
         readonly: bool = False,
     ) -> None:
         if byte_offset < 0:
@@ -277,15 +275,11 @@ class JSArrayBufferView(Generic[JSArrayBufferT, AnyBufferT]):
         except NotImplementedError:
             buffer_readonly = True
 
-        if flags is None:
-            self.flags = ArrayBufferViewFlags(0)
-            if not buffer_readonly:
-                self.flags |= ArrayBufferViewFlags.IsBufferResizable
-            if byte_length is None:
-                self.flags |= ArrayBufferViewFlags.IsLengthTracking
-        else:
-            self.flags = ArrayBufferViewFlags(flags)
         self.readonly = buffer_readonly if readonly is None else readonly
+
+    @property
+    def is_length_tracking(self) -> bool:
+        return self.byte_length is None
 
     @abstractmethod
     def get_buffer(self) -> AnyBufferT: ...
@@ -374,7 +368,6 @@ class JSTypedArray(
         byte_length: (
             int | None
         ) = None,  # TODO: serialized  data uses 0 when flags are resizable
-        flags: ArrayBufferViewFlags | None = None,
         readonly: bool = False,
     ) -> None:
         super(JSTypedArray, self).__init__(
@@ -382,7 +375,6 @@ class JSTypedArray(
             view_tag=self.view_tag,
             byte_offset=byte_offset,
             byte_length=byte_length,
-            flags=flags,
             readonly=readonly,
         )
 
@@ -615,7 +607,6 @@ class JSDataView(JSArrayBufferView[JSArrayBufferT, DataViewBuffer]):
         backing_buffer: JSArrayBufferT,
         byte_offset: int = 0,
         byte_length: int | None = None,
-        flags: ArrayBufferViewFlags | None = None,
         readonly: bool = False,
     ) -> None:
         super().__init__(
@@ -623,7 +614,6 @@ class JSDataView(JSArrayBufferView[JSArrayBufferT, DataViewBuffer]):
             view_tag=ArrayBufferViewTag.kDataView,
             byte_offset=byte_offset,
             byte_length=byte_length,
-            flags=flags,
             readonly=readonly,
         )
 
@@ -684,7 +674,6 @@ def create_view(
     *,
     byte_offset: int = 0,
     byte_length: int | None = None,
-    flags: ArrayBufferViewFlags | None = None,
     readonly: bool = False,
 ) -> JSTypedArray | JSDataView:
     if isinstance(format, ArrayBufferViewTag):

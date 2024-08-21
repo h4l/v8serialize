@@ -35,6 +35,7 @@ from v8serialize.constants import (
     MAX_ARRAY_LENGTH,
     MAX_ARRAY_LENGTH_REPR,
     UINT32_RANGE,
+    ArrayBufferViewFlags,
     ConstantTags,
     SerializationTag,
     TagConstraint,
@@ -534,7 +535,14 @@ class WritableTagStream:
         self.write_varint(buffer_view.byte_offset)
         # 0 / None when flags.IsBufferResizable
         self.write_varint(buffer_view.byte_length or 0)
-        self.write_varint(buffer_view.flags)
+
+        flags = ArrayBufferViewFlags(0)
+        if isinstance(buffer_view, JSArrayBuffer) and buffer_view.resizable:
+            flags |= ArrayBufferViewFlags.IsBufferResizable
+        if buffer_view.byte_length is None:
+            flags |= ArrayBufferViewFlags.IsLengthTracking
+
+        self.write_varint(flags)
 
     # TODO: should this just be a method of EncodeContext, not here?
     def write_object(self, value: object, ctx: EncodeContext) -> None:
