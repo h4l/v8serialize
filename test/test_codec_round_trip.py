@@ -19,6 +19,7 @@ from v8serialize.encode import (
     WritableTagStream,
     serialize_object_references,
 )
+from v8serialize.extensions import node_js_array_buffer_view_host_object_handler
 from v8serialize.jstypes import JSObject, JSUndefined
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
 from v8serialize.jstypes.jsarray import JSArray
@@ -213,9 +214,13 @@ def js_array_buffer_views(
             )
 
         byte_offset = data.draw(st.integers(min_value=0, max_value=buffer_byte_length))
-        byte_length = data.draw(
-            st.integers(min_value=0, max_value=buffer_byte_length - byte_offset)
+        item_length = data.draw(
+            st.integers(
+                min_value=0,
+                max_value=(buffer_byte_length - byte_offset) // view_format.itemsize,
+            )
         )
+        byte_length = item_length * view_format.itemsize
 
         return view_format.view_type(
             backing_buffer, byte_offset=byte_offset, byte_length=byte_length
@@ -622,4 +627,44 @@ def test_codec_rt_object__encodes_python_binary_types_as_array_buffers(
 
     assert isinstance(result, JSArrayBuffer)
     assert bytes(result.data) == bytes(result)
+    assert rts.eof
+
+
+@given(
+    value=js_array_buffer_views(
+        view_formats=st.sampled_from(
+            sorted(
+                set(ArrayBufferViewStructFormat)
+                - {ArrayBufferViewStructFormat.Float16Array},
+                key=lambda s: s.view_tag,
+            )
+        ),
+        backing_buffers=normal_js_array_buffers,
+    )
+)
+def test_codec_rt_nodejs_array_buffer_host_object(
+    value: JSTypedArray | JSDataView,
+    object_mapper: ObjectMapper,
+) -> None:
+    encode_ctx = DefaultEncodeContext([object_mapper])
+    encode_ctx.stream.write_host_object(
+        value, serializer=node_js_array_buffer_view_host_object_handler
+    )
+    rts = ReadableTagStream(encode_ctx.stream.data)
+    assert rts.read_tag(consume=False) == SerializationTag.kHostObject
+    result: JSTypedArray | JSDataView = rts.read_host_object(
+        deserializer=node_js_array_buffer_view_host_object_handler
+    )
+    # Node's view serialization intentionally only shares the portion of the
+    # buffer that the view references, so the rest of the initial buffer is not
+    # present in the result.
+    assert result.byte_offset == 0
+    assert result.is_length_tracking
+    assert result.byte_length is None
+    assert type(result) is type(value)
+    assert result.view_format == value.view_format
+    assert result.view_tag == value.view_tag
+    assert bytes(result.get_buffer_as_memoryview()) == bytes(
+        value.get_buffer_as_memoryview()
+    )
     assert rts.eof
