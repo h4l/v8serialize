@@ -1,6 +1,14 @@
 from dataclasses import dataclass
 from enum import IntEnum, IntFlag
-from typing import AbstractSet, Final, Literal
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Final,
+    Generic,
+    Literal,
+    TypeGuard,
+    TypeVar,
+)
 
 kLatestVersion: Final = 15
 """The current supported serialization format implemented here."""
@@ -152,6 +160,19 @@ class SerializationTag(IntEnum):
     kLegacyReservedRTCCertificate = ord("k")
 
 
+################################################################################
+# This is necessary because MyPy treats a Literal of all enum values differently
+# to a the enum type itself, but Literal[SerializationTag] is not allowed.
+
+# fmt: off
+AnySerializationTag = Literal[SerializationTag.kVersion, SerializationTag.kPadding, SerializationTag.kVerifyObjectCount, SerializationTag.kTheHole, SerializationTag.kUndefined, SerializationTag.kNull, SerializationTag.kTrue, SerializationTag.kFalse, SerializationTag.kInt32, SerializationTag.kUint32, SerializationTag.kDouble, SerializationTag.kBigInt, SerializationTag.kUtf8String, SerializationTag.kOneByteString, SerializationTag.kTwoByteString, SerializationTag.kObjectReference, SerializationTag.kBeginJSObject, SerializationTag.kEndJSObject, SerializationTag.kBeginSparseJSArray, SerializationTag.kEndSparseJSArray, SerializationTag.kBeginDenseJSArray, SerializationTag.kEndDenseJSArray, SerializationTag.kDate, SerializationTag.kTrueObject, SerializationTag.kFalseObject, SerializationTag.kNumberObject, SerializationTag.kBigIntObject, SerializationTag.kStringObject, SerializationTag.kRegExp, SerializationTag.kBeginJSMap, SerializationTag.kEndJSMap, SerializationTag.kBeginJSSet, SerializationTag.kEndJSSet, SerializationTag.kArrayBuffer, SerializationTag.kResizableArrayBuffer, SerializationTag.kArrayBufferTransfer, SerializationTag.kArrayBufferView, SerializationTag.kSharedArrayBuffer, SerializationTag.kSharedObject, SerializationTag.kWasmModuleTransfer, SerializationTag.kHostObject, SerializationTag.kWasmMemoryTransfer, SerializationTag.kError, SerializationTag.kLegacyReservedMessagePort, SerializationTag.kLegacyReservedBlob, SerializationTag.kLegacyReservedBlobIndex, SerializationTag.kLegacyReservedFile, SerializationTag.kLegacyReservedFileIndex, SerializationTag.kLegacyReservedDOMFileSystem, SerializationTag.kLegacyReservedFileList, SerializationTag.kLegacyReservedFileListIndex, SerializationTag.kLegacyReservedImageData, SerializationTag.kLegacyReservedImageBitmap, SerializationTag.kLegacyReservedImageBitmapTransfer, SerializationTag.kLegacyReservedOffscreenCanvas, SerializationTag.kLegacyReservedCryptoKey, SerializationTag.kLegacyReservedRTCCertificate]  # noqa: B950
+# fmt: on
+
+# Generate with:
+# python -c 'from v8serialize.constants import SerializationTag; print("Literal[{}]".format(", ".join(f"SerializationTag.{t.name}" for t in SerializationTag)))'  # noqa: B950
+################################################################################
+
+
 class ArrayBufferViewTag(IntEnum):
     kInt8Array = ord("b")
     kUint8Array = ord("B")
@@ -173,15 +194,25 @@ class ArrayBufferViewFlags(IntFlag):
     IsBufferResizable = 2
 
 
-TagSet = AbstractSet[SerializationTag]
+if TYPE_CHECKING:
+    TagT_co = TypeVar(
+        "TagT_co",
+        bound=AnySerializationTag,
+        default=AnySerializationTag,
+        covariant=True,
+    )
+else:
+    TagT_co = TypeVar("TagT_co", bound=AnySerializationTag)
+
+TagSet = AbstractSet[TagT_co]
 
 
 @dataclass(slots=True, frozen=True)
-class TagConstraint:
+class TagConstraint(Generic[TagT_co]):
     name: str
-    allowed_tags: TagSet
+    allowed_tags: TagSet[TagT_co]
 
-    def __contains__(self, tag: SerializationTag) -> bool:
+    def __contains__(self, tag: object) -> TypeGuard[TagT_co]:
         """True if `tag` is allowed by the constraint."""
         return tag in self.allowed_tags
 
@@ -194,7 +225,18 @@ class TagConstraint:
         return f"{self.name}: {self.allowed_tag_names}"
 
 
-JS_OBJECT_KEY_TAGS: Final = TagConstraint(
+ObjectKeyTag = Literal[
+    SerializationTag.kInt32,
+    SerializationTag.kDouble,
+    SerializationTag.kUint32,
+    SerializationTag.kNumberObject,
+    SerializationTag.kOneByteString,
+    SerializationTag.kTwoByteString,
+    SerializationTag.kUtf8String,
+    SerializationTag.kStringObject,
+]
+
+JS_OBJECT_KEY_TAGS: Final = TagConstraint[ObjectKeyTag](
     name="JavaScript Object Keys",
     allowed_tags=frozenset(
         {
@@ -222,7 +264,7 @@ ConstantTags = Literal[
     SerializationTag.kFalse,
 ]
 
-JS_CONSTANT_TAGS: Final = TagConstraint(
+JS_CONSTANT_TAGS: Final = TagConstraint[ConstantTags](
     name="JavaScript Constants",
     allowed_tags=frozenset(
         {
