@@ -4,7 +4,7 @@ from functools import reduce
 
 import pytest
 
-from v8serialize.constants import JSRegExpFlag
+from v8serialize.constants import JSRegExpFlag, SerializationErrorTag
 from v8serialize.errors import JSRegExpV8CodecError
 
 
@@ -73,3 +73,7 @@ def test_RegExpFlag__from_python_flags() -> None:
         assert JSRegExpFlag.from_python_flags(
             re.RegexFlag.MULTILINE | re.RegexFlag.VERBOSE
         )
+
+
+def test_ErrorTag() -> None:
+    assert SerializationErrorTag.EvalErrorPrototype == ord("E")

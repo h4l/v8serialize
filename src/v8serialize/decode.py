@@ -11,6 +11,7 @@ from typing import (
     ByteString,
     Callable,
     Generator,
+    Generic,
     Literal,
     Mapping,
     MutableMapping,
@@ -25,10 +26,13 @@ from typing import (
 )
 
 from v8serialize._values import (
+    AnyJSErrorSettableCause,
     ArrayBufferConstructor,
     ArrayBufferTransferConstructor,
     ArrayBufferViewConstructor,
     BufferT,
+    JSErrorConstructor,
+    JSErrorSettableCauseConstructor,
     SharedArrayBufferConstructor,
     SharedArrayBufferId,
     TransferId,
@@ -47,8 +51,10 @@ from v8serialize.constants import (
     ArrayBufferViewFlags,
     ArrayBufferViewTag,
     ConstantTags,
+    JSErrorName,
     JSRegExpFlag,
     PrimitiveObjectTag,
+    SerializationErrorTag,
     SerializationTag,
     TagConstraint,
     kLatestVersion,
@@ -64,6 +70,7 @@ from v8serialize.jstypes.jsbuffers import (
     JSTypedArray,
     create_view,
 )
+from v8serialize.jstypes.jserror import JSError
 from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject
 from v8serialize.jstypes.jsregexp import JSRegExp
 from v8serialize.references import SerializedId, SerializedObjectLog
@@ -112,12 +119,14 @@ class ArrayReadResult(NamedTuple):
     """The array and object properties."""
 
 
-@dataclass(frozen=True, slots=True)
-class ArrayBufferResizableReadResult:
-    max_byte_length: int
-    """The maximum sie the buffer may be resized to."""
-    data: memoryview
-    """The data exposed by the buffer at its current size."""
+class JSErrorReadResult(NamedTuple, Generic[T]):
+    js_error: T
+    cause: object | None
+
+
+class ReferencedObject(NamedTuple, Generic[T]):
+    serialized_id: SerializedId
+    object: T
 
 
 @dataclass(slots=True)
@@ -354,6 +363,59 @@ class ReadableTagStream:
         flags = JSRegExpFlag(self.read_varint())
         result = JSRegExp(source, flags)
         return self.objects.record_reference(result), result
+
+    def read_error_tag(self) -> SerializationErrorTag:
+        self.ensure_capacity(1)
+        code = self.read_varint()
+        if code in SerializationErrorTag:
+            return SerializationErrorTag(code)
+        self.throw(
+            f"Expected an error tag but found {self.data[self.pos]} "
+            f"(not a valid error tag)"
+        )
+
+    def read_js_error(
+        self,
+        tag_mapper: TagMapper,
+        *,
+        error: JSErrorConstructor[T],
+    ) -> ReferencedObject[JSErrorReadResult[T]]:
+        self.read_tag(SerializationTag.kError)
+        tag = self.read_error_tag()
+
+        error_name = JSErrorName.for_error_tag(tag)
+        if error_name is not JSErrorName.Error:
+            tag = self.read_error_tag()
+
+        message: object = None
+        if tag is SerializationErrorTag.Message:
+            self.read_tag(consume=False, tag=JS_STRING_TAGS)
+            message = self.read_object(tag_mapper)
+            tag = self.read_error_tag()
+        assert message is None or isinstance(message, str)
+
+        stack: object = None
+        if tag is SerializationErrorTag.Stack:
+            self.read_tag(consume=False, tag=JS_STRING_TAGS)
+            stack = self.read_object(tag_mapper)
+            tag = self.read_error_tag()
+        assert stack is None or isinstance(stack, str)
+
+        error_obj = error(name=error_name, message=message, stack=stack)
+        serialized_id = self.objects.record_reference(error_obj)
+
+        cause: object = None
+        if tag is SerializationErrorTag.Cause:
+            cause = self.read_object(tag_mapper)
+            tag = self.read_error_tag()
+
+        if tag is not SerializationErrorTag.End:
+            self.throw(
+                f"Expected End error tag after reading error fields but found "
+                f"{tag.name}"
+            )
+
+        return ReferencedObject(serialized_id, JSErrorReadResult(error_obj, cause))
 
     def read_jsmap(
         self, tag_mapper: TagMapper, *, identity: object
@@ -738,6 +800,7 @@ class TagMapper:
     js_array_type: JSArrayType
     js_constants: Mapping[ConstantTags, object]
     host_object_deserializer: HostObjectDeserializer[object] | None
+    js_error_type: JSErrorSettableCauseConstructor
 
     def __init__(
         self,
@@ -749,6 +812,7 @@ class TagMapper:
         js_array_type: JSArrayType | None = None,
         js_constants: Mapping[ConstantTags, object] | None = None,
         host_object_deserializer: HostObjectDeserializer[object] | None = None,
+        js_error_type: JSErrorSettableCauseConstructor | None = None,
     ) -> None:
         self.default_tag_mapper = default_tag_mapper
         self.jsmap_type = jsmap_type or dict
@@ -756,6 +820,7 @@ class TagMapper:
         self.js_object_type = js_object_type or JSObject
         self.js_array_type = js_array_type or JSArray
         self.host_object_deserializer = host_object_deserializer
+        self.js_error_type = js_error_type or JSError
 
         _js_constants = dict(js_constants) if js_constants is not None else {}
         _js_constants.setdefault(SerializationTag.kTheHole, JSHole)
@@ -798,6 +863,7 @@ class TagMapper:
         r(JS_ARRAY_BUFFER_TAGS, TagMapper.deserialize_js_array_buffer)
         r(SerializationTag.kArrayBufferView, TagMapper.deserialize_js_array_buffer_view)
         r(JS_PRIMITIVE_OBJECT_TAGS, TagMapper.deserialize_js_primitive_object)
+        r(SerializationTag.kError, TagMapper.deserialize_js_error)
         r(SerializationTag.kWasmModuleTransfer, TagMapper.deserialize_unsupported_wasm)
         r(SerializationTag.kWasmMemoryTransfer, TagMapper.deserialize_unsupported_wasm)
 
@@ -950,11 +1016,19 @@ class TagMapper:
         stream.objects.replace_reference(serialized_id, obj.value)
         return obj.value
 
+    # FIXME: americanise (americanize?) spelling
     def deserialize_js_regexp(
         self, tag: Literal[SerializationTag.kRegExp], stream: ReadableTagStream
     ) -> JSRegExp:
         _, regexp = stream.read_js_regexp(self)
         return regexp
+
+    def deserialize_js_error(
+        self, tag: Literal[SerializationTag.kError], stream: ReadableTagStream
+    ) -> AnyJSErrorSettableCause:
+        _, (js_error, cause) = stream.read_js_error(self, error=self.js_error_type)
+        js_error.cause = cause
+        return js_error
 
     def deserialize_unsupported_wasm(
         self,

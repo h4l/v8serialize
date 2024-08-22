@@ -3,7 +3,7 @@ from __future__ import annotations
 import operator
 import re
 from dataclasses import dataclass
-from enum import IntEnum, IntFlag
+from enum import IntEnum, IntFlag, StrEnum
 from functools import lru_cache, reduce
 from types import MappingProxyType
 from typing import (
@@ -301,6 +301,75 @@ class JSRegExpFlag(IntFlag):
 
     def __str__(self) -> str:
         return "".join(f.__char for f in self)
+
+
+class SerializationErrorTag(IntEnum):
+    EvalErrorPrototype = "E"
+    """The error is a EvalError. No accompanying data."""
+    RangeErrorPrototype = "R"
+    """The error is a RangeError. No accompanying data."""
+    ReferenceErrorPrototype = "F"
+    """The error is a ReferenceError. No accompanying data."""
+    SyntaxErrorPrototype = "S"
+    """The error is a SyntaxError. No accompanying data."""
+    TypeErrorPrototype = "T"
+    """The error is a TypeError. No accompanying data."""
+    UriErrorPrototype = "U"
+    """The error is a URIError. No accompanying data."""
+    Message = "m"
+    """Followed by message: string."""
+    Cause = "c"
+    """Followed by a JS object: cause."""
+    Stack = "s"
+    """Followed by stack: string."""
+    End = "."
+    """The end of this error information."""
+
+    if not TYPE_CHECKING:
+
+        def __new__(cls, code_char: str) -> Self:
+            code = ord(code_char)
+            obj = int.__new__(cls, code)
+            obj._value_ = code
+            return obj
+
+
+class JSErrorName(StrEnum):
+    EvalError = "EvalError", SerializationErrorTag.EvalErrorPrototype
+    RangeError = "RangeError", SerializationErrorTag.RangeErrorPrototype
+    ReferenceError = "ReferenceError", SerializationErrorTag.ReferenceErrorPrototype
+    SyntaxError = "SyntaxError", SerializationErrorTag.SyntaxErrorPrototype
+    TypeError = "TypeError", SerializationErrorTag.TypeErrorPrototype
+    UriError = "UriError", SerializationErrorTag.UriErrorPrototype
+    Error = "Error", None
+
+    __error_tag: SerializationErrorTag | None
+
+    if not TYPE_CHECKING:
+
+        def __new__(cls, name: str, error_tag: SerializationErrorTag | None) -> Self:
+            obj = str.__new__(cls, name)
+            obj._value_ = obj
+            obj.__error_tag = error_tag
+            return obj
+
+    @property
+    def error_tag(self) -> SerializationErrorTag | None:
+        return self.__error_tag
+
+    @staticmethod
+    def for_error_name(error_name: str) -> JSErrorName:
+        return (
+            JSErrorName(error_name) if error_name in JSErrorName else JSErrorName.Error
+        )
+
+    @lru_cache()  # noqa: B019  # OK because static
+    @staticmethod
+    def for_error_tag(error_tag: SerializationErrorTag) -> JSErrorName:
+        for x in JSErrorName:
+            if x.error_tag is error_tag:
+                return x
+        return JSErrorName.Error
 
 
 if TYPE_CHECKING:

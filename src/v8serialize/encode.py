@@ -29,6 +29,7 @@ from v8serialize._values import (
     AnyArrayBuffer,
     AnyArrayBufferTransfer,
     AnyArrayBufferView,
+    AnyJSError,
     AnySharedArrayBuffer,
 )
 from v8serialize.constants import (
@@ -41,6 +42,8 @@ from v8serialize.constants import (
     UINT32_RANGE,
     ArrayBufferViewFlags,
     ConstantTags,
+    JSErrorName,
+    SerializationErrorTag,
     SerializationTag,
     TagConstraint,
     kLatestVersion,
@@ -57,6 +60,7 @@ from v8serialize.jstypes.jsbuffers import (
     JSArrayBufferView,
     JSSharedArrayBuffer,
 )
+from v8serialize.jstypes.jserror import JSErrorData
 from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject
 from v8serialize.jstypes.jsregexp import JSRegExp
 from v8serialize.jstypes.jsundefined import JSUndefinedEnum, JSUndefinedType
@@ -120,6 +124,7 @@ class TagConstraintRemover(AbstractContextManager[None, None]):
         self.stream.allowed_tags = None
 
 
+# FIXME: not used
 @dataclass(slots=True, frozen=True)
 class SerializedObjectReference:
     serialized_tag: SerializationTag
@@ -340,6 +345,28 @@ class WritableTagStream:
         # We can write any of the string formats here, but just UTF-8 seems fine
         self.write_string_utf8(regexp.source)
         self.write_varint(regexp.flags.canonical)
+
+    def write_js_error(
+        self, error: AnyJSError, ctx: EncodeContext, *, identity: object | None = None
+    ) -> None:
+        self.objects.record_reference(error if identity is None else identity)
+        self.write_tag(SerializationTag.kError)
+        error_tag = JSErrorName.for_error_name(error.name).error_tag
+        if error_tag is not None:  # "Error" is the default and has no tag
+            self.write_varint(error_tag)
+        error_message = error.message
+        if error_message is not None:
+            self.write_varint(SerializationErrorTag.Message)
+            self.write_string_utf8(error_message)
+        stack = error.stack
+        if stack is not None:
+            self.write_varint(SerializationErrorTag.Stack)
+            self.write_string_utf8(stack)
+        cause = error.cause
+        if cause is not None:
+            self.write_varint(SerializationErrorTag.Cause)
+            self.write_object(cause, ctx)
+        self.write_varint(SerializationErrorTag.End)
 
     def write_jsmap(
         self,
@@ -797,6 +824,12 @@ class ObjectMapper(ObjectMapperObject):
         self, value: re.Pattern[AnyStr], /, ctx: EncodeContext, next: SerializeNextFn
     ) -> None:
         ctx.stream.write_js_regexp(JSRegExp.from_python_pattern(value))
+
+    @serialize.register(JSErrorData)
+    def serialize_js_error(
+        self, value: AnyJSError, /, ctx: EncodeContext, next: SerializeNextFn
+    ) -> None:
+        ctx.stream.write_js_error(value, ctx)
 
     @serialize.register(JSObject)
     def serialize_js_object(

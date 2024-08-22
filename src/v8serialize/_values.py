@@ -12,12 +12,14 @@ from typing import (
     runtime_checkable,
 )
 
-from v8serialize.constants import ArrayBufferViewTag
+from v8serialize.constants import ArrayBufferViewTag, JSErrorName
 
 if TYPE_CHECKING:
     from typing_extensions import Buffer
 
     AnyBuffer: TypeAlias = ByteString | Buffer
+
+T_co = TypeVar("T_co", covariant=True)
 
 SharedArrayBufferId = NewType("SharedArrayBufferId", int)
 TransferId = NewType("TransferId", int)
@@ -95,3 +97,44 @@ class ArrayBufferViewConstructor(Protocol[BufferT_con, ViewT_co]):
         byte_offset: int,
         byte_length: int | None,
     ) -> ViewT_co: ...
+
+
+class AnyJSError(Protocol):
+    @property
+    def name(self) -> str: ...
+    @property
+    def message(self) -> str | None: ...
+    @property
+    def stack(self) -> str | None: ...
+    @property
+    def cause(self) -> object | None: ...
+
+
+class AnyJSErrorSettableCause(AnyJSError, Protocol):
+    """AnyJSError with a settable cause property."""
+
+    cause: object | None
+
+
+class JSErrorConstructor(Protocol[T_co]):
+    def __call__(
+        self, *, name: JSErrorName, message: str | None, stack: str | None
+    ) -> T_co: ...
+
+
+if TYPE_CHECKING:
+    JSErrorSettableCauseT_co = TypeVar(
+        "JSErrorSettableCauseT_co",
+        bound=AnyJSErrorSettableCause,
+        covariant=True,
+        default=AnyJSErrorSettableCause,
+    )
+else:
+    JSErrorSettableCauseT_co = TypeVar(
+        "JSErrorSettableCauseT_co", bound=AnyJSErrorSettableCause, covariant=True
+    )
+
+
+class JSErrorSettableCauseConstructor(
+    JSErrorConstructor[JSErrorSettableCauseT_co], Protocol[JSErrorSettableCauseT_co]
+): ...

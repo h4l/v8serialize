@@ -1,15 +1,16 @@
 from dataclasses import asdict, dataclass
-from typing import ByteString, cast
+from typing import TYPE_CHECKING, ByteString, cast
 
 
 @dataclass(init=False)
-class V8CodecError(BaseException):
-    message: str
+class V8CodecError(BaseException):  # FIXME: should inherit Exception
+    if not TYPE_CHECKING:
+        message: str  # needed to have dataclass include message in the repr, etc
 
     def __init__(self, message: str, *args: object) -> None:
         super().__init__(message, *args)
 
-    @property  # type: ignore[no-redef]
+    @property
     def message(self) -> str:
         return cast(str, self.args[0])
 

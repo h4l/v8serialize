@@ -1,3 +1,4 @@
+import dataclasses
 import math
 from typing import Optional, TypeVar, cast
 
@@ -11,6 +12,7 @@ from v8serialize.constants import (
     JS_PRIMITIVE_OBJECT_TAGS,
     MAX_ARRAY_LENGTH,
     ConstantTags,
+    JSErrorName,
     JSRegExpFlag,
     SerializationTag,
 )
@@ -36,6 +38,7 @@ from v8serialize.jstypes.jsbuffers import (
     ViewFormat,
     create_view,
 )
+from v8serialize.jstypes.jserror import JSError, JSErrorData
 from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject
 from v8serialize.jstypes.jsregexp import JSRegExp
 
@@ -235,10 +238,41 @@ def js_array_buffer_views(
     )
 
 
+def js_errors(
+    names: st.SearchStrategy[str] | None = None,
+    messages: st.SearchStrategy[str | None] | None = None,
+    stacks: st.SearchStrategy[str | None] | None = None,
+    causes: st.SearchStrategy[object] | None = None,
+) -> st.SearchStrategy[JSError]:
+    return st.builds(
+        JSError,
+        name=st.sampled_from(JSErrorName) if names is None else names,
+        message=st.text() | st.none() if messages is None else messages,
+        stack=st.text() | st.none() if stacks is None else stacks,
+        cause=st.none() if causes is None else causes,
+    )
+
+
+def js_error_data(
+    names: st.SearchStrategy[str] | None = None,
+    messages: st.SearchStrategy[str | None] | None = None,
+    stacks: st.SearchStrategy[str | None] | None = None,
+    causes: st.SearchStrategy[object] | None = None,
+) -> st.SearchStrategy[JSErrorData]:
+    return st.builds(
+        JSErrorData,
+        name=st.sampled_from(JSErrorName) if names is None else names,
+        message=st.text() | st.none() if messages is None else messages,
+        stack=st.text() | st.none() if stacks is None else stacks,
+        cause=st.none() if causes is None else causes,
+    )
+
+
 js_regexp_flags = st.builds(
     JSRegExpFlag, st.integers(min_value=0, max_value=int(JSRegExpFlag(0xFFF).canonical))
 )
 js_regexps = st.builds(JSRegExp, source=st.text(), flags=js_regexp_flags)
+
 
 any_atomic = st.one_of(
     st.integers(),
@@ -286,6 +320,7 @@ any_object = st.recursive(
             ),
         ),
         st.sets(elements=any_atomic),
+        js_errors(causes=children),
     ),
     max_leaves=3,  # TODO: tune this, perhaps increase in CI
 )
@@ -704,3 +739,42 @@ def test_codec_rt_js_regexp(
     result = rts.read_object(tag_mapper)
     assert value == result
     assert rts.eof
+
+
+# Test with JSErrorData here, as its a pure representation of the serializable
+# data, and supports equality. In contrast, JSError is a Python Exception, and
+# Exception uses identity for equality.
+@given(
+    value=st.recursive(
+        js_error_data(names=st.sampled_from(JSErrorName) | st.text()),
+        lambda children: js_error_data(
+            names=st.sampled_from(JSErrorName) | st.text(), causes=children
+        ),
+    )
+)
+def test_codec_rt_js_error(value: JSErrorData, object_mapper: ObjectMapper) -> None:
+    tag_mapper = TagMapper(js_error_type=JSErrorData)
+    encode_ctx = DefaultEncodeContext([object_mapper])
+    encode_ctx.stream.write_object(value, ctx=encode_ctx)
+
+    rts = ReadableTagStream(encode_ctx.stream.data)
+    assert rts.read_tag(consume=False) == SerializationTag.kError
+    result = rts.read_object(tag_mapper)
+    assert rts.eof
+    assert isinstance(result, JSErrorData)
+
+    # Unknown error names become "Error" after loading. Normalise result name
+    # back to initial values to verify overall equality.
+    err_before: JSErrorData | None = value
+    err_after: JSErrorData | None = result
+
+    while err_before and err_after:
+        if err_before.name not in JSErrorName:
+            assert err_after.name == JSErrorName.Error
+            err_after.name = err_before.name
+
+        err_before = cast(JSErrorData | None, err_before.cause)
+        err_after = cast(JSErrorData | None, err_after.cause)
+        assert (err_before and err_after) or not (err_before or err_after)
+
+    assert value == result
