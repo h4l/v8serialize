@@ -11,6 +11,7 @@ from v8serialize.constants import (
     JS_PRIMITIVE_OBJECT_TAGS,
     MAX_ARRAY_LENGTH,
     ConstantTags,
+    JSRegExpFlag,
     SerializationTag,
 )
 from v8serialize.decode import ReadableTagStream, TagMapper
@@ -36,6 +37,7 @@ from v8serialize.jstypes.jsbuffers import (
     create_view,
 )
 from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject
+from v8serialize.jstypes.jsregexp import JSRegExp
 
 T = TypeVar("T")
 
@@ -233,6 +235,11 @@ def js_array_buffer_views(
     )
 
 
+js_regexp_flags = st.builds(
+    JSRegExpFlag, st.integers(min_value=0, max_value=int(JSRegExpFlag(0xFFF).canonical))
+)
+js_regexps = st.builds(JSRegExp, source=st.text(), flags=js_regexp_flags)
+
 any_atomic = st.one_of(
     st.integers(),
     # NaN breaks equality when nested inside objects. We test with nan in
@@ -245,6 +252,7 @@ any_atomic = st.one_of(
     st.just(False),
     # FIXME: non-hashable objects are a problem for maps/sets
     # js_array_buffers,
+    js_regexps,
 )
 
 
@@ -681,4 +689,18 @@ def test_codec_rt_nodejs_array_buffer_host_object(
     assert bytes(result.get_buffer_as_memoryview()) == bytes(
         value.get_buffer_as_memoryview()
     )
+    assert rts.eof
+
+
+@given(value=js_regexps)
+def test_codec_rt_js_regexp(
+    value: JSRegExp, object_mapper: ObjectMapper, tag_mapper: TagMapper
+) -> None:
+    encode_ctx = DefaultEncodeContext([object_mapper])
+    encode_ctx.stream.write_object(value, ctx=encode_ctx)
+
+    rts = ReadableTagStream(encode_ctx.stream.data)
+    assert rts.read_tag(consume=False) == SerializationTag.kRegExp
+    result = rts.read_object(tag_mapper)
+    assert value == result
     assert rts.eof

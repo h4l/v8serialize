@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import struct
 from collections import abc
 from contextlib import AbstractContextManager
@@ -10,6 +11,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    AnyStr,
     Iterable,
     Literal,
     Mapping,
@@ -56,6 +58,7 @@ from v8serialize.jstypes.jsbuffers import (
     JSSharedArrayBuffer,
 )
 from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject
+from v8serialize.jstypes.jsregexp import JSRegExp
 from v8serialize.jstypes.jsundefined import JSUndefinedEnum, JSUndefinedType
 from v8serialize.references import SerializedId, SerializedObjectLog
 
@@ -329,6 +332,14 @@ class WritableTagStream:
             self.write_double(value, tag=None)
         else:
             raise AssertionError(f"Unexpected tag: {tag}")
+
+    def write_js_regexp(
+        self, regexp: JSRegExp, *, identity: object | None = None
+    ) -> None:
+        self.write_tag(SerializationTag.kRegExp)
+        # We can write any of the string formats here, but just UTF-8 seems fine
+        self.write_string_utf8(regexp.source)
+        self.write_varint(regexp.flags.canonical)
 
     def write_jsmap(
         self,
@@ -774,6 +785,18 @@ class ObjectMapper(ObjectMapperObject):
         self, value: JSPrimitiveObject, /, ctx: EncodeContext, next: SerializeNextFn
     ) -> None:
         ctx.stream.write_js_primitive_object(value)
+
+    @serialize.register(JSRegExp)
+    def serialize_js_regexp(
+        self, value: JSRegExp, /, ctx: EncodeContext, next: SerializeNextFn
+    ) -> None:
+        ctx.stream.write_js_regexp(value)
+
+    @serialize.register(re.Pattern)
+    def serialize_python_regexp(
+        self, value: re.Pattern[AnyStr], /, ctx: EncodeContext, next: SerializeNextFn
+    ) -> None:
+        ctx.stream.write_js_regexp(JSRegExp.from_python_pattern(value))
 
     @serialize.register(JSObject)
     def serialize_js_object(

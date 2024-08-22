@@ -48,3 +48,7 @@ class NormalizedKeyError(KeyError):
         super(NormalizedKeyError, self).__init__(
             f"{self.normalized_key!r} (normalized from {self.raw_key!r})"
         )
+
+
+class JSRegExpV8CodecError(V8CodecError):
+    pass

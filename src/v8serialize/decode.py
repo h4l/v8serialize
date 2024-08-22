@@ -40,12 +40,14 @@ from v8serialize.constants import (
     JS_CONSTANT_TAGS,
     JS_OBJECT_KEY_TAGS,
     JS_PRIMITIVE_OBJECT_TAGS,
+    JS_STRING_TAGS,
     UINT32_RANGE,
     AnySerializationTag,
     ArrayBufferTags,
     ArrayBufferViewFlags,
     ArrayBufferViewTag,
     ConstantTags,
+    JSRegExpFlag,
     PrimitiveObjectTag,
     SerializationTag,
     TagConstraint,
@@ -63,6 +65,7 @@ from v8serialize.jstypes.jsbuffers import (
     create_view,
 )
 from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject
+from v8serialize.jstypes.jsregexp import JSRegExp
 from v8serialize.references import SerializedId, SerializedObjectLog
 
 if TYPE_CHECKING:
@@ -341,6 +344,15 @@ class ReadableTagStream:
             result = JSPrimitiveObject(self.read_string_utf8(tag=False))
         else:
             raise AssertionError(f"Unreachable: {tag}")
+        return self.objects.record_reference(result), result
+
+    def read_js_regexp(self, tag_mapper: TagMapper) -> tuple[SerializedId, JSRegExp]:
+        self.read_tag(tag=SerializationTag.kRegExp)
+        self.read_tag(consume=False, tag=JS_STRING_TAGS)
+        source = self.read_object(tag_mapper)
+        assert isinstance(source, str)
+        flags = JSRegExpFlag(self.read_varint())
+        result = JSRegExp(source, flags)
         return self.objects.record_reference(result), result
 
     def read_jsmap(
@@ -776,6 +788,7 @@ class TagMapper:
 
         # Tags which require tag-specific behaviour
         r(JS_CONSTANT_TAGS, TagMapper.deserialize_constant)
+        r(SerializationTag.kRegExp, TagMapper.deserialize_js_regexp)
         r(SerializationTag.kBeginJSMap, TagMapper.deserialize_jsmap)
         r(SerializationTag.kBeginJSSet, TagMapper.deserialize_jsset)
         r(SerializationTag.kObjectReference, TagMapper.deserialize_object_reference)
@@ -936,6 +949,12 @@ class TagMapper:
         # wrapped value type and keep the wrapper.)
         stream.objects.replace_reference(serialized_id, obj.value)
         return obj.value
+
+    def deserialize_js_regexp(
+        self, tag: Literal[SerializationTag.kRegExp], stream: ReadableTagStream
+    ) -> JSRegExp:
+        _, regexp = stream.read_js_regexp(self)
+        return regexp
 
     def deserialize_unsupported_wasm(
         self,
