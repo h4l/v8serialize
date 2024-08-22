@@ -785,6 +785,8 @@ class TagMapper:
         r(JS_ARRAY_BUFFER_TAGS, TagMapper.deserialize_js_array_buffer)
         r(SerializationTag.kArrayBufferView, TagMapper.deserialize_js_array_buffer_view)
         r(JS_PRIMITIVE_OBJECT_TAGS, TagMapper.deserialize_js_primitive_object)
+        r(SerializationTag.kWasmModuleTransfer, TagMapper.deserialize_unsupported_wasm)
+        r(SerializationTag.kWasmMemoryTransfer, TagMapper.deserialize_unsupported_wasm)
 
         # fmt: on
 
@@ -934,6 +936,19 @@ class TagMapper:
         # wrapped value type and keep the wrapper.)
         stream.objects.replace_reference(serialized_id, obj.value)
         return obj.value
+
+    def deserialize_unsupported_wasm(
+        self,
+        tag: Literal[
+            SerializationTag.kWasmMemoryTransfer, SerializationTag.kWasmModuleTransfer
+        ],
+        stream: ReadableTagStream,
+    ) -> Never:
+        stream.throw(
+            f"Stream contains a {tag.name} which is not supported. V8's "
+            "serialized WASM objects use shared ArrayBuffers/transfer IDs that "
+            "are only accessible from within the V8 process that serializes them."
+        )
 
 
 @dataclass(init=False)

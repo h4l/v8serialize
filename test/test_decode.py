@@ -4,7 +4,8 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from v8serialize.decode import ReadableTagStream, loads
+from v8serialize.constants import SerializationTag
+from v8serialize.decode import ReadableTagStream, TagMapper, loads
 from v8serialize.encode import WritableTagStream
 from v8serialize.errors import DecodeV8CodecError
 
@@ -36,3 +37,18 @@ def test_decode_varint__truncated(n: int) -> None:
 def test_loads(serialized: str, expected: object) -> None:
     result = loads(b64decode(serialized))
     assert result == expected
+
+
+@pytest.mark.parametrize(
+    "tag", [SerializationTag.kWasmMemoryTransfer, SerializationTag.kWasmModuleTransfer]
+)
+def test_wasm_is_not_supported(tag: SerializationTag) -> None:
+    wts = WritableTagStream()
+    wts.write_tag(tag)
+    rts = ReadableTagStream(wts.data)
+
+    with pytest.raises(
+        DecodeV8CodecError,
+        match=f"Stream contains a {tag.name} which is not supported.",
+    ):
+        rts.read_object(TagMapper())
