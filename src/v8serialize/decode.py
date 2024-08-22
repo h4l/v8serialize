@@ -19,6 +19,7 @@ from typing import (
     Protocol,
     TypeVar,
     cast,
+    overload,
     runtime_checkable,
 )
 
@@ -37,10 +38,12 @@ from v8serialize.constants import (
     JS_CONSTANT_TAGS,
     JS_OBJECT_KEY_TAGS,
     UINT32_RANGE,
+    AnySerializationTag,
     ArrayBufferViewFlags,
     ArrayBufferViewTag,
     ConstantTags,
     SerializationTag,
+    TagConstraint,
     kLatestVersion,
 )
 from v8serialize.errors import DecodeV8CodecError, V8CodecError
@@ -61,6 +64,7 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
+TagT = TypeVar("TagT", bound=AnySerializationTag)
 
 
 def _decode_zigzag(n: int) -> int:
@@ -118,8 +122,22 @@ class ReadableTagStream:
     def throw(self, message: str, *, cause: BaseException | None = None) -> Never:
         raise DecodeV8CodecError(message, data=self.data, position=self.pos) from cause
 
+    @overload
     def read_tag(
-        self, tag: SerializationTag | None = None, consume: bool = True
+        self, tag: None = None, *, consume: bool = True
+    ) -> SerializationTag: ...
+
+    @overload
+    def read_tag(self, tag: TagT, *, consume: bool = True) -> TagT: ...
+
+    @overload
+    def read_tag(self, tag: TagConstraint[TagT], *, consume: bool = True) -> TagT: ...
+
+    def read_tag(
+        self,
+        tag: SerializationTag | TagConstraint | None = None,
+        *,
+        consume: bool = True,
     ) -> SerializationTag:
         """Read the tag at the current position.
 
@@ -136,15 +154,22 @@ class ReadableTagStream:
             self.read_padding()
             value = self.data[self.pos]
         if value in SerializationTag:
+            value = SerializationTag(value)
             if tag is None:
                 self.pos += consume
-                return SerializationTag(value)
-            else:
-                if value == tag:
+                return value
+            elif not isinstance(tag, SerializationTag):
+                if value in tag:
                     self.pos += consume
-                    return tag
+                    return value
 
-            expected = f"Expected tag {tag.name}"
+                expected = f"Expected tag {tag.allowed_tag_names}"
+            else:
+                if value is tag:
+                    self.pos += consume
+                    return value
+                expected = f"Expected tag {tag.name}"
+
             actual = (
                 f"{self.data[self.pos]} ({SerializationTag(self.data[self.pos]).name})"
             )
