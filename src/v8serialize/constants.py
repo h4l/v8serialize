@@ -276,3 +276,22 @@ JS_CONSTANT_TAGS: Final = TagConstraint[ConstantTags](
         }
     ),
 )
+
+ArrayBufferTags = Literal[
+    SerializationTag.kArrayBuffer,
+    SerializationTag.kResizableArrayBuffer,
+    SerializationTag.kSharedArrayBuffer,
+    SerializationTag.kArrayBufferTransfer,
+]
+
+JS_ARRAY_BUFFER_TAGS: Final = TagConstraint[ArrayBufferTags](
+    name="ArrayBuffers",
+    allowed_tags=frozenset(
+        {
+            SerializationTag.kArrayBuffer,
+            SerializationTag.kResizableArrayBuffer,
+            SerializationTag.kSharedArrayBuffer,
+            SerializationTag.kArrayBufferTransfer,
+        }
+    ),
+)

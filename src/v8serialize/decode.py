@@ -4,13 +4,14 @@ import codecs
 import operator
 import struct
 from dataclasses import dataclass, field
+from types import MappingProxyType
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
     ByteString,
     Callable,
     Generator,
-    Iterable,
+    Literal,
     Mapping,
     MutableMapping,
     MutableSet,
@@ -35,10 +36,12 @@ from v8serialize._values import (
 )
 from v8serialize.constants import (
     INT32_RANGE,
+    JS_ARRAY_BUFFER_TAGS,
     JS_CONSTANT_TAGS,
     JS_OBJECT_KEY_TAGS,
     UINT32_RANGE,
     AnySerializationTag,
+    ArrayBufferTags,
     ArrayBufferViewFlags,
     ArrayBufferViewTag,
     ConstantTags,
@@ -57,14 +60,25 @@ from v8serialize.jstypes.jsbuffers import (
     JSTypedArray,
     create_view,
 )
+from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject
 from v8serialize.references import SerializedId, SerializedObjectLog
 
 if TYPE_CHECKING:
-    from _typeshed import SupportsKeysAndGetItem, SupportsRead
+    from _typeshed import SupportsRead
 
 T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
 TagT = TypeVar("TagT", bound=AnySerializationTag)
+
+if TYPE_CHECKING:
+    TagT_con = TypeVar(
+        "TagT_con",
+        bound=AnySerializationTag,
+        contravariant=True,
+        default=AnySerializationTag,
+    )
+else:
+    TagT_con = TypeVar("TagT_con", bound=AnySerializationTag, contravariant=True)
 
 
 def _decode_zigzag(n: int) -> int:
@@ -460,7 +474,7 @@ class ReadableTagStream:
         shared_array_buffer: SharedArrayBufferConstructor[BufferT],
         array_buffer_transfer: ArrayBufferTransferConstructor[BufferT],
     ) -> BufferT | ViewT:
-        tag = self.read_tag(consume=False)
+        tag = self.read_tag(tag=JS_ARRAY_BUFFER_TAGS, consume=False)
         buffer: BufferT
         if tag is SerializationTag.kArrayBuffer:
             buffer = self._read_js_array_buffer(array_buffer=array_buffer)
@@ -475,7 +489,7 @@ class ReadableTagStream:
                 array_buffer_transfer=array_buffer_transfer
             )
         else:
-            self.throw(f"Expected an ArrayBuffer tag but found {tag.name}")
+            raise AssertionError(f"Unreachable: {tag.name}")
         return buffer
 
     def _read_js_array_buffer(
@@ -594,14 +608,48 @@ HostObjectDeserializer = (
 )
 
 
-class TagReader(Protocol):
+class TagReader(Protocol[TagT_con]):
     def __call__(
         self,
         tag_mapper: TagMapper,
-        tag: SerializationTag,
+        tag: TagT_con,
         stream: ReadableTagStream,
         /,
     ) -> object: ...
+
+
+@dataclass(slots=True, init=False)
+class TagReaderRegistry:
+    index: Mapping[SerializationTag, TagReader[SerializationTag]]
+    _index: dict[SerializationTag, TagReader[SerializationTag]]
+
+    def __init__(self, entries: TagReaderRegistry | None = None) -> None:
+        self._index = {}
+        self.index = MappingProxyType(self._index)
+        if entries:
+            self.register_all(entries)
+
+    # TODO: - could extract tags from tag_reader fn signature (messy pre 3.10
+    #         though)
+    #       - could pre-bind tag arg value with partial
+    def register(
+        self, tag: TagT | TagConstraint[TagT], tag_reader: TagReader[TagT]
+    ) -> None:
+        if isinstance(tag, TagConstraint):
+            for t in sorted(tag.allowed_tags):
+                self._index[cast(SerializationTag, t)] = cast(
+                    TagReader[SerializationTag], tag_reader
+                )
+        else:
+            self._index[cast(SerializationTag, tag)] = cast(
+                TagReader[SerializationTag], tag_reader
+            )
+
+    def register_all(self, registry: TagReaderRegistry) -> None:
+        self._index.update(registry.index)
+
+    def match(self, tag: TagT) -> TagReader[TagT] | None:
+        return self._index.get(tag)
 
 
 class ReadableTagStreamReadFunction(Protocol):
@@ -641,7 +689,7 @@ JSArrayType = Callable[[], JSArray[object]]
 class TagMapper:
     """Defines the conversion of V8 serialization tagged data to Python values."""
 
-    tag_readers: Mapping[SerializationTag, TagReader]
+    tag_readers: TagReaderRegistry
     default_tag_mapper: TagMapper | None
     jsmap_type: JSMapType
     jsset_type: JSSetType
@@ -652,11 +700,7 @@ class TagMapper:
 
     def __init__(
         self,
-        tag_readers: (
-            SupportsKeysAndGetItem[SerializationTag, TagReader]
-            | Iterable[tuple[SerializationTag, TagReader]]
-            | None
-        ) = None,
+        tag_readers: TagReaderRegistry | None = None,
         default_tag_mapper: TagMapper | None = None,
         jsmap_type: JSMapType | None = None,
         jsset_type: JSSetType | None = None,
@@ -680,65 +724,54 @@ class TagMapper:
         _js_constants.setdefault(SerializationTag.kFalse, False)
         self.js_constants = _js_constants
 
-        if tag_readers is not None:
-            tag_readers = dict(tag_readers)
+        self.tag_readers = TagReaderRegistry(tag_readers)
+        self.register_tag_readers(self.tag_readers)
 
-        self.tag_readers = self.register_tag_readers(tag_readers)
-        assert self.tag_readers
-
-    def register_tag_readers(
-        self, tag_readers: dict[SerializationTag, TagReader] | None
-    ) -> dict[SerializationTag, TagReader]:
-
-        primitives: list[tuple[SerializationTag, ReadableTagStreamReadFunction]] = [
-            (SerializationTag.kDouble, ReadableTagStream.read_double),
-            (SerializationTag.kOneByteString, ReadableTagStream.read_string_onebyte),
-            (SerializationTag.kTwoByteString, ReadableTagStream.read_string_twobyte),
-            (SerializationTag.kUtf8String, ReadableTagStream.read_string_utf8),
-            (SerializationTag.kBigInt, ReadableTagStream.read_bigint),
-            (SerializationTag.kInt32, ReadableTagStream.read_int32),
-            (SerializationTag.kUint32, ReadableTagStream.read_uint32),
-        ]
-        primitive_tag_readers = {t: read_stream(read_fn) for (t, read_fn) in primitives}
-
+    def register_tag_readers(self, tag_readers: TagReaderRegistry) -> None:
         # TODO: revisit how we register these, should we use a decorator, like
         #       with @singledispatchmethod? (Can't use that directly a it
         #       doesn't dispatch on values or Literal annotations.)
-        default_tag_readers: dict[SerializationTag, TagReader] = {
-            SerializationTag.kTheHole: TagMapper.deserialize_constant,
-            SerializationTag.kUndefined: TagMapper.deserialize_constant,
-            SerializationTag.kNull: TagMapper.deserialize_constant,
-            SerializationTag.kTrue: TagMapper.deserialize_constant,
-            SerializationTag.kFalse: TagMapper.deserialize_constant,
-            SerializationTag.kBeginJSMap: TagMapper.deserialize_jsmap,
-            SerializationTag.kBeginJSSet: TagMapper.deserialize_jsset,
-            SerializationTag.kObjectReference: TagMapper.deserialize_object_reference,
-            SerializationTag.kBeginJSObject: TagMapper.deserialize_js_object,
-            SerializationTag.kBeginDenseJSArray: TagMapper.deserialize_js_array_dense,
-            SerializationTag.kBeginSparseJSArray: TagMapper.deserialize_js_array_sparse,
-            SerializationTag.kArrayBuffer: TagMapper.deserialize_js_array_buffer,
-            SerializationTag.kResizableArrayBuffer: TagMapper.deserialize_js_array_buffer,  # noqa: B950
-            SerializationTag.kSharedArrayBuffer: TagMapper.deserialize_js_array_buffer,
-            SerializationTag.kArrayBufferTransfer: TagMapper.deserialize_js_array_buffer,  # noqa: B950
-            SerializationTag.kArrayBufferView: TagMapper.deserialize_js_array_buffer,
-        }
 
-        return {**primitive_tag_readers, **default_tag_readers, **(tag_readers or {})}
+        r = tag_readers.register
+
+        # fmt: off
+
+        # primitives — just read the stream directly, no handling needed
+        r(SerializationTag.kDouble, read_stream(ReadableTagStream.read_double))
+        r(SerializationTag.kOneByteString, read_stream(ReadableTagStream.read_string_onebyte))  # noqa: B950
+        r(SerializationTag.kTwoByteString, read_stream(ReadableTagStream.read_string_twobyte))  # noqa: B950
+        r(SerializationTag.kUtf8String, read_stream(ReadableTagStream.read_string_utf8))
+        r(SerializationTag.kBigInt, read_stream(ReadableTagStream.read_bigint))
+        r(SerializationTag.kInt32, read_stream(ReadableTagStream.read_int32))
+        r(SerializationTag.kUint32, read_stream(ReadableTagStream.read_uint32))
+
+        # Tags which require tag-specific behaviour
+        r(JS_CONSTANT_TAGS, TagMapper.deserialize_constant)
+        r(SerializationTag.kBeginJSMap, TagMapper.deserialize_jsmap)
+        r(SerializationTag.kBeginJSSet, TagMapper.deserialize_jsset)
+        r(SerializationTag.kObjectReference, TagMapper.deserialize_object_reference)
+        r(SerializationTag.kBeginJSObject, TagMapper.deserialize_js_object)
+        r(SerializationTag.kBeginDenseJSArray, TagMapper.deserialize_js_array_dense)
+        r(SerializationTag.kBeginSparseJSArray, TagMapper.deserialize_js_array_sparse)
+        r(JS_ARRAY_BUFFER_TAGS, TagMapper.deserialize_js_array_buffer)
+        r(SerializationTag.kArrayBufferView, TagMapper.deserialize_js_array_buffer_view)
+
+        # fmt: on
 
     def deserialize(self, tag: SerializationTag, stream: ReadableTagStream) -> object:
-        read_tag = self.tag_readers.get(tag)
+        read_tag = self.tag_readers.match(tag)
         if not read_tag:
             # FIXME: more specific error
             stream.throw(f"No reader is implemented for tag {tag.name}")
         return read_tag(self, tag, stream)
 
     def deserialize_constant(
-        self, tag: SerializationTag, stream: ReadableTagStream
+        self, tag: ConstantTags, stream: ReadableTagStream
     ) -> object:
-        return self.js_constants[stream.read_constant(cast(ConstantTags, tag))]
+        return self.js_constants[stream.read_constant(tag)]
 
     def deserialize_jsmap(
-        self, tag: SerializationTag, stream: ReadableTagStream
+        self, tag: Literal[SerializationTag.kBeginJSMap], stream: ReadableTagStream
     ) -> Mapping[object, object]:
         assert tag == SerializationTag.kBeginJSMap
         # TODO: this model of references makes it impossible to handle immutable
@@ -748,7 +781,7 @@ class TagMapper:
         return map
 
     def deserialize_jsset(
-        self, tag: SerializationTag, stream: ReadableTagStream
+        self, tag: Literal[SerializationTag.kBeginJSSet], stream: ReadableTagStream
     ) -> AbstractSet[object]:
         assert tag == SerializationTag.kBeginJSSet
         set = self.jsset_type()
@@ -758,7 +791,7 @@ class TagMapper:
         return set
 
     def deserialize_js_object(
-        self, tag: SerializationTag, stream: ReadableTagStream
+        self, tag: Literal[SerializationTag.kBeginJSObject], stream: ReadableTagStream
     ) -> JSObject[object]:
         assert tag == SerializationTag.kBeginJSObject
         obj = self.js_object_type()
@@ -766,7 +799,9 @@ class TagMapper:
         return obj
 
     def deserialize_js_array_dense(
-        self, tag: SerializationTag, stream: ReadableTagStream
+        self,
+        tag: Literal[SerializationTag.kBeginDenseJSArray],
+        stream: ReadableTagStream,
     ) -> JSArray[object]:
         assert tag == SerializationTag.kBeginDenseJSArray
         obj = self.js_array_type()
@@ -774,7 +809,9 @@ class TagMapper:
         return obj
 
     def deserialize_js_array_sparse(
-        self, tag: SerializationTag, stream: ReadableTagStream
+        self,
+        tag: Literal[SerializationTag.kBeginSparseJSArray],
+        stream: ReadableTagStream,
     ) -> JSArray[object]:
         assert tag == SerializationTag.kBeginSparseJSArray
         obj = self.js_array_type()
@@ -788,9 +825,16 @@ class TagMapper:
         obj.update(items)
         return obj
 
+    def deserialize_js_array_buffer_view(
+        self, tag: Literal[SerializationTag.kArrayBufferView], stream: ReadableTagStream
+    ) -> Never:
+        # The ArrayBuffer views must be serialized directly after an ArrayBuffer
+        # or an object reference to an ArrayBuffer.
+        stream.throw(f"Found an orphaned {tag.name} without a preceding ArrayBuffer")
+
     def deserialize_js_array_buffer(
         self,
-        tag: SerializationTag,
+        tag: ArrayBufferTags,
         stream: ReadableTagStream,
     ) -> (
         JSArrayBuffer
@@ -819,7 +863,7 @@ class TagMapper:
         return buffer
 
     def deserialize_host_object(
-        self, tag: SerializationTag, stream: ReadableTagStream
+        self, tag: Literal[SerializationTag.kHostObject], stream: ReadableTagStream
     ) -> object:
         if self.host_object_deserializer is None:
             stream.throw(
@@ -830,7 +874,7 @@ class TagMapper:
         return stream.read_host_object(self.host_object_deserializer)
 
     def deserialize_object_reference(
-        self, tag: SerializationTag, stream: ReadableTagStream
+        self, tag: Literal[SerializationTag.kObjectReference], stream: ReadableTagStream
     ) -> object:
         assert tag == SerializationTag.kObjectReference
         serialized_id, obj = stream.read_object_reference()
