@@ -8,6 +8,7 @@ from hypothesis import strategies as st
 from v8serialize._values import SharedArrayBufferId, TransferId
 from v8serialize.constants import (
     JS_CONSTANT_TAGS,
+    JS_PRIMITIVE_OBJECT_TAGS,
     MAX_ARRAY_LENGTH,
     ConstantTags,
     SerializationTag,
@@ -34,6 +35,7 @@ from v8serialize.jstypes.jsbuffers import (
     ViewFormat,
     create_view,
 )
+from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject
 
 T = TypeVar("T")
 
@@ -384,6 +386,18 @@ def test_codec_rt_constants(value: ConstantTags) -> None:
     rts = ReadableTagStream(wts.data)
     result = rts.read_constant(value)
     assert value == result
+    assert rts.eof
+
+
+@given(st.one_of(st.booleans(), st.text(), st.floats(allow_nan=False), st.integers()))
+def test_codec_rt_primitive_object(value: bool | str | float | int) -> None:
+    wrapped = JSPrimitiveObject(value)
+    wts = WritableTagStream()
+    wts.write_js_primitive_object(wrapped)
+    rts = ReadableTagStream(wts.data)
+    assert rts.read_tag(consume=False, tag=JS_PRIMITIVE_OBJECT_TAGS)
+    serialized_id, result = rts.read_js_primitive_object()
+    assert result == wrapped
     assert rts.eof
 
 

@@ -55,6 +55,7 @@ from v8serialize.jstypes.jsbuffers import (
     JSArrayBufferView,
     JSSharedArrayBuffer,
 )
+from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject
 from v8serialize.jstypes.jsundefined import JSUndefinedEnum, JSUndefinedType
 from v8serialize.references import SerializedId, SerializedObjectLog
 
@@ -304,6 +305,30 @@ class WritableTagStream:
             )
         self.write_tag(SerializationTag.kUint32)
         self.write_varint(value)
+
+    def write_js_primitive_object(
+        self, obj: JSPrimitiveObject, *, identity: object | None = None
+    ) -> None:
+        self.objects.record_reference(obj if identity is None else identity)
+        tag = obj.tag
+        value = obj.value
+        self.write_tag(tag)
+        if tag is SerializationTag.kStringObject:
+            assert isinstance(value, str)
+            self.write_string_utf8(value, tag=None)
+        elif (
+            tag is SerializationTag.kTrueObject or tag is SerializationTag.kFalseObject
+        ):
+            # no data — nothing to do
+            assert value is True or value is False
+        elif tag is SerializationTag.kBigIntObject:
+            assert isinstance(value, (int, float)) and value.is_integer()
+            self.write_bigint(int(value), tag=None)
+        elif tag is SerializationTag.kNumberObject:
+            assert isinstance(value, (float, int))
+            self.write_double(value, tag=None)
+        else:
+            raise AssertionError(f"Unexpected tag: {tag}")
 
     def write_jsmap(
         self,
@@ -743,6 +768,12 @@ class ObjectMapper(ObjectMapperObject):
         self, value: float, /, ctx: EncodeContext, next: SerializeNextFn
     ) -> None:
         ctx.stream.write_double(value)
+
+    @serialize.register(JSPrimitiveObject)
+    def serialize_js_primitive_object(
+        self, value: JSPrimitiveObject, /, ctx: EncodeContext, next: SerializeNextFn
+    ) -> None:
+        ctx.stream.write_js_primitive_object(value)
 
     @serialize.register(JSObject)
     def serialize_js_object(

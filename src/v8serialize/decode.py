@@ -39,12 +39,14 @@ from v8serialize.constants import (
     JS_ARRAY_BUFFER_TAGS,
     JS_CONSTANT_TAGS,
     JS_OBJECT_KEY_TAGS,
+    JS_PRIMITIVE_OBJECT_TAGS,
     UINT32_RANGE,
     AnySerializationTag,
     ArrayBufferTags,
     ArrayBufferViewFlags,
     ArrayBufferViewTag,
     ConstantTags,
+    PrimitiveObjectTag,
     SerializationTag,
     TagConstraint,
     kLatestVersion,
@@ -251,8 +253,9 @@ class ReadableTagStream:
             )
         return cast(ConstantTags, tag)
 
-    def read_double(self) -> float:
-        self.read_tag(tag=SerializationTag.kDouble)
+    def read_double(self, tag: bool = True) -> float:
+        if tag:
+            self.read_tag(tag=SerializationTag.kDouble)
         self.ensure_capacity(8)
         value = cast(float, struct.unpack_from("<d", self.data, self.pos)[0])
         self.pos += 8
@@ -279,9 +282,10 @@ class ReadableTagStream:
             self.throw("TwoByteString is not valid UTF-16 data", cause=e)
         return value
 
-    def read_string_utf8(self) -> str:
+    def read_string_utf8(self, tag: bool = True) -> str:
         """Decode a Utf8String, which is UTF8-encoded text."""
-        self.read_tag(tag=SerializationTag.kUtf8String)
+        if tag:
+            self.read_tag(tag=SerializationTag.kUtf8String)
         length = self.read_varint()
         try:
             value = codecs.decode(self.read_bytes(length), "utf-8")
@@ -290,8 +294,9 @@ class ReadableTagStream:
             self.throw("Utf8String is not valid UTF-8 data", cause=e)
         return value
 
-    def read_bigint(self) -> int:
-        self.read_tag(tag=SerializationTag.kBigInt)
+    def read_bigint(self, tag: bool = True) -> int:
+        if tag:
+            self.read_tag(tag=SerializationTag.kBigInt)
         bitfield = self.read_varint()
         is_negative = bitfield & 1
         byte_count = (bitfield >> 1) & 0b111111111111111111111111111111
@@ -313,6 +318,30 @@ class ReadableTagStream:
         if value in UINT32_RANGE:
             return value
         self.throw(f"Serialized value is out of {UINT32_RANGE} for UInt32: {value}")
+
+    def read_js_primitive_object(
+        self, tag: PrimitiveObjectTag | None = None
+    ) -> tuple[SerializedId, JSPrimitiveObject]:
+        if tag and tag not in JS_PRIMITIVE_OBJECT_TAGS:
+            raise ValueError("tag must be a primitive object tag")
+
+        tag = self.read_tag(tag=JS_PRIMITIVE_OBJECT_TAGS if tag is None else tag)
+        result: JSPrimitiveObject
+        if tag is SerializationTag.kTrueObject:
+            result = JSPrimitiveObject(True)
+        elif tag is SerializationTag.kFalseObject:
+            result = JSPrimitiveObject(False)
+        elif tag is SerializationTag.kNumberObject:
+            result = JSPrimitiveObject(self.read_double(tag=False))
+        elif tag is SerializationTag.kBigIntObject:
+            result = JSPrimitiveObject(
+                self.read_bigint(tag=False), tag=SerializationTag.kBigIntObject
+            )
+        elif tag is SerializationTag.kStringObject:
+            result = JSPrimitiveObject(self.read_string_utf8(tag=False))
+        else:
+            raise AssertionError(f"Unreachable: {tag}")
+        return self.objects.record_reference(result), result
 
     def read_jsmap(
         self, tag_mapper: TagMapper, *, identity: object
@@ -755,6 +784,7 @@ class TagMapper:
         r(SerializationTag.kBeginSparseJSArray, TagMapper.deserialize_js_array_sparse)
         r(JS_ARRAY_BUFFER_TAGS, TagMapper.deserialize_js_array_buffer)
         r(SerializationTag.kArrayBufferView, TagMapper.deserialize_js_array_buffer_view)
+        r(JS_PRIMITIVE_OBJECT_TAGS, TagMapper.deserialize_js_primitive_object)
 
         # fmt: on
 
@@ -894,6 +924,16 @@ class TagMapper:
                 )
 
         return obj
+
+    def deserialize_js_primitive_object(
+        self, tag: PrimitiveObjectTag, stream: ReadableTagStream
+    ) -> object:
+        serialized_id, obj = stream.read_js_primitive_object(tag)
+        # Unwrap objects so they act like regular strings/numbers/bools.
+        # (Alternatively, we could make the wrapper types subclasses of their
+        # wrapped value type and keep the wrapper.)
+        stream.objects.replace_reference(serialized_id, obj.value)
+        return obj.value
 
 
 @dataclass(init=False)

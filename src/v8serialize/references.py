@@ -73,3 +73,12 @@ class SerializedObjectLog:
         self._object_by_serialized_id.append(obj)
         self._serialized_id_by_pyid[id(obj)] = serialized_id
         return serialized_id
+
+    def replace_reference(self, serialized_id: SerializedId, value: object) -> None:
+        if serialized_id != len(self._object_by_serialized_id) - 1:
+            raise ValueError(
+                f"Only the most-recent reference can be replaced: most "
+                f"recent={len(self._object_by_serialized_id) - 1}, "
+                f"serialized_id={serialized_id}"
+            )
+        self._object_by_serialized_id[serialized_id] = value

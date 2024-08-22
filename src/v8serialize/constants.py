@@ -295,3 +295,24 @@ JS_ARRAY_BUFFER_TAGS: Final = TagConstraint[ArrayBufferTags](
         }
     ),
 )
+
+PrimitiveObjectTag = Literal[
+    SerializationTag.kTrueObject,
+    SerializationTag.kFalseObject,
+    SerializationTag.kNumberObject,
+    SerializationTag.kBigIntObject,
+    SerializationTag.kStringObject,
+]
+
+JS_PRIMITIVE_OBJECT_TAGS = TagConstraint[PrimitiveObjectTag](
+    name="Primitive wrapper objects",
+    allowed_tags=frozenset(
+        {
+            SerializationTag.kTrueObject,
+            SerializationTag.kFalseObject,
+            SerializationTag.kNumberObject,
+            SerializationTag.kBigIntObject,
+            SerializationTag.kStringObject,
+        }
+    ),
+)
