@@ -831,6 +831,14 @@ class ObjectMapper(ObjectMapperObject):
     ) -> None:
         ctx.stream.write_js_error(value, ctx)
 
+    @serialize.register(BaseException)
+    def serialize_python_exception(
+        self, value: BaseException, /, ctx: EncodeContext, next: SerializeNextFn
+    ) -> None:
+        ctx.stream.write_js_error(
+            JSErrorData.from_exception(value), ctx, identity=value
+        )
+
     @serialize.register(JSObject)
     def serialize_js_object(
         self,
