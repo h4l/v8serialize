@@ -1,0 +1,4 @@
+ValueError: Unable to do the thing
+    at failing_operation (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:68:12)
+    at raise_simple (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:11:8)
+    at call_and_capture_tbe (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:84:8)

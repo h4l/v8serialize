@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 84, in call_and_capture_tbe
+    fn()
+  File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 11, in raise_simple
+    self.failing_operation()
+  File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 68, in failing_operation
+    raise ValueError("Unable to do the thing")
+ValueError: Unable to do the thing

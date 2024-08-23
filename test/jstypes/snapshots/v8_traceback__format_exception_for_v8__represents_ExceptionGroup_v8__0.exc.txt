@@ -1,0 +1,11 @@
+ExceptionGroup: Everything went wrong (2 sub-exceptions)
+    at raise_group (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:24:8)
+    at call_and_capture_tbe (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:84:8)
+
+  ↳ 1: ValueError: Unable to do the thing
+        at failing_operation (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:68:12)
+        at raise_group (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:15:12)
+
+  ↳ 2: TypeError: Expected an Apple but received an Orange
+        at failing_operation2 (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:72:12)
+        at raise_group (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:20:12)
