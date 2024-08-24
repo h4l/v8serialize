@@ -68,6 +68,22 @@ def test_load_v13_arraybufferview() -> None:
     assert result.get_buffer().tolist() == [1, 2, 3]
 
 
+def test_VerifyObjectCount_not_supported() -> None:
+    # VerifyObjectCount tag has not been written by any version of the V8
+    # serializer in the V8 git repo (I think v9 is the earliest version in the
+    # current source layout). Therefore we don't need to implement support for
+    # ignoring it.
+    wts = WritableTagStream()
+    wts.write_header()
+    wts.write_tag(SerializationTag.kVerifyObjectCount)
+    wts.write_varint(1)
+
+    with pytest.raises(
+        DecodeV8CodecError, match="No reader is implemented for tag kVerifyObjectCount"
+    ):
+        loads(wts.data)
+
+
 @pytest.mark.parametrize("version", [12, kLatestVersion + 1])
 def test_ReadableTagStream__rejects_unsupported_versions(version: int) -> None:
     wts = WritableTagStream()
