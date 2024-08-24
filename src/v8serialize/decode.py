@@ -253,7 +253,8 @@ class ReadableTagStream:
         """
         self.read_tag(SerializationTag.kVersion)
         version = self.read_varint()
-        if version > kLatestVersion:
+        # v13 was first released in 2017.
+        if version > kLatestVersion or version < 13:
             self.throw(f"Unsupported version {version}")
         self.version = version
         return version

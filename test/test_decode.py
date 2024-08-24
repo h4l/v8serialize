@@ -4,7 +4,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from v8serialize.constants import SerializationTag
+from v8serialize.constants import SerializationTag, kLatestVersion
 from v8serialize.decode import ReadableTagStream, TagMapper, loads
 from v8serialize.encode import WritableTagStream
 from v8serialize.errors import DecodeV8CodecError
@@ -66,6 +66,19 @@ def test_load_v13_arraybufferview() -> None:
     result = loads(v13_array_buffer_view)
     assert isinstance(result, JSUint8Array)
     assert result.get_buffer().tolist() == [1, 2, 3]
+
+
+@pytest.mark.parametrize("version", [12, kLatestVersion + 1])
+def test_ReadableTagStream__rejects_unsupported_versions(version: int) -> None:
+    wts = WritableTagStream()
+    wts.write_tag(SerializationTag.kVersion)
+    wts.write_varint(version)
+
+    rts = ReadableTagStream(wts.data)
+    with pytest.raises(DecodeV8CodecError) as exc_info:
+        rts.read_header()
+
+    assert f"Unsupported version {version}" in str(exc_info.value)
 
 
 @pytest.mark.parametrize(
