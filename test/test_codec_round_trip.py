@@ -26,6 +26,7 @@ from v8serialize.encode import (
 from v8serialize.extensions import node_js_array_buffer_view_host_object_handler
 from v8serialize.jstypes import JSObject, JSUndefined
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
+from v8serialize.jstypes._v8 import V8SharedObjectReference
 from v8serialize.jstypes.jsarray import JSArray
 from v8serialize.jstypes.jsarrayproperties import JSHole
 from v8serialize.jstypes.jsbuffers import (
@@ -56,6 +57,7 @@ def tag_mapper() -> TagMapper:
 
 
 any_int_or_text = st.one_of(st.integers(), st.text())
+uint32s = st.integers(min_value=0, max_value=2**32 - 1)
 
 name_properties = st.text().filter(
     lambda name: isinstance(normalise_property_key(name), str)
@@ -182,10 +184,10 @@ resizable_js_array_buffers = st.builds(
 
 normal_js_array_buffers = st.one_of(fixed_js_array_buffers, resizable_js_array_buffers)
 
-shared_array_buffers = st.integers(min_value=0, max_value=2**32 - 1).map(
+shared_array_buffers = uint32s.map(
     lambda value: JSSharedArrayBuffer(SharedArrayBufferId(value))
 )
-array_buffer_transfers = st.integers(min_value=0, max_value=2**32 - 1).map(
+array_buffer_transfers = uint32s.map(
     lambda value: JSArrayBufferTransfer(TransferId(value))
 )
 
@@ -289,6 +291,11 @@ so if we start form an arbitrary datetime, the fromtimestamp result can be
 slightly different, which breaks round-trip equality.
 """
 
+v8_shared_object_references = st.builds(
+    V8SharedObjectReference, shared_value_id=uint32s
+)
+
+
 any_atomic = st.one_of(
     st.integers(),
     # NaN breaks equality when nested inside objects. We test with nan in
@@ -306,6 +313,7 @@ any_atomic = st.one_of(
     # (Can't serialize tz, so aware datetimes come back as naive or a fixed tz;
     # epoch timestamp always matches though.)
     naive_timestamp_datetimes,
+    v8_shared_object_references,
 )
 
 
@@ -808,3 +816,14 @@ def test_codec_rt_js_error(value: JSErrorData, object_mapper: ObjectMapper) -> N
         assert (err_before and err_after) or not (err_before or err_after)
 
     assert value == result
+
+
+@given(value=v8_shared_object_references)
+def test_codec_rt_v8_shared_object_reference(value: V8SharedObjectReference) -> None:
+    wts = WritableTagStream()
+    wts.write_v8_shared_object_reference(value)
+    rts = ReadableTagStream(wts.data)
+    assert rts.read_tag(consume=False, tag=SerializationTag.kSharedObject)
+    result = rts.read_v8_shared_object_reference().object
+    assert result == value
+    assert rts.eof

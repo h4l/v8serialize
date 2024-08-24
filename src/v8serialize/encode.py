@@ -52,6 +52,7 @@ from v8serialize.constants import (
 from v8serialize.decorators import singledispatchmethod
 from v8serialize.errors import V8CodecError
 from v8serialize.jstypes import JSObject
+from v8serialize.jstypes._v8 import V8SharedObjectReference
 from v8serialize.jstypes.jsarray import JSArray
 from v8serialize.jstypes.jsarrayproperties import JSHoleEnum, JSHoleType
 from v8serialize.jstypes.jsbuffers import (
@@ -293,6 +294,7 @@ class WritableTagStream:
     def write_int32(
         self,
         value: int,
+        *,
         tag: Literal[SerializationTag.kInt32] | None = SerializationTag.kInt32,
     ) -> None:
         if value not in INT32_RANGE:
@@ -306,13 +308,15 @@ class WritableTagStream:
     def write_uint32(
         self,
         value: int,
+        *,
+        tag: Literal[SerializationTag.kUint32] | None = SerializationTag.kUint32,
     ) -> None:
         if value not in UINT32_RANGE:
             raise ValueError(
                 f"Python int is too large to represent as Uint32: value must be "
                 f"in {UINT32_RANGE}"
             )
-        self.write_tag(SerializationTag.kUint32)
+        self.write_tag(tag)
         self.write_varint(value)
 
     def write_js_primitive_object(
@@ -626,6 +630,13 @@ class WritableTagStream:
         else:
             serializer(value=value, stream=self)
 
+    def write_v8_shared_object_reference(
+        self, value: V8SharedObjectReference, *, identity: object | None = None
+    ) -> None:
+        self.objects.record_reference(value if identity is None else identity)
+        self.write_tag(SerializationTag.kSharedObject)
+        self.write_uint32(value.shared_value_id, tag=None)
+
     # TODO: should this just be a method of EncodeContext, not here?
     def write_object(self, value: object, ctx: EncodeContext) -> None:
         ctx.serialize(value)
@@ -855,6 +866,16 @@ class ObjectMapper(ObjectMapperObject):
         # requires a timezone and time of day to produce a point in time,
         # otherwise it's ambiguous.
         ctx.stream.write_js_date(value)
+
+    @serialize.register(V8SharedObjectReference)
+    def serialize_v8_shared_object_reference(
+        self,
+        value: V8SharedObjectReference,
+        /,
+        ctx: EncodeContext,
+        next: SerializeNextFn,
+    ) -> None:
+        ctx.stream.write_v8_shared_object_reference(value)
 
     @serialize.register(JSObject)
     def serialize_js_object(

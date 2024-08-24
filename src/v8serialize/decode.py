@@ -62,6 +62,7 @@ from v8serialize.constants import (
 )
 from v8serialize.errors import DecodeV8CodecError, V8CodecError
 from v8serialize.jstypes import JSHole, JSObject, JSUndefined
+from v8serialize.jstypes._v8 import V8SharedObjectReference, V8SharedValueId
 from v8serialize.jstypes.jsarray import JSArray
 from v8serialize.jstypes.jsbuffers import (
     JSArrayBuffer,
@@ -328,8 +329,9 @@ class ReadableTagStream:
             return value
         self.throw(f"Serialized value is out of {INT32_RANGE} for Int32: {value}")
 
-    def read_uint32(self) -> int:
-        self.read_tag(tag=SerializationTag.kUint32)
+    def read_uint32(self, *, tag: bool = True) -> int:
+        if tag:
+            self.read_tag(tag=SerializationTag.kUint32)
         value = self.read_varint()
         if value in UINT32_RANGE:
             return value
@@ -703,6 +705,13 @@ class ReadableTagStream:
             return deserializer.deserialize_host_object(stream=self)
         return deserializer(stream=self)
 
+    def read_v8_shared_object_reference(
+        self,
+    ) -> ReferencedObject[V8SharedObjectReference]:
+        self.read_tag(SerializationTag.kSharedObject)
+        result = V8SharedObjectReference(V8SharedValueId(self.read_uint32(tag=False)))
+        return ReferencedObject(self.objects.record_reference(result), result)
+
     def read_object(self, tag_mapper: TagMapper) -> object:
         tag = self.read_tag(consume=False)
         return tag_mapper.deserialize(tag, self)
@@ -880,6 +889,7 @@ class TagMapper:
         r(JS_PRIMITIVE_OBJECT_TAGS, TagMapper.deserialize_js_primitive_object)
         r(SerializationTag.kError, TagMapper.deserialize_js_error)
         r(SerializationTag.kDate, TagMapper.deserialize_js_date)
+        r(SerializationTag.kSharedObject, TagMapper.deserialize_v8_shared_object_reference)  # noqa: B950
         r(SerializationTag.kWasmModuleTransfer, TagMapper.deserialize_unsupported_wasm)
         r(SerializationTag.kWasmMemoryTransfer, TagMapper.deserialize_unsupported_wasm)
 
@@ -999,6 +1009,11 @@ class TagMapper:
                 "to read this serialized data."
             )
         return stream.read_host_object(self.host_object_deserializer)
+
+    def deserialize_v8_shared_object_reference(
+        self, tag: Literal[SerializationTag.kSharedObject], stream: ReadableTagStream
+    ) -> V8SharedObjectReference:
+        return stream.read_v8_shared_object_reference().object
 
     def deserialize_object_reference(
         self, tag: Literal[SerializationTag.kObjectReference], stream: ReadableTagStream
