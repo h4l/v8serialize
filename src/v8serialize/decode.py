@@ -4,6 +4,7 @@ import codecs
 import operator
 import struct
 from dataclasses import dataclass, field
+from datetime import datetime, tzinfo
 from types import MappingProxyType
 from typing import (
     TYPE_CHECKING,
@@ -417,6 +418,12 @@ class ReadableTagStream:
 
         return ReferencedObject(serialized_id, JSErrorReadResult(error_obj, cause))
 
+    def read_js_date(self, *, tz: tzinfo | None = None) -> ReferencedObject[datetime]:
+        self.read_tag(SerializationTag.kDate)
+        epoch_ms = self.read_double(tag=False)
+        result = datetime.fromtimestamp(epoch_ms / 1000, tz=tz)
+        return ReferencedObject(self.objects.record_reference(result), result)
+
     def read_jsmap(
         self, tag_mapper: TagMapper, *, identity: object
     ) -> Generator[tuple[object, object], None, int]:
@@ -801,6 +808,7 @@ class TagMapper:
     js_constants: Mapping[ConstantTags, object]
     host_object_deserializer: HostObjectDeserializer[object] | None
     js_error_type: JSErrorSettableCauseConstructor
+    default_timezone: tzinfo | None
 
     def __init__(
         self,
@@ -813,6 +821,7 @@ class TagMapper:
         js_constants: Mapping[ConstantTags, object] | None = None,
         host_object_deserializer: HostObjectDeserializer[object] | None = None,
         js_error_type: JSErrorSettableCauseConstructor | None = None,
+        default_timezone: tzinfo | None = None,
     ) -> None:
         self.default_tag_mapper = default_tag_mapper
         self.jsmap_type = jsmap_type or dict
@@ -821,6 +830,7 @@ class TagMapper:
         self.js_array_type = js_array_type or JSArray
         self.host_object_deserializer = host_object_deserializer
         self.js_error_type = js_error_type or JSError
+        self.default_timezone = default_timezone
 
         _js_constants = dict(js_constants) if js_constants is not None else {}
         _js_constants.setdefault(SerializationTag.kTheHole, JSHole)
@@ -864,6 +874,7 @@ class TagMapper:
         r(SerializationTag.kArrayBufferView, TagMapper.deserialize_js_array_buffer_view)
         r(JS_PRIMITIVE_OBJECT_TAGS, TagMapper.deserialize_js_primitive_object)
         r(SerializationTag.kError, TagMapper.deserialize_js_error)
+        r(SerializationTag.kDate, TagMapper.deserialize_js_date)
         r(SerializationTag.kWasmModuleTransfer, TagMapper.deserialize_unsupported_wasm)
         r(SerializationTag.kWasmMemoryTransfer, TagMapper.deserialize_unsupported_wasm)
 
@@ -1042,6 +1053,11 @@ class TagMapper:
             "serialized WASM objects use shared ArrayBuffers/transfer IDs that "
             "are only accessible from within the V8 process that serializes them."
         )
+
+    def deserialize_js_date(
+        self, tag: Literal[SerializationTag.kDate], stream: ReadableTagStream
+    ) -> datetime:
+        return stream.read_js_date(tz=self.default_timezone).object
 
 
 @dataclass(init=False)

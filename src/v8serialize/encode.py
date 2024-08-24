@@ -5,6 +5,7 @@ import struct
 from collections import abc
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
+from datetime import datetime
 from functools import lru_cache, partial
 from types import NoneType, TracebackType
 from typing import (
@@ -367,6 +368,12 @@ class WritableTagStream:
             self.write_varint(SerializationErrorTag.Cause)
             self.write_object(cause, ctx)
         self.write_varint(SerializationErrorTag.End)
+
+    def write_js_date(self, value: datetime, *, identity: object | None = None) -> None:
+        epoch_ms = value.timestamp() * 1000
+        self.objects.record_reference(value if identity is None else identity)
+        self.write_tag(SerializationTag.kDate)
+        self.write_double(epoch_ms, tag=None)
 
     def write_jsmap(
         self,
@@ -838,6 +845,16 @@ class ObjectMapper(ObjectMapperObject):
         ctx.stream.write_js_error(
             JSErrorData.from_exception(value), ctx, identity=value
         )
+
+    @serialize.register(datetime)
+    def serialize_python_datetime(
+        self, value: datetime, /, ctx: EncodeContext, next: SerializeNextFn
+    ) -> None:
+        # Note that we don't handle date objects because JavaScript Date is a
+        # fixed point in time, whereas Python date is a calendar date. A date
+        # requires a timezone and time of day to produce a point in time,
+        # otherwise it's ambiguous.
+        ctx.stream.write_js_date(value)
 
     @serialize.register(JSObject)
     def serialize_js_object(

@@ -1,5 +1,5 @@
-import dataclasses
 import math
+from datetime import datetime
 from typing import Optional, TypeVar, cast
 
 import pytest
@@ -274,6 +274,21 @@ js_regexp_flags = st.builds(
 js_regexps = st.builds(JSRegExp, source=st.text(), flags=js_regexp_flags)
 
 
+naive_timestamp_datetimes = st.datetimes(min_value=datetime(1, 1, 2)).map(
+    # Truncate timestamp precision to nearest 0.25 milliseconds to avoid lossy
+    # float operations breaking equality. We don't really care about testing the
+    # precision of float operations, just that the values are encoded and
+    # decoded as provided.
+    lambda dt: datetime.fromtimestamp(round(dt.timestamp() * 4000 + 1) / 4000)
+)
+"""datetime values rounded slightly by passing through timestamp() representation.
+
+These datetime values can be represented exactly as their timestamp value.
+The datetime code does some rounding when converting a timestamp to a datetime,
+so if we start form an arbitrary datetime, the fromtimestamp result can be
+slightly different, which breaks round-trip equality.
+"""
+
 any_atomic = st.one_of(
     st.integers(),
     # NaN breaks equality when nested inside objects. We test with nan in
@@ -287,6 +302,10 @@ any_atomic = st.one_of(
     # FIXME: non-hashable objects are a problem for maps/sets
     # js_array_buffers,
     js_regexps,
+    # Use naive datetimes for general tests to avoid needing to normalise tz.
+    # (Can't serialize tz, so aware datetimes come back as naive or a fixed tz;
+    # epoch timestamp always matches though.)
+    naive_timestamp_datetimes,
 )
 
 
@@ -441,6 +460,17 @@ def test_codec_rt_primitive_object(value: bool | str | float | int) -> None:
     assert rts.read_tag(consume=False, tag=JS_PRIMITIVE_OBJECT_TAGS)
     serialized_id, result = rts.read_js_primitive_object()
     assert result == wrapped
+    assert rts.eof
+
+
+@given(value=naive_timestamp_datetimes)
+def test_codec_rt_naive_datetimes(value: datetime) -> None:
+    wts = WritableTagStream()
+    wts.write_js_date(value)
+    rts = ReadableTagStream(wts.data)
+    assert rts.read_tag(consume=False, tag=SerializationTag.kDate)
+    result = rts.read_js_date().object
+    assert result == value
     assert rts.eof
 
 
