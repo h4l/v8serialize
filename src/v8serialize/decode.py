@@ -135,6 +135,7 @@ class ReadableTagStream:
     data: ByteString
     pos: int = field(default=0)
     objects: SerializedObjectLog = field(default_factory=SerializedObjectLog)
+    version: int = field(default=kLatestVersion)
 
     @property
     def eof(self) -> bool:
@@ -254,6 +255,7 @@ class ReadableTagStream:
         version = self.read_varint()
         if version > kLatestVersion:
             self.throw(f"Unsupported version {version}")
+        self.version = version
         return version
 
     def read_constant(self, expected: ConstantTags | None = None) -> ConstantTags:
@@ -679,7 +681,9 @@ class ReadableTagStream:
         #   buffer types anyway.
         byte_offset = self.read_varint()
         byte_length = self.read_varint()
-        flags = ArrayBufferViewFlags(self.read_varint())
+        flags = ArrayBufferViewFlags(0)
+        if self.version >= 14:  # flags field was added in v14
+            flags = ArrayBufferViewFlags(self.read_varint())
 
         result = array_buffer_view(
             buffer=backing_buffer,

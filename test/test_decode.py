@@ -8,6 +8,7 @@ from v8serialize.constants import SerializationTag
 from v8serialize.decode import ReadableTagStream, TagMapper, loads
 from v8serialize.encode import WritableTagStream
 from v8serialize.errors import DecodeV8CodecError
+from v8serialize.jstypes.jsbuffers import JSUint8Array
 
 
 @given(st.integers(min_value=1))
@@ -37,6 +38,34 @@ def test_decode_varint__truncated(n: int) -> None:
 def test_loads(serialized: str, expected: object) -> None:
     result = loads(b64decode(serialized))
     assert result == expected
+
+
+def test_load_v13_arraybufferview() -> None:
+    # Format v13 is the oldest version it makes sense to support, introduced in
+    # 2017 and used in Node.js 16. It serializes ArrayBufferView without flags
+    #
+    # $ docker container run --rm -it node:16-alpine -e '
+    #     const v8 = require("v8");
+    #     const ser = new v8.Serializer();
+    #     ser.writeHeader();
+    #     ser.writeValue(Uint8Array.from([1, 2, 3]));
+    #     console.log(ser.releaseBuffer().toString("base64"));'
+    #
+    # Note, this flag field was mistakenly added without bumping the version in
+    # V8, which seems to have resulted in some v13 versions writing the flags
+    # field while reporting v13 format.
+    #
+    # The V8 code attempts to work around the issue by caching an exception when
+    # reading in v13 mode, and retrying with v14 behaviour enabled. We've not
+    # implemented this behaviour as v13 is so old that probably nothing is using
+    # it any more, and even if they are they should have updated to a version
+    # that fixed this issue, as the change was reverted later.
+
+    v13_array_buffer_view = b64decode("/w1CAwECA1ZCAAM=")
+    assert v13_array_buffer_view[1] == 13  # v13
+    result = loads(v13_array_buffer_view)
+    assert isinstance(result, JSUint8Array)
+    assert result.get_buffer().tolist() == [1, 2, 3]
 
 
 @pytest.mark.parametrize(
