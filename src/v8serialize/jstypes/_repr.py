@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from itertools import islice
 from reprlib import Repr
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import TYPE_CHECKING, Any, Collection, Iterable
 
 from v8serialize.jstypes.jsarrayproperties import SparseArrayProperties
 
 if TYPE_CHECKING:
     from v8serialize.jstypes.jsarray import JSArray
+    from v8serialize.jstypes.jsmap import JSMap
     from v8serialize.jstypes.jsobject import JSObject
+    from v8serialize.jstypes.jsset import JSSet
 
 
 class JSRepr(Repr):
@@ -33,6 +35,16 @@ class JSRepr(Repr):
     if TYPE_CHECKING:
 
         def _join(self, pieces: Iterable[str], level: int) -> str: ...
+
+        def _repr_iterable(
+            self,
+            obj: Collection[object],
+            level: int,
+            left: str,
+            right: str,
+            maxiter: int,
+            trail: str = "",
+        ) -> str: ...
 
     # We need to maintain insertion order in the repr because that's a defined
     # behaviour of JavaScript objects. The default repr behaviour is to sort
@@ -172,6 +184,30 @@ class JSRepr(Repr):
         if prop_pieces:
             return f"JSArray([{array_repr}], **{{{props_repr}}})"
         return f"JSArray([{array_repr}])"
+
+    def repr_JSMap(self, obj: JSMap, level: int) -> str:
+        # same as repr_dict() but without sorting entries and "JSMap()" not {}
+        n = len(obj)
+        if n == 0:
+            return "JSMap()"
+        if level <= 0:
+            return "JSMap({" + self.fillvalue + "})"
+        newlevel = level - 1
+        repr1 = self.repr1
+        pieces = []
+        for key in islice(obj, self.maxdict):
+            keyrepr = repr1(key, newlevel)
+            valrepr = repr1(obj[key], newlevel)
+            pieces.append("%s: %s" % (keyrepr, valrepr))
+        if n > self.maxdict:
+            pieces.append(self.fillvalue)
+        s = self._join(pieces, level)
+        return "JSMap({%s})" % (s,)
+
+    def repr_JSSet(self, obj: JSSet, level: int) -> str:
+        if not obj:
+            return "JSSet()"
+        return self._repr_iterable(obj, level, "JSSet([", "])", self.maxset)
 
 
 def _contains_single_piece(pieces: list[str]) -> bool:
