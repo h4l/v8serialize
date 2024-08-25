@@ -829,8 +829,8 @@ def read_stream(rts_fn: ReadableTagStreamReadFunction) -> TagReader:
 
 
 class DecodeContext(Protocol):
-    tag_mappers: Sequence[AnyTagMapper]
-    stream: ReadableTagStream
+    @property
+    def stream(self) -> ReadableTagStream: ...
 
     def decode_object(self, *, tag: SerializationTag | None = ...) -> object: ...
 
