@@ -5,7 +5,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from v8serialize.constants import SerializationTag, kLatestVersion
-from v8serialize.decode import ReadableTagStream, TagMapper, loads
+from v8serialize.decode import DefaultDecodeContext, ReadableTagStream, loads
 from v8serialize.encode import WritableTagStream
 from v8serialize.errors import DecodeV8CodecError
 from v8serialize.jstypes.jsbuffers import JSUint8Array
@@ -79,7 +79,8 @@ def test_VerifyObjectCount_not_supported() -> None:
     wts.write_varint(1)
 
     with pytest.raises(
-        DecodeV8CodecError, match="No reader is implemented for tag kVerifyObjectCount"
+        DecodeV8CodecError,
+        match="No tag mapper was able to read the tag kVerifyObjectCount",
     ):
         loads(wts.data)
 
@@ -103,10 +104,10 @@ def test_ReadableTagStream__rejects_unsupported_versions(version: int) -> None:
 def test_wasm_is_not_supported(tag: SerializationTag) -> None:
     wts = WritableTagStream()
     wts.write_tag(tag)
-    rts = ReadableTagStream(wts.data)
+    decode_ctx = DefaultDecodeContext(stream=ReadableTagStream(wts.data))
 
     with pytest.raises(
         DecodeV8CodecError,
         match=f"Stream contains a {tag.name} which is not supported.",
     ):
-        rts.read_object(TagMapper())
+        decode_ctx.deserialize()

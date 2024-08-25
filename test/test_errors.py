@@ -1,6 +1,11 @@
 from dataclasses import dataclass
 
-from v8serialize.errors import NormalizedKeyError, V8CodecError
+from v8serialize.constants import SerializationTag
+from v8serialize.errors import (
+    NormalizedKeyError,
+    UnmappedTagDecodeV8CodecError,
+    V8CodecError,
+)
 
 
 @dataclass(init=False)
@@ -33,3 +38,14 @@ def test_NormalizedKeyError() -> None:
     assert repr(nke) == "NormalizedKeyError(normalized_key=0, raw_key='0')"
     # str being the repr of a str is kind of weird, but this is what all errors do
     assert str(nke) == repr("0 (normalized from '0')")
+
+
+def test_UnmappedTagDecodeV8CodecError() -> None:
+    err = UnmappedTagDecodeV8CodecError(
+        "Msg", tag=SerializationTag.kArrayBuffer, position=2, data=b"foo"
+    )
+
+    assert (
+        str(err)
+        == "Msg: position=2, data=b'foo', tag=<SerializationTag.kArrayBuffer: 66>"
+    )

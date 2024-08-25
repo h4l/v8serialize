@@ -1,5 +1,10 @@
+from __future__ import annotations
+
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, ByteString, cast
+
+if TYPE_CHECKING:
+    from v8serialize.constants import SerializationTag
 
 
 @dataclass(init=False)
@@ -22,6 +27,7 @@ class V8CodecError(BaseException):  # FIXME: should inherit Exception
         return f"{message}{": " if values_fmt else ""}{values_fmt}"
 
 
+# TODO: str/repr needs customising to abbreviate the data field
 @dataclass(init=False)
 class DecodeV8CodecError(V8CodecError, ValueError):
     position: int
@@ -33,6 +39,30 @@ class DecodeV8CodecError(V8CodecError, ValueError):
         super().__init__(message, *args)
         self.position = position
         self.data = data
+
+
+@dataclass(init=False)
+class UnmappedTagDecodeV8CodecError(DecodeV8CodecError):
+    """Raised when attempting to deserialize a tag that no TagMapper is able to
+    handle (by reading the tag's data from the stream and representing the data
+    as a Python object)."""
+
+    if not TYPE_CHECKING:
+        tag: SerializationTag
+
+    def __init__(
+        self,
+        message: str,
+        *args: object,
+        tag: SerializationTag,
+        position: int,
+        data: ByteString,
+    ) -> None:
+        super().__init__(message, tag, *args, position=position, data=data)
+
+    @property
+    def tag(self) -> SerializationTag:
+        return cast("SerializationTag", self.args[1])
 
 
 @dataclass(slots=True, init=False)

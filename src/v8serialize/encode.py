@@ -660,7 +660,7 @@ HostObjectSerializer: TypeAlias = (
 class EncodeContext(Protocol):
     """Maintains the state needed to write Python objects in V8 format."""
 
-    object_mappers: Sequence[ObjectMapperObject | SerializeObjectFn]
+    object_mappers: Sequence[AnyObjectMapper]
     stream: WritableTagStream
 
     def serialize(self, value: object) -> None:
@@ -683,7 +683,7 @@ class SerializeNextFn(Protocol):
 
 class SerializeObjectFn(Protocol):
     def __call__(
-        self, value: object, /, ctx: DefaultEncodeContext, next: SerializeNextFn
+        self, value: object, /, ctx: EncodeContext, next: SerializeNextFn
     ) -> None: ...
 
 
@@ -700,6 +700,7 @@ class DefaultEncodeContext(EncodeContext):
     stream: WritableTagStream
     _memoized: _lru_cache_wrapper[Any]
 
+    # TODO: make this signature more consistent with DefaultDecodeContext
     def __init__(
         self,
         object_mappers: Iterable[ObjectMapperObject | SerializeObjectFn] | None = None,
@@ -783,7 +784,7 @@ class ObjectMapper(ObjectMapperObject):
         else:
             # Can't use bigints for object keys, so write large ints as strings
             if ctx.stream.allowed_tags is JS_OBJECT_KEY_TAGS:
-                ctx.stream.write_object(str(value), ctx=ctx)
+                ctx.stream.write_string_onebyte(str(value))  # onebyte always OK for int
             else:
                 ctx.stream.write_bigint(value)
 
@@ -994,9 +995,9 @@ default_object_mappers: tuple[AnyObjectMapper, ...] = (
 class Encoder:
     """Encode Python values in the V8 serialization format.
 
-    Encoder is a high-level interface wraps an ObjectMapper andWritableTagStream
-    to decide how to represent Python types, and write out the V8 tag data
-    respectively.
+    Encoder is a high-level interface that wraps an ObjectMapper and
+    WritableTagStream to decide how to represent Python types, and write out the
+    V8 tag data respectively.
     """
 
     object_mappers: Sequence[AnyObjectMapper]
