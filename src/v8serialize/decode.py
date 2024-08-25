@@ -896,10 +896,10 @@ class DefaultDecodeContext(DecodeContext):
             default_tag_mappers if tag_mappers is None else tag_mappers
         )
 
-    def __deserialize(self, tag: SerializationTag, *, i: int) -> object:
+    def __decode_object_with_mapper(self, tag: SerializationTag, *, i: int) -> object:
         if i < len(self.tag_mappers):
             tm = self.tag_mappers[i]
-            next = partial(self.__deserialize, i=i + 1)
+            next = partial(self.__decode_object_with_mapper, i=i + 1)
             if callable(tm):
                 return tm(tag, ctx=self, next=next)
             else:
@@ -910,7 +910,7 @@ class DefaultDecodeContext(DecodeContext):
     def decode_object(self, *, tag: SerializationTag | None = None) -> object:
         if tag is None:
             tag = self.stream.read_tag()
-        return self.__deserialize(tag, i=0)
+        return self.__decode_object_with_mapper(tag, i=0)
 
     def _report_unmapped_value(self, tag: SerializationTag) -> Never:
         raise UnmappedTagDecodeV8CodecError(
