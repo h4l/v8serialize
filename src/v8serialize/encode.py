@@ -639,7 +639,7 @@ class WritableTagStream:
 
     # TODO: should this just be a method of EncodeContext, not here?
     def write_object(self, value: object, ctx: EncodeContext) -> None:
-        ctx.serialize(value)
+        ctx.encode_object(value)
 
 
 class HostObjectSerializerFn(Protocol[T_con]):
@@ -660,10 +660,10 @@ HostObjectSerializer: TypeAlias = (
 class EncodeContext(Protocol):
     """Maintains the state needed to write Python objects in V8 format."""
 
-    object_mappers: Sequence[AnyObjectMapper]
-    stream: WritableTagStream
+    @property
+    def stream(self) -> WritableTagStream: ...
 
-    def serialize(self, value: object) -> None:
+    def encode_object(self, value: object) -> None:
         """Serialize a single Python value to the stream.
 
         The object_mappers convert the Python value to JavaScript representation,
@@ -717,10 +717,10 @@ class DefaultEncodeContext(EncodeContext):
             lambda x: x
         )
 
-    def __serialize(self, value: object, *, i: int) -> None:
+    def __encode_object_with_mapper(self, value: object, *, i: int) -> None:
         if i < len(self.object_mappers):
             om = self.object_mappers[i]
-            next = partial(self.__serialize, i=i + 1)
+            next = partial(self.__encode_object_with_mapper, i=i + 1)
             if callable(om):
                 return om(value, ctx=self, next=next)
             else:
@@ -728,13 +728,13 @@ class DefaultEncodeContext(EncodeContext):
         self._report_unmapped_value(value)
         raise AssertionError("report_unmapped_value returned")
 
-    def serialize(self, value: object) -> None:
+    def encode_object(self, value: object) -> None:
         """Serialize a single Python value to the stream.
 
         The object_mappers convert the Python value to JavaScript representation,
         and the stream writes out V8 serialization format tagged data.
         """
-        return self.__serialize(value, i=0)
+        return self.__encode_object_with_mapper(value, i=0)
 
     def _report_unmapped_value(self, value: object) -> Never:
         raise UnmappedValueEncodeV8CodecError(
@@ -965,7 +965,7 @@ class ObjectMapper(ObjectMapperObject):
         ctx: EncodeContext,
         next: SerializeNextFn,
     ) -> None:
-        ctx.serialize(value.backing_buffer)
+        ctx.encode_object(value.backing_buffer)
         ctx.stream.write_js_array_buffer_view(value)
 
 
@@ -1012,7 +1012,7 @@ class Encoder:
             stream=WritableTagStream(), object_mappers=self.object_mappers
         )
         ctx.stream.write_header()
-        ctx.serialize(value)
+        ctx.encode_object(value)
         return ctx.stream.data
 
 

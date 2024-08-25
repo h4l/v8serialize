@@ -463,7 +463,7 @@ def test_codec_rt_constants(
     create_rw_ctx: CreateContexts,
 ) -> None:
     encode_ctx, decode_ctx = create_rw_ctx()
-    encode_ctx.serialize(value)
+    encode_ctx.encode_object(value)
     result = decode_ctx.decode_object()
     assert value == result
     assert decode_ctx.stream.eof
