@@ -370,7 +370,7 @@ class WritableTagStream:
         cause = error.cause
         if cause is not None:
             self.write_varint(SerializationErrorTag.Cause)
-            self.write_object(cause, ctx)
+            ctx.encode_object(cause)
         self.write_varint(SerializationErrorTag.End)
 
     def write_js_date(self, value: datetime, *, identity: object | None = None) -> None:
@@ -390,8 +390,8 @@ class WritableTagStream:
         self.write_tag(SerializationTag.kBeginJSMap)
         count = 0
         for key, value in items:
-            self.write_object(key, ctx=ctx)
-            self.write_object(value, ctx=ctx)
+            ctx.encode_object(key)
+            ctx.encode_object(value)
             count += 2
         self.write_tag(SerializationTag.kEndJSMap)
         self.write_varint(count)
@@ -407,7 +407,7 @@ class WritableTagStream:
         self.write_tag(SerializationTag.kBeginJSSet)
         count = 0
         for value in values:
-            self.write_object(value, ctx=ctx)
+            ctx.encode_object(value)
             count += 1
         self.write_tag(SerializationTag.kEndJSSet)
         self.write_varint(count)
@@ -433,8 +433,8 @@ class WritableTagStream:
         count = 0
         for key, value in items:
             with self.constrain_tags(JS_OBJECT_KEY_TAGS):
-                self.write_object(key, ctx=ctx)
-            self.write_object(value, ctx=ctx)
+                ctx.encode_object(key)
+            ctx.encode_object(value)
             count += 1
         self.write_tag(end_tag)
         self.write_varint(count)
@@ -481,15 +481,15 @@ class WritableTagStream:
         array_el_count = 0
 
         for el in array:
-            self.write_object(el, ctx)
+            ctx.encode_object(el)
             array_el_count += 1
         assert array_el_count == array_length
 
         properties_count = 0
         for key, value in [] if properties is None else properties:
             with self.constrain_tags(JS_OBJECT_KEY_TAGS):
-                self.write_object(key, ctx=ctx)
-            self.write_object(value, ctx=ctx)
+                ctx.encode_object(key)
+            ctx.encode_object(value)
             properties_count += 1
         self.write_tag(SerializationTag.kEndDenseJSArray)
         self.write_varint(properties_count)
@@ -636,10 +636,6 @@ class WritableTagStream:
         self.objects.record_reference(value if identity is None else identity)
         self.write_tag(SerializationTag.kSharedObject)
         self.write_uint32(value.shared_value_id, tag=None)
-
-    # TODO: should this just be a method of EncodeContext, not here?
-    def write_object(self, value: object, ctx: EncodeContext) -> None:
-        ctx.encode_object(value)
 
 
 class HostObjectSerializerFn(Protocol[T_con]):

@@ -699,7 +699,7 @@ def test_codec_rt_object_identity__simple(
     set1 = {1, 2}
     set2 = {1, 2}
     value = {"a": set1, "b": set2, "c": set1}
-    encode_ctx.stream.write_object(value, ctx=encode_ctx)
+    encode_ctx.encode_object(value)
 
     result = dict[object, object]()
     result.update(
@@ -717,7 +717,7 @@ def test_codec_rt_object(
     create_rw_ctx: CreateContexts,
 ) -> None:
     encode_ctx, decode_ctx = create_rw_ctx()
-    encode_ctx.stream.write_object(value, ctx=encode_ctx)
+    encode_ctx.encode_object(value)
 
     result = decode_ctx.decode_object()
     assert value == result
@@ -737,7 +737,7 @@ def test_codec_rt_object__encodes_python_binary_types_as_array_buffers(
     create_rw_ctx: CreateContexts,
 ) -> None:
     encode_ctx, decode_ctx = create_rw_ctx()
-    encode_ctx.stream.write_object(value, ctx=encode_ctx)
+    encode_ctx.encode_object(value)
 
     result = decode_ctx.decode_object()
 
@@ -791,7 +791,7 @@ def test_codec_rt_js_regexp(
     create_rw_ctx: CreateContexts,
 ) -> None:
     encode_ctx, decode_ctx = create_rw_ctx()
-    encode_ctx.stream.write_object(value, ctx=encode_ctx)
+    encode_ctx.encode_object(value)
 
     assert decode_ctx.stream.read_tag(consume=False) == SerializationTag.kRegExp
     result = decode_ctx.decode_object()
@@ -818,7 +818,7 @@ def test_codec_rt_js_error(value: JSErrorData) -> None:
         tag_mappers=[TagMapper(js_error_type=JSErrorData)],
     )
 
-    encode_ctx.stream.write_object(value, ctx=encode_ctx)
+    encode_ctx.encode_object(value)
 
     assert decode_ctx.stream.read_tag(consume=False) == SerializationTag.kError
     result = decode_ctx.decode_object()

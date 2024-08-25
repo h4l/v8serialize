@@ -10,7 +10,7 @@ def test_python_re_pattern() -> None:
     encode_ctx = DefaultEncodeContext([ObjectMapper()])
 
     re_pattern = re.compile("[a-z].*", re.DOTALL | re.IGNORECASE | re.ASCII)
-    encode_ctx.serialize(re_pattern)
+    encode_ctx.encode_object(re_pattern)
 
     decode_ctx = DefaultDecodeContext(data=encode_ctx.stream.data)
     regexp = decode_ctx.decode_object()
