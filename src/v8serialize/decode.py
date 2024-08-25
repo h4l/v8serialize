@@ -268,17 +268,7 @@ class ReadableTagStream:
         self.version = version
         return version
 
-    def read_constant(self, expected: ConstantTags | None = None) -> ConstantTags:
-        tag = self.read_tag(expected)
-        if expected is None and tag not in JS_CONSTANT_TAGS.allowed_tags:
-            self.throw(
-                f"Expected a constant tag from "
-                f"{", ".join(t.name for t in JS_CONSTANT_TAGS.allowed_tags)} "
-                f"but found {tag.name}"
-            )
-        return cast(ConstantTags, tag)
-
-    def read_double(self, tag: bool = True) -> float:
+    def read_double(self, *, tag: bool = False) -> float:
         if tag:
             self.read_tag(tag=SerializationTag.kDouble)
         self.ensure_capacity(8)
@@ -286,9 +276,10 @@ class ReadableTagStream:
         self.pos += 8
         return value
 
-    def read_string_onebyte(self) -> str:
+    def read_string_onebyte(self, *, tag: bool = False) -> str:
         """Decode a OneByteString, which is latin1-encoded text."""
-        self.read_tag(tag=SerializationTag.kOneByteString)
+        if tag:
+            self.read_tag(tag=SerializationTag.kOneByteString)
         length = self.read_varint()
         self.ensure_capacity(length)
         # Decoding latin1 can't fail/throw — just 1 byte/char.
@@ -296,9 +287,10 @@ class ReadableTagStream:
         value = codecs.decode(self.read_bytes(length), "latin1")
         return value
 
-    def read_string_twobyte(self) -> str:
+    def read_string_twobyte(self, *, tag: bool = False) -> str:
         """Decode a TwoByteString, which is UTF-16-encoded text."""
-        self.read_tag(SerializationTag.kTwoByteString)
+        if tag:
+            self.read_tag(SerializationTag.kTwoByteString)
         length = self.read_varint()
         try:
             value = codecs.decode(self.read_bytes(length), "utf-16-le")
@@ -307,7 +299,7 @@ class ReadableTagStream:
             self.throw("TwoByteString is not valid UTF-16 data", cause=e)
         return value
 
-    def read_string_utf8(self, tag: bool = True) -> str:
+    def read_string_utf8(self, *, tag: bool = False) -> str:
         """Decode a Utf8String, which is UTF8-encoded text."""
         if tag:
             self.read_tag(tag=SerializationTag.kUtf8String)
@@ -319,7 +311,7 @@ class ReadableTagStream:
             self.throw("Utf8String is not valid UTF-8 data", cause=e)
         return value
 
-    def read_bigint(self, tag: bool = True) -> int:
+    def read_bigint(self, *, tag: bool = False) -> int:
         if tag:
             self.read_tag(tag=SerializationTag.kBigInt)
         bitfield = self.read_varint()
@@ -330,14 +322,15 @@ class ReadableTagStream:
             return -value
         return value
 
-    def read_int32(self) -> int:
-        self.read_tag(tag=SerializationTag.kInt32)
+    def read_int32(self, *, tag: bool = False) -> int:
+        if tag:
+            self.read_tag(tag=SerializationTag.kInt32)
         value = self.read_zigzag()
         if value in INT32_RANGE:
             return value
         self.throw(f"Serialized value is out of {INT32_RANGE} for Int32: {value}")
 
-    def read_uint32(self, *, tag: bool = True) -> int:
+    def read_uint32(self, *, tag: bool = False) -> int:
         if tag:
             self.read_tag(tag=SerializationTag.kUint32)
         value = self.read_varint()
@@ -351,7 +344,8 @@ class ReadableTagStream:
         if tag and tag not in JS_PRIMITIVE_OBJECT_TAGS:
             raise ValueError("tag must be a primitive object tag")
 
-        tag = self.read_tag(tag=JS_PRIMITIVE_OBJECT_TAGS if tag is None else tag)
+        if tag is None:
+            tag = self.read_tag(tag=JS_PRIMITIVE_OBJECT_TAGS if tag is None else tag)
         result: JSPrimitiveObject
         if tag is SerializationTag.kTrueObject:
             result = JSPrimitiveObject(True)
@@ -369,10 +363,12 @@ class ReadableTagStream:
             raise AssertionError(f"Unreachable: {tag}")
         return self.objects.record_reference(result), result
 
-    def read_js_regexp(self, ctx: DecodeContext) -> tuple[SerializedId, JSRegExp]:
-        self.read_tag(tag=SerializationTag.kRegExp)
-        self.read_tag(consume=False, tag=JS_STRING_TAGS)
-        source = ctx.deserialize()
+    def read_js_regexp(
+        self, ctx: DecodeContext, *, tag: bool = False
+    ) -> tuple[SerializedId, JSRegExp]:
+        if tag:
+            self.read_tag(tag=SerializationTag.kRegExp)
+        source = ctx.deserialize(self.read_tag(tag=JS_STRING_TAGS))
         assert isinstance(source, str)
         flags = JSRegExpFlag(self.read_varint())
         result = JSRegExp(source, flags)
@@ -389,60 +385,64 @@ class ReadableTagStream:
         )
 
     def read_js_error(
-        self, ctx: DecodeContext, *, error: JSErrorConstructor[T]
+        self, ctx: DecodeContext, *, error: JSErrorConstructor[T], tag: bool = False
     ) -> ReferencedObject[JSErrorReadResult[T]]:
-        self.read_tag(SerializationTag.kError)
-        tag = self.read_error_tag()
+        if tag:
+            self.read_tag(SerializationTag.kError)
+        etag = self.read_error_tag()
 
-        error_name = JSErrorName.for_error_tag(tag)
+        error_name = JSErrorName.for_error_tag(etag)
         if error_name is not JSErrorName.Error:
-            tag = self.read_error_tag()
+            etag = self.read_error_tag()
 
         message: object = None
-        if tag is SerializationErrorTag.Message:
-            message = ctx.deserialize(self.read_tag(consume=False, tag=JS_STRING_TAGS))
-            tag = self.read_error_tag()
+        if etag is SerializationErrorTag.Message:
+            message = ctx.deserialize(self.read_tag(tag=JS_STRING_TAGS))
+            etag = self.read_error_tag()
         assert message is None or isinstance(message, str)
 
         stack: object = None
-        if tag is SerializationErrorTag.Stack:
-            stack = ctx.deserialize(self.read_tag(consume=False, tag=JS_STRING_TAGS))
-            tag = self.read_error_tag()
+        if etag is SerializationErrorTag.Stack:
+            stack = ctx.deserialize(self.read_tag(tag=JS_STRING_TAGS))
+            etag = self.read_error_tag()
         assert stack is None or isinstance(stack, str)
 
         error_obj = error(name=error_name, message=message, stack=stack)
         serialized_id = self.objects.record_reference(error_obj)
 
         cause: object = None
-        if tag is SerializationErrorTag.Cause:
+        if etag is SerializationErrorTag.Cause:
             cause = ctx.deserialize()
-            tag = self.read_error_tag()
+            etag = self.read_error_tag()
 
-        if tag is not SerializationErrorTag.End:
+        if etag is not SerializationErrorTag.End:
             self.throw(
                 f"Expected End error tag after reading error fields but found "
-                f"{tag.name}"
+                f"{etag.name}"
             )
 
         return ReferencedObject(serialized_id, JSErrorReadResult(error_obj, cause))
 
-    def read_js_date(self, *, tz: tzinfo | None = None) -> ReferencedObject[datetime]:
-        self.read_tag(SerializationTag.kDate)
+    def read_js_date(
+        self, *, tz: tzinfo | None = None, tag: bool = False
+    ) -> ReferencedObject[datetime]:
+        if tag:
+            self.read_tag(SerializationTag.kDate)
         epoch_ms = self.read_double(tag=False)
         result = datetime.fromtimestamp(epoch_ms / 1000, tz=tz)
         return ReferencedObject(self.objects.record_reference(result), result)
 
     def read_jsmap(
-        self, ctx: DecodeContext, *, identity: object
+        self, ctx: DecodeContext, *, identity: object, tag: bool = False
     ) -> Generator[tuple[object, object], None, int]:
-        self.read_tag(SerializationTag.kBeginJSMap)
+        if tag:
+            self.read_tag(SerializationTag.kBeginJSMap)
         self.objects.record_reference(identity)
         actual_count = 0
 
-        while self.read_tag(consume=False) != SerializationTag.kEndJSMap:
-            yield ctx.deserialize(), ctx.deserialize()
+        while (next_tag := self.read_tag()) != SerializationTag.kEndJSMap:
+            yield ctx.deserialize(next_tag), ctx.deserialize()
             actual_count += 2
-        self.pos += 1  # advance over EndJSMap
         expected_count = self.read_varint()
 
         if expected_count != actual_count:
@@ -453,16 +453,16 @@ class ReadableTagStream:
         return actual_count
 
     def read_jsset(
-        self, ctx: DecodeContext, *, identity: object
+        self, ctx: DecodeContext, *, identity: object, tag: bool = False
     ) -> Generator[object, None, int]:
-        self.read_tag(SerializationTag.kBeginJSSet)
+        if tag:
+            self.read_tag(SerializationTag.kBeginJSSet)
         self.objects.record_reference(identity)
         actual_count = 0
 
-        while self.read_tag(consume=False) != SerializationTag.kEndJSSet:
-            yield ctx.deserialize()
+        while (next_tag := self.read_tag()) != SerializationTag.kEndJSSet:
+            yield ctx.deserialize(next_tag)
             actual_count += 1
-        self.pos += 1  # advance over EndJSSet
 
         expected_count = self.read_varint()
         if expected_count != actual_count:
@@ -473,9 +473,10 @@ class ReadableTagStream:
         return actual_count
 
     def read_js_object(
-        self, ctx: DecodeContext, *, identity: object
+        self, ctx: DecodeContext, *, identity: object, tag: bool = False
     ) -> Generator[tuple[int | float | str, object], None, int]:
-        self.read_tag(SerializationTag.kBeginJSObject)
+        if tag:
+            self.read_tag(SerializationTag.kBeginJSObject)
         self.objects.record_reference(identity)
 
         actual_count = yield from self._read_js_object_properties(ctx)
@@ -490,9 +491,9 @@ class ReadableTagStream:
     ) -> Generator[tuple[int | float | str, object], None, int]:
         actual_count = 0
         while True:
-            tag = self.read_tag(consume=False)
+            tag = self.read_tag()
             if tag in JS_OBJECT_KEY_TAGS:
-                key = ctx.deserialize()
+                key = ctx.deserialize(tag)
                 if not isinstance(key, (int, float, str)):
                     # TODO: more specific error
                     raise TypeError(
@@ -509,7 +510,6 @@ class ReadableTagStream:
                     f"that is not a number or string tag. Valid "
                     f"{JS_OBJECT_KEY_TAGS}"
                 )
-        self.pos += 1  # advance over end_tag
 
         expected_count = self.read_varint()
         if expected_count != actual_count:
@@ -520,11 +520,12 @@ class ReadableTagStream:
         return actual_count
 
     def read_js_array_dense(
-        self, ctx: DecodeContext, *, identity: object
+        self, ctx: DecodeContext, *, identity: object, tag: bool = False
     ) -> Generator[
         tuple[int | float | str, object], None, tuple[int, int]
     ]:  # TODO: return tuple of (length: int, items: Generator) ?
-        self.read_tag(SerializationTag.kBeginDenseJSArray)
+        if tag:
+            self.read_tag(SerializationTag.kBeginDenseJSArray)
         self.objects.record_reference(identity)
         current_array_el_count = 0
         expected_array_el_count = self.read_varint()
@@ -549,9 +550,10 @@ class ReadableTagStream:
         return final_array_el_count, actual_properties_count
 
     def read_js_array_sparse(
-        self, ctx: DecodeContext, *, identity: object
+        self, ctx: DecodeContext, *, identity: object, tag: bool = False
     ) -> ArrayReadResult:
-        self.read_tag(SerializationTag.kBeginSparseJSArray)
+        if tag:
+            self.read_tag(SerializationTag.kBeginSparseJSArray)
         self.objects.record_reference(identity)
         expected_array_length = self.read_varint()
 
@@ -572,8 +574,11 @@ class ReadableTagStream:
 
         return ArrayReadResult(length=expected_array_length, items=read_items())
 
-    def read_object_reference(self) -> tuple[SerializedId, object]:
-        self.read_tag(SerializationTag.kObjectReference)
+    def read_object_reference(
+        self, *, tag: bool = False
+    ) -> tuple[SerializedId, object]:
+        if tag:
+            self.read_tag(SerializationTag.kObjectReference)
         serialized_id = SerializedId(self.read_varint())
 
         try:
@@ -591,8 +596,13 @@ class ReadableTagStream:
         array_buffer: ArrayBufferConstructor[BufferT],
         shared_array_buffer: SharedArrayBufferConstructor[BufferT],
         array_buffer_transfer: ArrayBufferTransferConstructor[BufferT],
+        tag: ArrayBufferTags | None = None,
     ) -> BufferT | ViewT:
-        tag = self.read_tag(tag=JS_ARRAY_BUFFER_TAGS, consume=False)
+        if tag is None:
+            tag = self.read_tag(tag=JS_ARRAY_BUFFER_TAGS)
+        elif tag not in JS_ARRAY_BUFFER_TAGS:
+            raise ValueError("tag must be an array buffer tag")
+
         buffer: BufferT
         if tag is SerializationTag.kArrayBuffer:
             buffer = self._read_js_array_buffer(array_buffer=array_buffer)
@@ -611,9 +621,10 @@ class ReadableTagStream:
         return buffer
 
     def _read_js_array_buffer(
-        self, array_buffer: ArrayBufferConstructor[BufferT]
+        self, array_buffer: ArrayBufferConstructor[BufferT], tag: bool = False
     ) -> BufferT:
-        self.read_tag(SerializationTag.kArrayBuffer)
+        if tag:
+            self.read_tag(SerializationTag.kArrayBuffer)
         byte_length = self.read_varint()
         if self.pos + byte_length > len(self.data):
             self.throw(
@@ -631,9 +642,10 @@ class ReadableTagStream:
         return result
 
     def _read_js_array_buffer_resizable(
-        self, *, array_buffer: ArrayBufferConstructor[BufferT]
+        self, *, array_buffer: ArrayBufferConstructor[BufferT], tag: bool = False
     ) -> BufferT:
-        self.read_tag(SerializationTag.kResizableArrayBuffer)
+        if tag:
+            self.read_tag(SerializationTag.kResizableArrayBuffer)
         byte_length = self.read_varint()
         if self.pos + byte_length >= len(self.data):
             self.throw(
@@ -657,16 +669,24 @@ class ReadableTagStream:
         return result
 
     def _read_js_array_buffer_shared(
-        self, *, shared_array_buffer: SharedArrayBufferConstructor[BufferT]
+        self,
+        *,
+        shared_array_buffer: SharedArrayBufferConstructor[BufferT],
+        tag: bool = False,
     ) -> BufferT:
-        self.read_tag(SerializationTag.kSharedArrayBuffer)
+        if tag:
+            self.read_tag(SerializationTag.kSharedArrayBuffer)
         index = self.read_varint()
         return shared_array_buffer(buffer_id=SharedArrayBufferId(index))
 
     def _read_js_array_buffer_transfer(
-        self, *, array_buffer_transfer: ArrayBufferTransferConstructor[BufferT]
+        self,
+        *,
+        array_buffer_transfer: ArrayBufferTransferConstructor[BufferT],
+        tag: bool = False,
     ) -> BufferT:
-        self.read_tag(SerializationTag.kArrayBufferTransfer)
+        if tag:
+            self.read_tag(SerializationTag.kArrayBufferTransfer)
         transfer_id = self.read_varint()
         return array_buffer_transfer(transfer_id=TransferId(transfer_id))
 
@@ -675,8 +695,10 @@ class ReadableTagStream:
         backing_buffer: BufferT,
         *,
         array_buffer_view: ArrayBufferViewConstructor[BufferT, ViewT],
+        tag: bool = False,
     ) -> ViewT:
-        self.read_tag(SerializationTag.kArrayBufferView)
+        if tag:
+            self.read_tag(SerializationTag.kArrayBufferView)
         raw_view_tag = self.read_varint()
         if raw_view_tag not in ArrayBufferViewTag:
             self.throw(
@@ -702,16 +724,20 @@ class ReadableTagStream:
         self.objects.record_reference(result)
         return result
 
-    def read_host_object(self, deserializer: HostObjectDeserializer[T]) -> T:
-        self.read_tag(SerializationTag.kHostObject)
+    def read_host_object(
+        self, deserializer: HostObjectDeserializer[T], tag: bool = False
+    ) -> T:
+        if tag:
+            self.read_tag(SerializationTag.kHostObject)
         if isinstance(deserializer, HostObjectDeserializerObj):
             return deserializer.deserialize_host_object(stream=self)
         return deserializer(stream=self)
 
     def read_v8_shared_object_reference(
-        self,
+        self, tag: bool = False
     ) -> ReferencedObject[V8SharedObjectReference]:
-        self.read_tag(SerializationTag.kSharedObject)
+        if tag:
+            self.read_tag(SerializationTag.kSharedObject)
         result = V8SharedObjectReference(V8SharedValueId(self.read_uint32(tag=False)))
         return ReferencedObject(self.objects.record_reference(result), result)
 
@@ -883,11 +909,8 @@ class DefaultDecodeContext(DecodeContext):
         raise AssertionError("report_unmapped_value returned")
 
     def deserialize(self, tag: SerializationTag | None = None) -> object:
-        # TODO: normalise the tag reading behaviour. We should aim to read the
-        #   tag once and then only assert about it being current if required
-        #   later. Currently we have a mish-mash of consume=False to re-read the
-        #   current tag several times.
-        tag = self.stream.read_tag(tag, consume=False)
+        if tag is None:
+            tag = self.stream.read_tag()
         return self.__deserialize(tag, i=0)
 
     def _report_unmapped_value(self, tag: SerializationTag) -> Never:
@@ -1000,7 +1023,7 @@ class TagMapper(TagMapperObject):
         return read_tag(self, tag, ctx)
 
     def deserialize_constant(self, tag: ConstantTags, ctx: DecodeContext) -> object:
-        return self.js_constants[ctx.stream.read_constant(tag)]
+        return self.js_constants[tag]
 
     def deserialize_jsmap(
         self, tag: Literal[SerializationTag.kBeginJSMap], ctx: DecodeContext
@@ -1082,6 +1105,7 @@ class TagMapper(TagMapperObject):
                 array_buffer=JSArrayBuffer,
                 shared_array_buffer=JSSharedArrayBuffer,
                 array_buffer_transfer=JSArrayBufferTransfer,
+                tag=tag,
             )
         )
 
@@ -1091,7 +1115,7 @@ class TagMapper(TagMapperObject):
             and ctx.stream.read_tag(consume=False) is SerializationTag.kArrayBufferView
         ):
             view: JSTypedArray | JSDataView = ctx.stream.read_js_array_buffer_view(
-                backing_buffer=buffer, array_buffer_view=create_view
+                backing_buffer=buffer, array_buffer_view=create_view, tag=True
             )
             return view
         return buffer

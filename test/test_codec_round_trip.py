@@ -1,6 +1,6 @@
 import math
 from datetime import datetime
-from typing import Callable, Optional, TypeVar, cast
+from typing import Callable, Literal, Optional, TypeVar, cast
 
 import pytest
 from hypothesis import given
@@ -8,10 +8,8 @@ from hypothesis import strategies as st
 
 from v8serialize._values import SharedArrayBufferId, TransferId
 from v8serialize.constants import (
-    JS_CONSTANT_TAGS,
     JS_PRIMITIVE_OBJECT_TAGS,
     MAX_ARRAY_LENGTH,
-    ConstantTags,
     JSErrorName,
     JSRegExpFlag,
     SerializationTag,
@@ -28,7 +26,7 @@ from v8serialize.jstypes import JSObject, JSUndefined
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
 from v8serialize.jstypes._v8 import V8SharedObjectReference
 from v8serialize.jstypes.jsarray import JSArray
-from v8serialize.jstypes.jsarrayproperties import JSHole
+from v8serialize.jstypes.jsarrayproperties import JSHole, JSHoleType
 from v8serialize.jstypes.jsbuffers import (
     ArrayBufferViewStructFormat,
     JSArrayBuffer,
@@ -42,18 +40,9 @@ from v8serialize.jstypes.jsbuffers import (
 from v8serialize.jstypes.jserror import JSError, JSErrorData
 from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject
 from v8serialize.jstypes.jsregexp import JSRegExp
+from v8serialize.jstypes.jsundefined import JSUndefinedType
 
 T = TypeVar("T")
-
-
-# @pytest.fixture(scope="session")
-# def object_mapper() -> ObjectMapper:
-#     return ObjectMapper()
-
-
-# @pytest.fixture(scope="session")
-# def tag_mapper() -> TagMapper:
-#     return TagMapper()
 
 
 CreateContexts = Callable[[], tuple[DefaultEncodeContext, DefaultDecodeContext]]
@@ -393,7 +382,7 @@ def test_codec_rt_double(value: float) -> None:
     wts = WritableTagStream()
     wts.write_double(value)
     rts = ReadableTagStream(wts.data)
-    result = rts.read_double()
+    result = rts.read_double(tag=True)
     assert value == result or math.isnan(value) and math.isnan(result)
     assert rts.eof
 
@@ -403,7 +392,7 @@ def test_codec_rt_string_onebyte(value: str) -> None:
     wts = WritableTagStream()
     wts.write_string_onebyte(value)
     rts = ReadableTagStream(wts.data)
-    result = rts.read_string_onebyte()
+    result = rts.read_string_onebyte(tag=True)
     assert value == result
     assert rts.eof
 
@@ -415,7 +404,7 @@ def test_codec_rt_string_twobyte(value: str, offset: int) -> None:
     wts.data.extend(b"\x00" * offset)
     wts.write_string_twobyte(value)
     rts = ReadableTagStream(wts.data, pos=offset)
-    result = rts.read_string_twobyte()
+    result = rts.read_string_twobyte(tag=True)
     assert value == result
     assert rts.eof
 
@@ -429,7 +418,7 @@ def test_codec_rt_string_utf8(value: str) -> None:
     wts = WritableTagStream()
     wts.write_string_utf8(value)
     rts = ReadableTagStream(wts.data)
-    result = rts.read_string_utf8()
+    result = rts.read_string_utf8(tag=True)
     assert value == result
     assert rts.eof
 
@@ -439,7 +428,7 @@ def test_codec_rt_bigint(value: int) -> None:
     wts = WritableTagStream()
     wts.write_bigint(value)
     rts = ReadableTagStream(wts.data)
-    result = rts.read_bigint()
+    result = rts.read_bigint(tag=True)
     assert value == result
     assert rts.eof
 
@@ -449,7 +438,7 @@ def test_codec_rt_int32(value: int) -> None:
     wts = WritableTagStream()
     wts.write_int32(value)
     rts = ReadableTagStream(wts.data)
-    result = rts.read_int32()
+    result = rts.read_int32(tag=True)
     assert value == result
     assert rts.eof
 
@@ -459,19 +448,25 @@ def test_codec_rt_uint32(value: int) -> None:
     wts = WritableTagStream()
     wts.write_uint32(value)
     rts = ReadableTagStream(wts.data)
-    result = rts.read_uint32()
+    result = rts.read_uint32(tag=True)
     assert value == result
     assert rts.eof
 
 
-@given(st.sampled_from(sorted(JS_CONSTANT_TAGS.allowed_tags)))
-def test_codec_rt_constants(value: ConstantTags) -> None:
-    wts = WritableTagStream()
-    wts.write_constant(value)
-    rts = ReadableTagStream(wts.data)
-    result = rts.read_constant(value)
+all_constants = st.sampled_from([JSHole, JSUndefined, None, True, False])
+"""JS Constant values, including JSHole."""
+
+
+@given(value=all_constants)
+def test_codec_rt_constants(
+    value: Literal[JSHoleType, JSUndefinedType, None, True, False],
+    create_rw_ctx: CreateContexts,
+) -> None:
+    encode_ctx, decode_ctx = create_rw_ctx()
+    encode_ctx.serialize(value)
+    result = decode_ctx.deserialize()
     assert value == result
-    assert rts.eof
+    assert decode_ctx.stream.eof
 
 
 @given(st.one_of(st.booleans(), st.text(), st.floats(allow_nan=False), st.integers()))
@@ -492,7 +487,7 @@ def test_codec_rt_naive_datetimes(value: datetime) -> None:
     wts.write_js_date(value)
     rts = ReadableTagStream(wts.data)
     assert rts.read_tag(consume=False, tag=SerializationTag.kDate)
-    result = rts.read_js_date().object
+    result = rts.read_js_date(tag=True).object
     assert result == value
     assert rts.eof
 
@@ -505,7 +500,9 @@ def test_codec_rt_jsmap(
     encode_ctx.stream.write_jsmap(value.items(), ctx=encode_ctx, identity=value)
     assert decode_ctx.stream.read_tag(consume=False) == SerializationTag.kBeginJSMap
     result = dict[object, object]()
-    result.update(decode_ctx.stream.read_jsmap(ctx=decode_ctx, identity=result))
+    result.update(
+        decode_ctx.stream.read_jsmap(ctx=decode_ctx, identity=result, tag=True)
+    )
     assert value == result
     assert decode_ctx.stream.eof
 
@@ -517,7 +514,9 @@ def test_codec_rt_jsset(value: set[object], create_rw_ctx: CreateContexts) -> No
     encode_ctx.stream.write_jsset(value, ctx=encode_ctx)
     assert decode_ctx.stream.read_tag(consume=False) == SerializationTag.kBeginJSSet
     result = set[object]()
-    result.update(decode_ctx.stream.read_jsset(ctx=decode_ctx, identity=result))
+    result.update(
+        decode_ctx.stream.read_jsset(ctx=decode_ctx, identity=result, tag=True)
+    )
     assert value == result
     assert decode_ctx.stream.eof
 
@@ -530,7 +529,9 @@ def test_codec_rt_js_object(
     encode_ctx.stream.write_js_object(value.items(), ctx=encode_ctx, identity=value)
     assert decode_ctx.stream.read_tag(consume=False) == SerializationTag.kBeginJSObject
     result = JSObject[object]()
-    result.update(decode_ctx.stream.read_js_object(ctx=decode_ctx, identity=result))
+    result.update(
+        decode_ctx.stream.read_js_object(ctx=decode_ctx, identity=result, tag=True)
+    )
     assert value == result
     assert decode_ctx.stream.eof
 
@@ -567,7 +568,9 @@ def test_codec_rt_js_object_raw_properties(
     encode_ctx.stream.write_js_object(value, ctx=encode_ctx, identity=value)
     assert decode_ctx.stream.read_tag(consume=False) == SerializationTag.kBeginJSObject
     result: list[tuple[int | float | str, object]] = []
-    result.extend(decode_ctx.stream.read_js_object(ctx=decode_ctx, identity=result))
+    result.extend(
+        decode_ctx.stream.read_js_object(ctx=decode_ctx, identity=result, tag=True)
+    )
     assert value == result
     assert decode_ctx.stream.eof
 
@@ -598,7 +601,7 @@ def test_codec_rt_js_array_dense(
     )
     result = JSArray[object]()
     result.update(
-        decode_ctx.stream.read_js_array_dense(ctx=decode_ctx, identity=result)
+        decode_ctx.stream.read_js_array_dense(ctx=decode_ctx, identity=result, tag=True)
     )
     assert value == result
     assert decode_ctx.stream.eof
@@ -620,21 +623,19 @@ def test_codec_rt_js_array_sparse(
     value: JSArray[object], create_rw_ctx: CreateContexts
 ) -> None:
     encode_ctx, decode_ctx = create_rw_ctx()
-    # encode_ctx = DefaultEncodeContext([ObjectMapper()])
     encode_ctx.stream.write_js_array_sparse(
         value.items(),
         ctx=encode_ctx,
         length=len(value.array),
         identity=value,
     )
-    # rts = ReadableTagStream(encode_ctx.stream.data)
     assert (
         decode_ctx.stream.read_tag(consume=False)
         == SerializationTag.kBeginSparseJSArray
     )
     result = JSArray[object]()
     length, items = decode_ctx.stream.read_js_array_sparse(
-        ctx=decode_ctx, identity=result
+        ctx=decode_ctx, identity=result, tag=True
     )
     if length > 0:
         result[length - 1] = JSHole
@@ -678,7 +679,7 @@ def test_codec_rt_js_array_buffer_view(
         decode_ctx.stream.read_tag(consume=False) == SerializationTag.kArrayBufferView
     )
     result: JSTypedArray | JSDataView = decode_ctx.stream.read_js_array_buffer_view(
-        backing_buffer=value.backing_buffer, array_buffer_view=create_view
+        backing_buffer=value.backing_buffer, array_buffer_view=create_view, tag=True
     )
     assert value == result
     assert decode_ctx.stream.eof
@@ -701,7 +702,9 @@ def test_codec_rt_object_identity__simple(
     encode_ctx.stream.write_object(value, ctx=encode_ctx)
 
     result = dict[object, object]()
-    result.update(decode_ctx.stream.read_jsmap(ctx=decode_ctx, identity=result))
+    result.update(
+        decode_ctx.stream.read_jsmap(ctx=decode_ctx, identity=result, tag=True)
+    )
 
     assert value == result
     assert result["a"] is result["c"]
@@ -765,7 +768,7 @@ def test_codec_rt_nodejs_array_buffer_host_object(
     )
     assert decode_ctx.stream.read_tag(consume=False) == SerializationTag.kHostObject
     result: JSTypedArray | JSDataView = decode_ctx.stream.read_host_object(
-        deserializer=node_js_array_buffer_view_host_object_handler
+        deserializer=node_js_array_buffer_view_host_object_handler, tag=True
     )
     # Node's view serialization intentionally only shares the portion of the
     # buffer that the view references, so the rest of the initial buffer is not
@@ -845,6 +848,6 @@ def test_codec_rt_v8_shared_object_reference(value: V8SharedObjectReference) -> 
     wts.write_v8_shared_object_reference(value)
     rts = ReadableTagStream(wts.data)
     assert rts.read_tag(consume=False, tag=SerializationTag.kSharedObject)
-    result = rts.read_v8_shared_object_reference().object
+    result = rts.read_v8_shared_object_reference(tag=True).object
     assert result == value
     assert rts.eof
