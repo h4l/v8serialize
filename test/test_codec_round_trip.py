@@ -464,7 +464,7 @@ def test_codec_rt_constants(
 ) -> None:
     encode_ctx, decode_ctx = create_rw_ctx()
     encode_ctx.serialize(value)
-    result = decode_ctx.deserialize()
+    result = decode_ctx.decode_object()
     assert value == result
     assert decode_ctx.stream.eof
 
@@ -719,7 +719,7 @@ def test_codec_rt_object(
     encode_ctx, decode_ctx = create_rw_ctx()
     encode_ctx.stream.write_object(value, ctx=encode_ctx)
 
-    result = decode_ctx.deserialize()
+    result = decode_ctx.decode_object()
     assert value == result
     assert decode_ctx.stream.eof
 
@@ -739,7 +739,7 @@ def test_codec_rt_object__encodes_python_binary_types_as_array_buffers(
     encode_ctx, decode_ctx = create_rw_ctx()
     encode_ctx.stream.write_object(value, ctx=encode_ctx)
 
-    result = decode_ctx.deserialize()
+    result = decode_ctx.decode_object()
 
     assert isinstance(result, JSArrayBuffer)
     assert bytes(result.data) == bytes(result)
@@ -794,7 +794,7 @@ def test_codec_rt_js_regexp(
     encode_ctx.stream.write_object(value, ctx=encode_ctx)
 
     assert decode_ctx.stream.read_tag(consume=False) == SerializationTag.kRegExp
-    result = decode_ctx.deserialize()
+    result = decode_ctx.decode_object()
     assert value == result
     assert decode_ctx.stream.eof
 
@@ -821,7 +821,7 @@ def test_codec_rt_js_error(value: JSErrorData) -> None:
     encode_ctx.stream.write_object(value, ctx=encode_ctx)
 
     assert decode_ctx.stream.read_tag(consume=False) == SerializationTag.kError
-    result = decode_ctx.deserialize()
+    result = decode_ctx.decode_object()
     assert decode_ctx.stream.eof
     assert isinstance(result, JSErrorData)
 

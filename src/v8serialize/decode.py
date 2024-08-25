@@ -368,7 +368,7 @@ class ReadableTagStream:
     ) -> tuple[SerializedId, JSRegExp]:
         if tag:
             self.read_tag(tag=SerializationTag.kRegExp)
-        source = ctx.deserialize(self.read_tag(tag=JS_STRING_TAGS))
+        source = ctx.decode_object(tag=self.read_tag(tag=JS_STRING_TAGS))
         assert isinstance(source, str)
         flags = JSRegExpFlag(self.read_varint())
         result = JSRegExp(source, flags)
@@ -397,13 +397,13 @@ class ReadableTagStream:
 
         message: object = None
         if etag is SerializationErrorTag.Message:
-            message = ctx.deserialize(self.read_tag(tag=JS_STRING_TAGS))
+            message = ctx.decode_object(tag=self.read_tag(tag=JS_STRING_TAGS))
             etag = self.read_error_tag()
         assert message is None or isinstance(message, str)
 
         stack: object = None
         if etag is SerializationErrorTag.Stack:
-            stack = ctx.deserialize(self.read_tag(tag=JS_STRING_TAGS))
+            stack = ctx.decode_object(tag=self.read_tag(tag=JS_STRING_TAGS))
             etag = self.read_error_tag()
         assert stack is None or isinstance(stack, str)
 
@@ -412,7 +412,7 @@ class ReadableTagStream:
 
         cause: object = None
         if etag is SerializationErrorTag.Cause:
-            cause = ctx.deserialize()
+            cause = ctx.decode_object()
             etag = self.read_error_tag()
 
         if etag is not SerializationErrorTag.End:
@@ -441,7 +441,7 @@ class ReadableTagStream:
         actual_count = 0
 
         while (next_tag := self.read_tag()) != SerializationTag.kEndJSMap:
-            yield ctx.deserialize(next_tag), ctx.deserialize()
+            yield ctx.decode_object(tag=next_tag), ctx.decode_object()
             actual_count += 2
         expected_count = self.read_varint()
 
@@ -461,7 +461,7 @@ class ReadableTagStream:
         actual_count = 0
 
         while (next_tag := self.read_tag()) != SerializationTag.kEndJSSet:
-            yield ctx.deserialize(next_tag)
+            yield ctx.decode_object(tag=next_tag)
             actual_count += 1
 
         expected_count = self.read_varint()
@@ -493,14 +493,14 @@ class ReadableTagStream:
         while True:
             tag = self.read_tag()
             if tag in JS_OBJECT_KEY_TAGS:
-                key = ctx.deserialize(tag)
+                key = ctx.decode_object(tag=tag)
                 if not isinstance(key, (int, float, str)):
                     # TODO: more specific error
                     raise TypeError(
                         f"{enclosing_name} key must deserialize to str, int or "
                         f"float: {key}"
                     )
-                yield key, ctx.deserialize()
+                yield key, ctx.decode_object()
                 actual_count += 1  # 1 per entry, unlike JSMap
             elif tag is end_tag:
                 break
@@ -531,7 +531,7 @@ class ReadableTagStream:
         expected_array_el_count = self.read_varint()
 
         for i in range(expected_array_el_count):
-            yield i, ctx.deserialize()
+            yield i, ctx.decode_object()
             current_array_el_count += 1
 
         actual_properties_count = yield from self._read_js_object_properties(
@@ -832,8 +832,7 @@ class DecodeContext(Protocol):
     tag_mappers: Sequence[AnyTagMapper]
     stream: ReadableTagStream
 
-    # TODO: rename to read_object?
-    def deserialize(self, tag: SerializationTag | None = ...) -> object: ...
+    def decode_object(self, *, tag: SerializationTag | None = ...) -> object: ...
 
 
 class DeserializeNextFn(Protocol):
@@ -908,7 +907,7 @@ class DefaultDecodeContext(DecodeContext):
         self._report_unmapped_value(tag)
         raise AssertionError("report_unmapped_value returned")
 
-    def deserialize(self, tag: SerializationTag | None = None) -> object:
+    def decode_object(self, *, tag: SerializationTag | None = None) -> object:
         if tag is None:
             tag = self.stream.read_tag()
         return self.__deserialize(tag, i=0)
@@ -1223,7 +1222,7 @@ class Decoder:
             stream=ReadableTagStream(data), tag_mappers=self.tag_mappers
         )
         ctx.stream.read_header()
-        return ctx.deserialize()
+        return ctx.decode_object()
 
 
 def loads(

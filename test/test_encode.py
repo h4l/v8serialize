@@ -13,6 +13,6 @@ def test_python_re_pattern() -> None:
     encode_ctx.serialize(re_pattern)
 
     decode_ctx = DefaultDecodeContext(data=encode_ctx.stream.data)
-    regexp = decode_ctx.deserialize()
+    regexp = decode_ctx.decode_object()
 
     assert regexp == JSRegExp("[a-z].*", JSRegExpFlag.DotAll | JSRegExpFlag.IgnoreCase)

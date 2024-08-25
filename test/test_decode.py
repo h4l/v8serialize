@@ -110,4 +110,4 @@ def test_wasm_is_not_supported(tag: SerializationTag) -> None:
         DecodeV8CodecError,
         match=f"Stream contains a {tag.name} which is not supported.",
     ):
-        decode_ctx.deserialize()
+        decode_ctx.decode_object()
