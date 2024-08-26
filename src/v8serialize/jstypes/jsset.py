@@ -1,6 +1,16 @@
+from __future__ import annotations
+
 from abc import ABCMeta
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, AbstractSet, Iterable, Iterator, MutableSet, overload
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Iterable,
+    Iterator,
+    MutableSet,
+    Self,
+    overload,
+)
 
 from v8serialize.jstypes import _repr
 from v8serialize.jstypes._equality import JSSameValueZero, same_value_zero
@@ -13,6 +23,8 @@ else:
     from typing import TypeVar
 
     T = TypeVar("T")
+
+U = TypeVar("U")
 
 
 @dataclass(slots=True)
@@ -90,10 +102,9 @@ Equality_comparisons_and_sameness#same-value-zero_equality
     def __init__(self, iterable: Iterable[T], /) -> None: ...
 
     def __init__(self, iterable: Iterable[T] | None = None, /) -> None:
-        if iterable is None:
-            self.__members = {}
-        else:
-            self.__members = dict((same_value_zero(x), x) for x in iterable)
+        self.__members = {}
+        if iterable is not None:
+            self |= iterable
 
     def add(self, value: T) -> None:
         self.__members[same_value_zero(value)] = value
@@ -142,3 +153,22 @@ Equality_comparisons_and_sameness#same-value-zero_equality
 
     def __repr__(self) -> str:
         return _repr.js_repr(self)
+
+    # Overrides for optimisation purposes
+    def clear(self) -> None:
+        self.__members.clear()
+
+    def __ior__(self, it: Iterable[T]) -> Self:  # type: ignore[override,misc]
+        self.__members.update((same_value_zero(x), x) for x in it)
+        return self
+
+    if TYPE_CHECKING:
+        # Base types require `it` arguments to be sets, but any iterable is OK
+        def __iand__(self, it: Iterable[object]) -> Self: ...
+        def __ixor__(self, it: Iterable[T]) -> Self: ...  # type: ignore[override,misc]
+        def __isub__(self, it: Iterable[object]) -> Self: ...
+
+        def __and__(self, other: Iterable[object]) -> Self: ...
+        def __or__(self, other: Iterable[U]) -> JSSet[U | T]: ...
+        def __sub__(self, other: Iterable[object]) -> Self: ...
+        def __xor__(self, other: Iterable[U]) -> JSSet[U | T]: ...

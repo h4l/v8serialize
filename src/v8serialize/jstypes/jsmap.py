@@ -4,7 +4,7 @@ from abc import ABCMeta
 from collections.abc import MutableMapping
 from dataclasses import dataclass
 from operator import itemgetter
-from typing import TYPE_CHECKING, Iterable, Iterator, Mapping, cast, overload
+from typing import TYPE_CHECKING, Iterable, Iterator, Mapping, TypeGuard, cast, overload
 
 from v8serialize.jstypes import _repr
 from v8serialize.jstypes._equality import JSSameValueZero, same_value_zero
@@ -21,6 +21,7 @@ else:
 
     KT = TypeVar("KT")
     VT = TypeVar("VT")
+U = TypeVar("U")
 
 
 @dataclass(slots=True, init=False)
@@ -191,3 +192,51 @@ Equality_comparisons_and_sameness#same-value-zero_equality
 
     def __repr__(self) -> str:
         return _repr.js_repr(self)
+
+    # Overrides for optimisation purposes. Clear is very worthwhile, the others
+    # are marginal and barely worth it...
+    def clear(self) -> None:
+        self.__dict.clear()
+
+    @overload
+    def update(self, m: SupportsKeysAndGetItem[KT, VT], /, **kwargs: VT) -> None: ...
+
+    @overload
+    def update(self, m: Iterable[tuple[KT, VT]], /, **kwargs: VT) -> None: ...
+
+    @overload
+    def update(self, /, **kwargs: VT) -> None: ...
+
+    def update(
+        self,
+        other: SupportsKeysAndGetItem[KT, VT] | Iterable[tuple[KT, VT]] = (),
+        /,
+        **kwds: VT,
+    ) -> None:
+        if isinstance(other, Mapping):
+            self.__dict.update((same_value_zero(k), (k, v)) for k, v in other.items())
+        elif _supports_keys_and_get_item(other):
+            self.__dict.update(
+                (same_value_zero(k), (k, other[k])) for k in other.keys()
+            )
+        else:
+            other = cast(Iterable[tuple[KT, VT]], other)
+            self.__dict.update((same_value_zero(k), (k, v)) for k, v in other)
+
+        if kwds:
+            self.__dict.update((same_value_zero(k), (k, v)) for k, v in kwds.items())  # type: ignore[misc]
+
+    @overload
+    def get(self, key: KT, /) -> VT | None: ...
+
+    @overload
+    def get(self, key: KT, /, default: VT | U) -> VT | U: ...
+
+    def get(self, key: KT, /, default: U | None = None) -> VT | U | None:
+        return self.__dict.get(same_value_zero(key), (None, default))[1]
+
+
+def _supports_keys_and_get_item(
+    x: SupportsKeysAndGetItem[KT, VT] | Iterable[tuple[KT, VT]]
+) -> TypeGuard[SupportsKeysAndGetItem[KT, VT]]:
+    return hasattr(x, "keys")
