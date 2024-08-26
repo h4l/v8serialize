@@ -1,10 +1,10 @@
 from math import isnan
 
-from hypothesis import example, given
+from hypothesis import given
 from hypothesis import strategies as st
 
 from v8serialize.jstypes._equality import same_value_zero
-from v8serialize.jstypes._v8 import V8SharedObjectReference
+from v8serialize.jstypes._v8 import V8SharedObjectReference, V8SharedValueId
 from v8serialize.jstypes.jsmap import JSMap
 
 from .strategies import mk_values_and_objects
@@ -21,22 +21,50 @@ entries = st.lists(
 @given(
     mapping=st.dictionaries(keys=hashable_values_and_objects, values=values_and_objects)
 )
-@example({V8SharedObjectReference(shared_value_id=0): 0})
 def test_equal_to_other_mappings_containing_same_object_instances(
     mapping: dict[object, object]
 ) -> None:
     assert JSMap(mapping.items()) == mapping
 
 
-def test_not_equal_to_other_mappings_containing_different_object_instances():
-    a, b = {V8SharedObjectReference(0): 0}, JSMap([(V8SharedObjectReference(0), 0)])
-    assert a != b  # the keys are different instances
-    assert a == dict(b.items())  # regular dicts are equal by value
+ID = V8SharedValueId(0)
+
+
+def test_equal_to_other_mappings_containing_different_object_instances() -> None:
+    k1, k2 = V8SharedObjectReference(ID), V8SharedObjectReference(ID)
+    assert k1 is not k2
+    assert k1 == k2
+
+    # JSMap instances are eq from the outside if they contain equal elements in
+    # the same order
+    jsmap_1_2, jsmap_2_1 = JSMap([(k1, 0), (k2, 0)]), JSMap([(k2, 0), (k1, 0)])
+
+    assert jsmap_1_2 == jsmap_2_1
+
+    # Regular dicts are equal by dict's idea of equality (de-dupe equal keys)
+    jsmap_1, jsmap_2 = JSMap([(k1, 0), (0, 0)]), JSMap([(0, 0), (k2, 0)])
+    assert jsmap_1 == {V8SharedObjectReference(ID): 0, 0: 0}
+    assert jsmap_2 == {V8SharedObjectReference(ID): 0, 0: 0}
+
+    # JSMaps with different item orders are not equal
+    assert jsmap_1 != jsmap_2
+
+    # Unequal lengths are not equal
+    assert jsmap_1_2 != {V8SharedObjectReference(ID): 0}
+    assert jsmap_2_1 != {V8SharedObjectReference(ID): 0}
+    # ... despite them being equal if they were de-duped
+    assert dict(jsmap_1_2.items()) == {V8SharedObjectReference(ID): 0}
+    assert dict(jsmap_2_1.items()) == {V8SharedObjectReference(ID): 0}
 
 
 def test_eq_with_unhashable_keys() -> None:
     assert JSMap([({}, 1), ({}, 2)]) != {1: "a", 2: "b"}
     assert {1: "a", 2: "b"} != JSMap([({}, 1), ({}, 2)])
+
+
+def test_eq_with_other_type() -> None:
+    assert JSMap().__eq__(object()) is NotImplemented
+    assert not (JSMap() == object())
 
 
 def test_jsmap_nan() -> None:

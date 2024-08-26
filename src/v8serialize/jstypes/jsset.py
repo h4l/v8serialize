@@ -20,7 +20,65 @@ class JSSet(MutableSet[T], metaclass=ABCMeta):
     """A Set that uses object identity for member equality
 
     This replicates the behaviour of JavaScript's Set type, which considers
-    members equal by `Object.is()` / `===`, not by value.
+    members equal by the [same-value-zero] rules (very close to `Object.is()` /
+    `===`).
+
+    [same-value-zero]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/\
+Equality_comparisons_and_sameness#same-value-zero_equality
+
+    `JSSet` is able to hold non-hashable objects as members.
+
+    Equality between JSSet instances works as if you compared a list of both
+    set's elements. When comparing JSSet to a normal Python `set`, equality
+    works as if the JSSet was a regular set — order does not matter and the
+    number of elements must be equal. Same-value-zero is only used for internal
+    membership checks, not for external equality.
+
+    Equality examples:
+
+    >>> a, b = bytearray(), bytearray()  # non-hashable
+    >>> assert a == b
+    >>> assert a is not b
+
+    Equality between two JSSets behaves like the list of members (JSSets
+    remember insertion order):
+
+    >>> JSSet([a, b]) == JSSet([a, b])
+    True
+    >>> JSSet([a, b]) == JSSet([b, a])
+    True
+    >>> JSSet([a, a]) == JSSet([b, b])
+    True
+
+    These behave like:
+
+    >>> list(JSSet([a, b])) == [b, a]
+    True
+
+    Equality between a JSSet and a normal `set` behaves as if the JSSet was a
+    normal set. The sets must have the same number of members.
+
+    Note that if there are non-hashable members, the sets can't be equal, as
+    normal sets cannot contain non-hashable members.
+
+    >>> # hashable, distinct instances
+    >>> x, y, z = tuple([0]), tuple([0]), tuple([0])
+    >>> assert x == y and y == z
+    >>> assert x is not y and y is not z
+
+    >>> jss_dup, jss_no_dup, s = JSSet([x, y]), JSSet([x]), set([y, z])
+    >>> jss_dup, jss_no_dup, s
+    (JSSet([(0,), (0,)]), JSSet([(0,)]), {(0,)})
+
+    >>> jss_no_dup == s
+    True
+    >>> jss_dup == s  # different number of members
+    False
+
+    Equivalent to
+
+    >>> set([x]) == set([y, z])
+    True
     """
 
     __members: dict[JSSameValueZero, T]
@@ -49,13 +107,32 @@ class JSSet(MutableSet[T], metaclass=ABCMeta):
         return same_value_zero(value) in self.__members
 
     def __eq__(self, other: object) -> bool:
+        # As with JSMap, JSSet are equal to other JSSet if they contain elements
+        # in the same order that are pair-wise equal to each other.
+        # See JSMap.__eq__ for more on this approach.
         if self is other:
             return True
         if isinstance(other, JSSet):
-            return self.__members == other.__members
+            if len(self) != len(other):
+                return False
+            # Two JSSets are equal if they contain equal members in the same order
+            return all(
+                x == y
+                for x, y in zip(self.__members.values(), other.__members.values())
+            )
         if isinstance(other, AbstractSet):
-            return self.__members == JSSet(other).__members
-        return False
+            if len(self) != len(other):
+                return False
+            # Other set types are equal if they're equal to a set containing our
+            # members (if our members are hashable).
+            try:
+                self_as_set = set(self.__members.values())
+            except Exception:
+                # We have an unhashable member. Fall back to comparing the other
+                # items in order, in the same way as if it were a JSSet
+                return all(x == y for x, y in zip(self.__members.values(), other))
+            return self_as_set == other
+        return NotImplemented
 
     def __iter__(self) -> Iterator[T]:
         return iter(self.__members.values())

@@ -4,6 +4,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from v8serialize.jstypes._equality import same_value_zero
+from v8serialize.jstypes._v8 import V8SharedObjectReference, V8SharedValueId
 from v8serialize.jstypes.jsset import JSSet
 
 from .strategies import mk_values_and_objects
@@ -19,9 +20,44 @@ def test_equal_to_other_sets(set_: set[object]) -> None:
     assert JSSet(set_) == set_
 
 
+ID = V8SharedValueId(0)
+
+
+def test_equal_to_other_sets_containing_different_object_instances() -> None:
+    k1, k2 = V8SharedObjectReference(ID), V8SharedObjectReference(ID)
+    assert k1 is not k2
+    assert k1 == k2
+
+    # JSSet instances are eq from the outside if they contain equal elements in
+    # the same order
+    jsset_1_2, jsset_2_1 = JSSet([k1, k2]), JSSet([k2, k1])
+
+    assert jsset_1_2 == jsset_2_1
+
+    # Regular sets are equal by set's idea of equality (de-dupe equal members)
+    jsset_1, jsset_2 = JSSet([k1, 0]), JSSet([0, k2])
+    assert jsset_1 == {V8SharedObjectReference(ID), 0}
+    assert jsset_2 == {V8SharedObjectReference(ID), 0}
+
+    # JSSets with different member orders are not equal
+    assert jsset_1 != jsset_2
+
+    # Unequal lengths are not equal
+    assert jsset_1_2 != {V8SharedObjectReference(ID)}
+    assert jsset_2_1 != {V8SharedObjectReference(ID)}
+    # ... despite them being equal if they were de-duped
+    assert set(jsset_1_2) == {V8SharedObjectReference(ID)}
+    assert set(jsset_2_1) == {V8SharedObjectReference(ID)}
+
+
 def test_eq_with_unhashable_elements() -> None:
     assert JSSet([{}, {}]) != set([1, 2])
     assert set([1, 2]) != JSSet([{}, {}])
+
+
+def test_eq_with_other_type() -> None:
+    assert JSSet().__eq__(object()) is NotImplemented
+    assert not (JSSet() == object())
 
 
 def test_nan() -> None:
