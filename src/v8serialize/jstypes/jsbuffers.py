@@ -58,6 +58,7 @@ class BaseJSArrayBuffer(ABC):
     def __buffer__(self, flags: int) -> memoryview: ...
 
 
+@BaseJSArrayBuffer.register
 @dataclass(frozen=True, slots=True, init=False)
 class JSArrayBuffer(
     AnyArrayBuffer,
@@ -204,6 +205,7 @@ class JSArrayBuffer(
         return get_buffer(self._data, flags)[: self.max_byte_length]
 
 
+@BaseJSArrayBuffer.register
 @dataclass(frozen=True, slots=True)
 class JSSharedArrayBuffer(AnySharedArrayBuffer, ABC):
     buffer_id: SharedArrayBufferId
@@ -212,6 +214,7 @@ class JSSharedArrayBuffer(AnySharedArrayBuffer, ABC):
         raise NotImplementedError("Cannot access SharedArrayBuffer from Python")
 
 
+@BaseJSArrayBuffer.register
 @dataclass(frozen=True, slots=True)
 class JSArrayBufferTransfer(AnyArrayBufferTransfer, ABC):
     transfer_id: TransferId

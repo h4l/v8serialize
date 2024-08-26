@@ -6,10 +6,13 @@ import pytest
 from v8serialize.constants import ArrayBufferViewTag
 from v8serialize.jstypes.jsbuffers import (
     ArrayBufferViewStructFormat,
+    BaseJSArrayBuffer,
     ByteLengthJSArrayBufferError,
     JSArrayBuffer,
+    JSArrayBufferTransfer,
     JSDataView,
     JSInt8Array,
+    JSSharedArrayBuffer,
 )
 
 
@@ -154,3 +157,12 @@ def test_JSArrayBuffer_init__caller_can_close_memoryview() -> None:
         data.tolist()
 
     assert buf.data.tolist() == [1, 2]
+
+
+@pytest.mark.parametrize(
+    "ab_type", [JSArrayBuffer, JSSharedArrayBuffer, JSArrayBufferTransfer]
+)
+def test_subtype_registration(ab_type: type) -> None:
+    # Serialization of ArrayBuffer types relies on them being subclasses of
+    # BaseJSArrayBuffer
+    assert issubclass(ab_type, BaseJSArrayBuffer)
