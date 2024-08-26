@@ -23,6 +23,7 @@ from v8serialize.encode import (
 )
 from v8serialize.extensions import node_js_array_buffer_view_host_object_handler
 from v8serialize.jstypes import JSObject, JSUndefined
+from v8serialize.jstypes._equality import same_value_zero
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
 from v8serialize.jstypes._v8 import V8SharedObjectReference
 from v8serialize.jstypes.jsarray import JSArray
@@ -38,10 +39,13 @@ from v8serialize.jstypes.jsbuffers import (
     create_view,
 )
 from v8serialize.jstypes.jserror import JSError, JSErrorData
+from v8serialize.jstypes.jsmap import JSMap
 from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject
 from v8serialize.jstypes.jsregexp import JSRegExp
+from v8serialize.jstypes.jsset import JSSet
 from v8serialize.jstypes.jsundefined import JSUndefinedType
 
+K = TypeVar("K")
 T = TypeVar("T")
 
 
@@ -300,6 +304,37 @@ v8_shared_object_references = st.builds(
 )
 
 
+def js_maps(
+    keys: st.SearchStrategy[K],
+    values: st.SearchStrategy[T],
+    min_size: int = 0,
+    max_size: int | None = None,
+) -> st.SearchStrategy[JSMap[K, T]]:
+    return st.builds(
+        JSMap,
+        st.lists(
+            elements=st.tuples(keys, values),
+            min_size=min_size,
+            max_size=max_size,
+            unique_by=lambda i: same_value_zero(i[0]),
+        ),
+    )
+
+
+def js_sets(
+    elements: st.SearchStrategy[T], min_size: int = 0, max_size: int | None = None
+) -> st.SearchStrategy[JSSet[T]]:
+    return st.builds(
+        JSSet,
+        st.lists(
+            elements=elements,
+            min_size=min_size,
+            max_size=max_size,
+            unique_by=same_value_zero,
+        ),
+    )
+
+
 any_atomic = st.one_of(
     st.integers(),
     # NaN breaks equality when nested inside objects. We test with nan in
@@ -310,8 +345,6 @@ any_atomic = st.one_of(
     st.just(None),
     st.just(True),
     st.just(False),
-    # FIXME: non-hashable objects are a problem for maps/sets
-    # js_array_buffers,
     js_regexps,
     # Use naive datetimes for general tests to avoid needing to normalise tz.
     # (Can't serialize tz, so aware datetimes come back as naive or a fixed tz;
@@ -320,15 +353,22 @@ any_atomic = st.one_of(
     v8_shared_object_references,
 )
 
+non_hashable_atomic = st.one_of(
+    js_array_buffers,
+)
+
 
 # https://hypothesis.works/articles/recursive-data/
 any_object = st.recursive(
-    any_atomic,
+    any_atomic | non_hashable_atomic,
     lambda children: st.one_of(
+        # The rest are recursive types
         st.dictionaries(
             keys=any_atomic,
             values=children,
         ),
+        # JSMap can handle non-hashable objects as keys
+        js_maps(keys=children, values=children),
         js_objects(values=children),
         dense_js_arrays(
             elements=children,
@@ -351,6 +391,8 @@ any_object = st.recursive(
             ),
         ),
         st.sets(elements=any_atomic),
+        # JSSet can handle non-hashable elements
+        js_sets(elements=children),
         js_errors(causes=children),
     ),
     max_leaves=3,  # TODO: tune this, perhaps increase in CI
@@ -492,14 +534,14 @@ def test_codec_rt_naive_datetimes(value: datetime) -> None:
     assert rts.eof
 
 
-@given(value=st.dictionaries(keys=any_atomic, values=any_object))
+@given(value=js_maps(keys=any_object, values=any_object))
 def test_codec_rt_jsmap(
-    value: dict[object, object], create_rw_ctx: CreateContexts
+    value: JSMap[object, object], create_rw_ctx: CreateContexts
 ) -> None:
     encode_ctx, decode_ctx = create_rw_ctx()
     encode_ctx.stream.write_jsmap(value.items(), ctx=encode_ctx, identity=value)
     assert decode_ctx.stream.read_tag(consume=False) == SerializationTag.kBeginJSMap
-    result = dict[object, object]()
+    result = JSMap[object, object]()
     result.update(
         decode_ctx.stream.read_jsmap(ctx=decode_ctx, identity=result, tag=True)
     )
@@ -507,16 +549,14 @@ def test_codec_rt_jsmap(
     assert decode_ctx.stream.eof
 
 
-@given(value=st.sets(elements=any_atomic))
+@given(value=js_sets(elements=any_object))
 def test_codec_rt_jsset(value: set[object], create_rw_ctx: CreateContexts) -> None:
     encode_ctx, decode_ctx = create_rw_ctx()
 
     encode_ctx.stream.write_jsset(value, ctx=encode_ctx)
     assert decode_ctx.stream.read_tag(consume=False) == SerializationTag.kBeginJSSet
-    result = set[object]()
-    result.update(
-        decode_ctx.stream.read_jsset(ctx=decode_ctx, identity=result, tag=True)
-    )
+    result = JSSet[object]()
+    result |= decode_ctx.stream.read_jsset(ctx=decode_ctx, identity=result, tag=True)
     assert value == result
     assert decode_ctx.stream.eof
 

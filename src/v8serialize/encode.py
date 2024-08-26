@@ -739,7 +739,10 @@ class DefaultEncodeContext(EncodeContext):
 
     def deduplicate(self, value: T) -> T:
         if getattr(value, "__hash__", None) is not None:
-            return self._memoized(value)  # type: ignore[no-any-return]
+            try:
+                return self._memoized(value)  # type: ignore[no-any-return]
+            except Exception:  # when an object nested in value is not hashable
+                pass
         return value
 
 

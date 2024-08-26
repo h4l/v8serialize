@@ -81,8 +81,10 @@ from v8serialize.jstypes.jsbuffers import (
     create_view,
 )
 from v8serialize.jstypes.jserror import JSError
+from v8serialize.jstypes.jsmap import JSMap
 from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject
 from v8serialize.jstypes.jsregexp import JSRegExp
+from v8serialize.jstypes.jsset import JSSet
 from v8serialize.references import SerializedId, SerializedObjectLog
 
 if TYPE_CHECKING:
@@ -966,8 +968,8 @@ class TagMapper(TagMapperObject):
         default_timezone: tzinfo | None = None,
     ) -> None:
         self.default_tag_mapper = default_tag_mapper
-        self.jsmap_type = jsmap_type or dict
-        self.jsset_type = jsset_type or set
+        self.jsmap_type = jsmap_type or JSMap
+        self.jsset_type = jsset_type or JSSet
         self.js_object_type = js_object_type or JSObject
         self.js_array_type = js_array_type or JSArray
         self.host_object_deserializer = host_object_deserializer
