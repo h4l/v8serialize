@@ -5,10 +5,17 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from v8serialize.constants import SerializationTag, kLatestVersion
-from v8serialize.decode import DefaultDecodeContext, ReadableTagStream, loads
-from v8serialize.encode import WritableTagStream
+from v8serialize.decode import DefaultDecodeContext, ReadableTagStream, TagMapper, loads
+from v8serialize.encode import (
+    DefaultEncodeContext,
+    ObjectMapper,
+    WritableTagStream,
+    serialize_object_references,
+)
 from v8serialize.errors import DecodeV8CodecError
-from v8serialize.jstypes.jsbuffers import JSUint8Array
+from v8serialize.jstypes.jsarray import JSArray
+from v8serialize.jstypes.jsbuffers import JSArrayBuffer, JSUint8Array
+from v8serialize.jstypes.jserror import JSErrorData
 
 
 @given(st.integers(min_value=1))
@@ -111,3 +118,36 @@ def test_wasm_is_not_supported(tag: SerializationTag) -> None:
         match=f"Stream contains a {tag.name} which is not supported.",
     ):
         decode_ctx.decode_object()
+
+
+@pytest.mark.parametrize(
+    "example",
+    [
+        JSErrorData(cause=JSArrayBuffer(b"foobar")),
+        JSErrorData(cause=JSUint8Array(JSArrayBuffer(b"foobar"))),
+        # The Uint8 view applies to a reference to the buffer
+        (lambda buf: JSArray([buf, JSErrorData(cause=JSUint8Array(buf))]))(
+            JSArrayBuffer(b"foobar")
+        ),
+    ],
+)
+def test_decode_array_buffer_as_error_cause(example: object) -> None:
+    # ArrayBuffers are weird in that they can be followed by an ArrayBufferView
+    # serialized as a separate object. Normally, the byte following any object
+    # is EOF (nothing) or a valid SerializationTag. However when an object is
+    # serialized as the cause of a JSError, the next byte is the error's End
+    # tag, which is not a Serialization Tag.
+
+    encode_ctx = DefaultEncodeContext(
+        object_mappers=[serialize_object_references, ObjectMapper()]
+    )
+    encode_ctx.stream.write_header()
+    encode_ctx.encode_object(example)
+
+    # The buffer is referenced, not duplicated when it occurs twice
+    assert encode_ctx.stream.data.count(b"foobar") == 1
+
+    result = loads(
+        encode_ctx.stream.data, tag_mappers=[TagMapper(js_error_type=JSErrorData)]
+    )
+    assert result == example

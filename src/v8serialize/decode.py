@@ -161,6 +161,16 @@ class ReadableTagStream:
     def throw(self, message: str, *, cause: BaseException | None = None) -> Never:
         raise DecodeV8CodecError(message, data=self.data, position=self.pos) from cause
 
+    def peak_tag(self) -> SerializationTag | None:
+        """Get the current position as a SerializationTag if it is one, or None
+        (without advancing position)."""
+        if self.eof:
+            return None
+        value = self.data[self.pos]
+        if value in SerializationTag:
+            return SerializationTag(value)
+        return None
+
     @overload
     def read_tag(
         self, tag: None = None, *, consume: bool = True
@@ -1109,10 +1119,9 @@ class TagMapper(TagMapperObject):
         )
 
         # Buffers can be followed by a BufferView which wraps the buffer.
-        if (
-            not ctx.stream.eof
-            and ctx.stream.read_tag(consume=False) is SerializationTag.kArrayBufferView
-        ):
+        # Warning: current value may not be a tag, e.g. at EOF or if the buffer
+        # is the cause object of an Error (then it'll be an End error tag).
+        if ctx.stream.peak_tag() is SerializationTag.kArrayBufferView:
             view: JSTypedArray | JSDataView = ctx.stream.read_js_array_buffer_view(
                 backing_buffer=buffer, array_buffer_view=create_view, tag=True
             )
@@ -1147,13 +1156,12 @@ class TagMapper(TagMapperObject):
         ):
             # Object references can be followed by a ArrayBufferView that
             # wraps the buffer referenced by the reference.
-            if (
-                not ctx.stream.eof
-                and ctx.stream.read_tag(consume=False)
-                is SerializationTag.kArrayBufferView
-            ):
+            # Warning: current value may not be a tag, e.g. at EOF or if the
+            # buffer is the cause object of an Error (then it'll be an End error
+            # tag).
+            if ctx.stream.peak_tag() is SerializationTag.kArrayBufferView:
                 return ctx.stream.read_js_array_buffer_view(
-                    backing_buffer=obj, array_buffer_view=create_view
+                    backing_buffer=obj, array_buffer_view=create_view, tag=True
                 )
 
         return obj
