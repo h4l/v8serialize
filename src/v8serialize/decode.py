@@ -1051,9 +1051,9 @@ class TagMapper(TagMapperObject):
     ) -> AbstractSet[object]:
         assert tag == SerializationTag.kBeginJSSet
         set = self.jsset_type()
-        # MutableSet doesn't provide update()
-        for element in ctx.stream.read_jsset(ctx, identity=set):
-            set.add(element)
+        # MutableSet's types expect AbstractSet for RHS of |= but implementations
+        # accept any iterable in practice.
+        set |= ctx.stream.read_jsset(ctx, identity=set)  # type: ignore[arg-type]
         return set
 
     def deserialize_js_object(
