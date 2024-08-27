@@ -13,6 +13,7 @@ from typing import (
     AbstractSet,
     Any,
     AnyStr,
+    Collection,
     Iterable,
     Literal,
     Mapping,
@@ -442,7 +443,7 @@ class WritableTagStream:
     @overload
     def write_js_array_dense(
         self,
-        array: Sequence[object],
+        array: Collection[object],
         ctx: EncodeContext,
         *,
         properties: Iterable[tuple[Any, Any]],  # FIXME: [object, object]
@@ -452,7 +453,7 @@ class WritableTagStream:
     @overload
     def write_js_array_dense(
         self,
-        array: Sequence[object],
+        array: Collection[object],
         ctx: EncodeContext,
         *,
         properties: None = ...,
@@ -461,7 +462,7 @@ class WritableTagStream:
 
     def write_js_array_dense(
         self,
-        array: Sequence[object],
+        array: Collection[object],
         ctx: EncodeContext,
         *,
         properties: Iterable[tuple[Any, Any]] | None = None,
@@ -930,6 +931,12 @@ class ObjectMapper(ObjectMapperObject):
         self, value: AbstractSet[object], /, ctx: EncodeContext, next: SerializeNextFn
     ) -> None:
         ctx.stream.write_jsset(value, ctx=ctx)
+
+    @serialize.register(abc.Collection)
+    def serialize_collection(
+        self, value: Collection[object], /, ctx: EncodeContext, next: SerializeNextFn
+    ) -> None:
+        ctx.stream.write_js_array_dense(value, ctx=ctx)
 
     @serialize.register(BaseJSArrayBuffer)
     def serialize_js_array_buffer(
