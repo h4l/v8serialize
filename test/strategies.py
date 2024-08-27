@@ -263,7 +263,7 @@ naive_timestamp_datetimes = st.datetimes(min_value=datetime(1, 1, 2)).map(
     # float operations breaking equality. We don't really care about testing the
     # precision of float operations, just that the values are encoded and
     # decoded as provided.
-    lambda dt: datetime.fromtimestamp(round(dt.timestamp() * 4000 + 1) / 4000)
+    lambda dt: datetime.fromtimestamp(round(dt.timestamp() * 4) / 4)
 )
 """datetime values rounded slightly by passing through timestamp() representation.
 
