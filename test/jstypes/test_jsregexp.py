@@ -49,3 +49,7 @@ def test_from_python_pattern() -> None:
         JSRegExp.from_python_pattern(re.compile("", re.VERBOSE))
 
     assert JSRegExp.from_python_pattern(re.compile("", re.VERBOSE), throw=False) is None
+
+
+def test_empty_source_is_non_capturing_group() -> None:
+    assert JSRegExp(source="").source == "(?:)"

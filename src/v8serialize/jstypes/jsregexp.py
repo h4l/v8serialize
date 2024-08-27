@@ -21,6 +21,13 @@ class JSRegExp:
     source: str
     flags: JSRegExpFlag = field(default=JSRegExpFlag.NoFlag)
 
+    def __post_init__(self) -> None:
+        if self.source == "":
+            # JavaScript regexes cannot be empty, because the slash-delimited
+            # literal syntax would be the same as a comment. Empty regexes are
+            # represented as an empty non-capturing group.
+            object.__setattr__(self, "source", "(?:)")
+
     @overload
     @staticmethod
     def from_python_pattern(

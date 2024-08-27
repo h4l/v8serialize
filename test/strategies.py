@@ -245,10 +245,17 @@ def js_error_data(
     )
 
 
-js_regexp_flags = st.builds(
-    JSRegExpFlag, st.integers(min_value=0, max_value=int(JSRegExpFlag(0xFFF).canonical))
-)
-js_regexps = st.builds(JSRegExp, source=st.text(), flags=js_regexp_flags)
+def js_regexp_flags(allow_linear: bool = False) -> st.SearchStrategy[JSRegExpFlag]:
+    values = st.integers(min_value=JSRegExpFlag.NoFlag, max_value=~JSRegExpFlag.NoFlag)
+    if not allow_linear:
+        values = values.map(lambda x: x & ~JSRegExpFlag.Linear)  # unset Linear
+    return st.builds(JSRegExpFlag, values)
+
+
+def js_regexps(allow_linear: bool = False) -> st.SearchStrategy[JSRegExp]:
+    return st.builds(
+        JSRegExp, source=st.text(), flags=js_regexp_flags(allow_linear=allow_linear)
+    )
 
 
 naive_timestamp_datetimes = st.datetimes(min_value=datetime(1, 1, 2)).map(
@@ -312,7 +319,7 @@ any_atomic = st.one_of(
     st.just(None),
     st.just(True),
     st.just(False),
-    js_regexps,
+    js_regexps(),
     # Use naive datetimes for general tests to avoid needing to normalise tz.
     # (Can't serialize tz, so aware datetimes come back as naive or a fixed tz;
     # epoch timestamp always matches though.)
