@@ -9,7 +9,7 @@ const server = http.createServer(async (req, res) => {
     req.url ?? "/",
     `http://${req.headers.host ?? "localhost"}`,
   );
-  console.log(`${req.method} ${req.url} ${JSON.stringify(req.headers)}`);
+  // console.log(`${req.method} ${req.url} ${JSON.stringify(req.headers)}`);
   if (url.pathname != "/") {
     res.statusCode = 404;
     return res.end("URL must be /\n");
@@ -33,12 +33,18 @@ const server = http.createServer(async (req, res) => {
       maxStringLength: null,
       maxArrayLength: null,
     });
+    const serializationBase64 = v8.serialize(object).toString("base64");
+    console.log(
+      `req: ${
+        body.toString("base64")
+      }, interpretation: ${interpretation}, resp: ${serializationBase64}`,
+    );
     res.writeHead(200, { "Content-Type": "application/json" });
     return res.end(JSON.stringify({
       interpretation,
       serialization: {
         encoding: "base64",
-        data: v8.serialize(object).toString("base64"),
+        data: serializationBase64,
       },
     }));
   } else if (req.method === "GET") {
