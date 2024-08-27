@@ -1,6 +1,8 @@
 import re
+from test.strategies import js_regexp_flags
 
 import pytest
+from hypothesis import given
 
 from v8serialize.constants import JSRegExpFlag
 from v8serialize.errors import JSRegExpV8CodecError
@@ -53,3 +55,11 @@ def test_from_python_pattern() -> None:
 
 def test_empty_source_is_non_capturing_group() -> None:
     assert JSRegExp(source="").source == "(?:)"
+
+
+@given(any_flags=js_regexp_flags())
+def test_flags_cannot_have_both_unicode_flags_set(any_flags: JSRegExpFlag) -> None:
+    with pytest.raises(
+        ValueError, match=r"The Unicode and UnicodeSets flags cannot be set together"
+    ):
+        JSRegExp("", flags=any_flags | JSRegExpFlag.Unicode | JSRegExpFlag.UnicodeSets)

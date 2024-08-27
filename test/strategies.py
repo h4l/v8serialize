@@ -246,9 +246,23 @@ def js_error_data(
 
 
 def js_regexp_flags(allow_linear: bool = False) -> st.SearchStrategy[JSRegExpFlag]:
-    values = st.integers(min_value=JSRegExpFlag.NoFlag, max_value=~JSRegExpFlag.NoFlag)
-    if not allow_linear:
-        values = values.map(lambda x: x & ~JSRegExpFlag.Linear)  # unset Linear
+
+    def normalise_unicode_flags(flags: int | JSRegExpFlag) -> JSRegExpFlag:
+        if not allow_linear and flags & JSRegExpFlag.Linear:
+            flags &= ~JSRegExpFlag.Linear  # unset Linear
+
+        if flags & JSRegExpFlag.Unicode and flags & JSRegExpFlag.UnicodeSets:
+            # Need to un-set one of the two as they're incompatible.
+            if hash(flags) % 2 == 0:
+                flags &= ~JSRegExpFlag.Unicode
+            else:
+                flags &= ~JSRegExpFlag.UnicodeSets
+        return JSRegExpFlag(flags)
+
+    values = st.integers(
+        min_value=JSRegExpFlag.NoFlag, max_value=~JSRegExpFlag.NoFlag
+    ).map(normalise_unicode_flags)
+
     return st.builds(JSRegExpFlag, values)
 
 

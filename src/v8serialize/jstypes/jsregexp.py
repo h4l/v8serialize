@@ -27,6 +27,12 @@ class JSRegExp:
             # literal syntax would be the same as a comment. Empty regexes are
             # represented as an empty non-capturing group.
             object.__setattr__(self, "source", "(?:)")
+        if self.flags & JSRegExpFlag.Unicode and self.flags & JSRegExpFlag.UnicodeSets:
+            raise ValueError(
+                "The Unicode and UnicodeSets flags cannot be set together: "
+                "Setting both is a syntax error in JavaScript because they "
+                "enable incompatible interpretations of the RegExp source."
+            )
 
     @overload
     @staticmethod
