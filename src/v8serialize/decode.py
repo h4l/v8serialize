@@ -242,7 +242,7 @@ class ReadableTagStream:
         self.pos += count
         return self.data[self.pos - count : self.pos]
 
-    def read_varint(self) -> int:
+    def read_varint(self, max_bits: int | None = None) -> int:
         data = self.data
         pos = self.pos
         varint = 0
@@ -256,6 +256,8 @@ class ReadableTagStream:
                 self.pos = pos + 1
                 return varint
             offset += 7
+            if max_bits and offset >= max_bits:
+                self.throw(f"Varint is larger than {max_bits} bits")
         count = pos - self.pos
         self.pos = pos
         self.throw(
@@ -263,8 +265,8 @@ class ReadableTagStream:
             f"{count} bytes"
         )
 
-    def read_zigzag(self) -> int:
-        uint = self.read_varint()
+    def read_zigzag(self, max_bits: int | None = None) -> int:
+        uint = self.read_varint(max_bits=max_bits)
         return _decode_zigzag(uint)
 
     def read_header(self) -> int:
@@ -337,7 +339,7 @@ class ReadableTagStream:
     def read_int32(self, *, tag: bool = False) -> int:
         if tag:
             self.read_tag(tag=SerializationTag.kInt32)
-        value = self.read_zigzag()
+        value = self.read_zigzag(max_bits=32)
         if value in INT32_RANGE:
             return value
         self.throw(f"Serialized value is out of {INT32_RANGE} for Int32: {value}")
@@ -345,7 +347,7 @@ class ReadableTagStream:
     def read_uint32(self, *, tag: bool = False) -> int:
         if tag:
             self.read_tag(tag=SerializationTag.kUint32)
-        value = self.read_varint()
+        value = self.read_varint(max_bits=32)
         if value in UINT32_RANGE:
             return value
         self.throw(f"Serialized value is out of {UINT32_RANGE} for UInt32: {value}")
@@ -637,7 +639,7 @@ class ReadableTagStream:
     ) -> BufferT:
         if tag:
             self.read_tag(SerializationTag.kArrayBuffer)
-        byte_length = self.read_varint()
+        byte_length = self.read_uint32()
         if self.pos + byte_length > len(self.data):
             self.throw(
                 f"ArrayBuffer byte length exceeds available data: {byte_length=}"
@@ -658,12 +660,12 @@ class ReadableTagStream:
     ) -> BufferT:
         if tag:
             self.read_tag(SerializationTag.kResizableArrayBuffer)
-        byte_length = self.read_varint()
+        byte_length = self.read_uint32()
         if self.pos + byte_length >= len(self.data):
             self.throw(
                 f"ArrayBuffer byte length exceeds available data: {byte_length=}"
             )
-        max_byte_length = self.read_varint()
+        max_byte_length = self.read_uint32()
         if max_byte_length < byte_length:
             self.throw(
                 f"ResizableArrayBuffer max byte length is less than current "
@@ -688,7 +690,7 @@ class ReadableTagStream:
     ) -> BufferT:
         if tag:
             self.read_tag(SerializationTag.kSharedArrayBuffer)
-        index = self.read_varint()
+        index = self.read_uint32()
         return shared_array_buffer(buffer_id=SharedArrayBufferId(index))
 
     def _read_js_array_buffer_transfer(
@@ -699,7 +701,7 @@ class ReadableTagStream:
     ) -> BufferT:
         if tag:
             self.read_tag(SerializationTag.kArrayBufferTransfer)
-        transfer_id = self.read_varint()
+        transfer_id = self.read_uint32()
         return array_buffer_transfer(transfer_id=TransferId(transfer_id))
 
     def read_js_array_buffer_view(
@@ -719,8 +721,8 @@ class ReadableTagStream:
         # TODO: should it be this method's responsibility to bounds-check the
         #   view? I'm leaning towards no, as we can't check the two reference
         #   buffer types anyway.
-        byte_offset = self.read_varint()
-        byte_length = self.read_varint()
+        byte_offset = self.read_uint32()
+        byte_length = self.read_uint32()
         flags = ArrayBufferViewFlags(0)
         if self.version >= 14:  # flags field was added in v14
             flags = ArrayBufferViewFlags(self.read_varint())

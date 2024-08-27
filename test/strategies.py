@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal, Optional, TypeVar, cast, overload
+from typing import Final, Literal, Optional, TypeVar, cast, overload
 
 from hypothesis import strategies as st
 
@@ -32,7 +32,8 @@ T = TypeVar("T")
 
 
 any_int_or_text = st.one_of(st.integers(), st.text())
-uint32s = st.integers(min_value=0, max_value=2**32 - 1)
+UINT32_MAX: Final = 2**32 - 1
+uint32s = st.integers(min_value=0, max_value=UINT32_MAX)
 
 name_properties = st.text().filter(
     lambda name: isinstance(normalise_property_key(name), str)
@@ -151,10 +152,12 @@ fixed_js_array_buffers = st.binary().map(lambda data: JSArrayBuffer(data))
 
 resizable_js_array_buffers = st.builds(
     lambda data, headroom_byte_length: JSArrayBuffer(
-        data, max_byte_length=len(data) + headroom_byte_length, resizable=True
+        data,
+        max_byte_length=min(UINT32_MAX, len(data) + headroom_byte_length),
+        resizable=True,
     ),
     st.binary(),
-    st.integers(min_value=0),
+    uint32s,
 )
 
 normal_js_array_buffers = st.one_of(fixed_js_array_buffers, resizable_js_array_buffers)

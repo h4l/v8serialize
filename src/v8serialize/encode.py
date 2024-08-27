@@ -566,7 +566,7 @@ class WritableTagStream:
         self.objects.record_reference(buffer if identity is None else identity)
         self.write_tag(SerializationTag.kArrayBuffer)
         with memoryview(buffer.data) as buffer_data:
-            self.write_varint(len(buffer_data))
+            self.write_uint32(len(buffer_data), tag=None)
             self.data.extend(buffer_data)
 
     def _write_js_array_buffer_resizable(
@@ -581,9 +581,8 @@ class WritableTagStream:
                 )
             self.objects.record_reference(buffer if identity is None else identity)
             self.write_tag(SerializationTag.kResizableArrayBuffer)
-            # TODO: validate uint32
-            self.write_varint(len(buffer_data))
-            self.write_varint(buffer.max_byte_length)
+            self.write_uint32(len(buffer_data), tag=None)
+            self.write_uint32(buffer.max_byte_length, tag=None)
             self.data.extend(buffer_data)
 
     def _write_js_array_buffer_shared(
@@ -610,9 +609,9 @@ class WritableTagStream:
         self.objects.record_reference(buffer_view if identity is None else identity)
         self.write_tag(SerializationTag.kArrayBufferView)
         self.write_varint(buffer_view.view_tag.value)
-        self.write_varint(buffer_view.byte_offset)
+        self.write_uint32(buffer_view.byte_offset, tag=None)
         # 0 / None when flags.IsBufferResizable
-        self.write_varint(buffer_view.byte_length or 0)
+        self.write_uint32(buffer_view.byte_length or 0, tag=None)
 
         flags = ArrayBufferViewFlags(0)
         if isinstance(buffer_view, JSArrayBuffer) and buffer_view.resizable:
