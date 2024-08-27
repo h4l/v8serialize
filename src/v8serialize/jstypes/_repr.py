@@ -181,5 +181,19 @@ def _contains_single_piece(pieces: list[str]) -> bool:
     return not ("\n" in piece or "\r" in piece)
 
 
-default_js_repr = JSRepr(indent=2)
+default_js_repr = JSRepr(
+    indent=None,
+    maxjsobject=100,
+    maxjsarray=100,
+    maxlevel=20,
+    maxtuple=100,
+    maxlist=100,
+    maxarray=100,
+    maxdict=100,
+    maxset=100,
+    maxfrozenset=100,
+    maxdeque=100,
+    maxstring=200,
+    maxother=100,
+)
 js_repr = default_js_repr.repr
