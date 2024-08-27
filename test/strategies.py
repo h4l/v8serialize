@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, TypeVar, cast
+from typing import Literal, Optional, TypeVar, cast, overload
 
 from hypothesis import strategies as st
 
@@ -166,20 +166,45 @@ array_buffer_transfers = uint32s.map(
     lambda value: JSArrayBufferTransfer(TransferId(value))
 )
 
-js_array_buffers = st.one_of(
-    fixed_js_array_buffers,
-    resizable_js_array_buffers,
-    shared_array_buffers,
-    array_buffer_transfers,
-)
+
+@overload
+def js_array_buffers(
+    *,
+    allow_shared: Literal[False] = False,
+) -> st.SearchStrategy[JSArrayBuffer]: ...
+
+
+@overload
+def js_array_buffers(
+    *,
+    allow_shared: Literal[True] | bool,
+) -> st.SearchStrategy[JSArrayBuffer | JSArrayBufferTransfer | JSSharedArrayBuffer]: ...
+
+
+def js_array_buffers(
+    *,
+    allow_shared: bool = False,
+) -> st.SearchStrategy[JSArrayBuffer | JSArrayBufferTransfer | JSSharedArrayBuffer]:
+    strategies: list[
+        st.SearchStrategy[JSArrayBuffer | JSArrayBufferTransfer | JSSharedArrayBuffer]
+    ] = [
+        fixed_js_array_buffers,
+        resizable_js_array_buffers,
+    ]
+    if allow_shared:
+        strategies.extend([shared_array_buffers, array_buffer_transfers])
+    return st.one_of(*strategies)
 
 
 def js_array_buffer_views(
-    backing_buffers: st.SearchStrategy[
-        JSArrayBuffer | JSSharedArrayBuffer | JSArrayBufferTransfer
-    ] = js_array_buffers,
+    backing_buffers: (
+        st.SearchStrategy[JSArrayBuffer | JSSharedArrayBuffer | JSArrayBufferTransfer]
+        | None
+    ) = None,
     view_formats: st.SearchStrategy[ViewFormat] | None = None,
 ) -> st.SearchStrategy[JSTypedArray | JSDataView]:
+    if backing_buffers is None:
+        backing_buffers = js_array_buffers()
     if view_formats is None:
         view_formats = st.sampled_from(ArrayBufferViewStructFormat)
 
@@ -323,65 +348,68 @@ def js_sets(
     )
 
 
-any_atomic = st.one_of(
-    st.integers(),
-    # NaN breaks equality when nested inside objects. We test with nan in
-    # test_codec_rt_double.
-    st.floats(allow_nan=False),
-    st.text(),
-    st.just(JSUndefined),
-    st.just(None),
-    st.just(True),
-    st.just(False),
-    js_regexps(),
-    # Use naive datetimes for general tests to avoid needing to normalise tz.
-    # (Can't serialize tz, so aware datetimes come back as naive or a fixed tz;
-    # epoch timestamp always matches though.)
-    naive_timestamp_datetimes,
-    v8_shared_object_references,
-)
+def any_atomic(allow_theoretical: bool = False) -> st.SearchStrategy[object]:
+    return st.one_of(
+        st.integers(),
+        # NaN breaks equality when nested inside objects. We test with nan in
+        # test_codec_rt_double.
+        st.floats(allow_nan=False),
+        st.text(),
+        st.just(JSUndefined),
+        st.just(None),
+        st.just(True),
+        st.just(False),
+        js_regexps(allow_linear=allow_theoretical),
+        # Use naive datetimes for general tests to avoid needing to normalise tz.
+        # (Can't serialize tz, so aware datetimes come back as naive or a fixed tz;
+        # epoch timestamp always matches though.)
+        naive_timestamp_datetimes,
+        *([v8_shared_object_references] if allow_theoretical else []),
+    )
 
-non_hashable_atomic = st.one_of(
-    js_array_buffers,
-)
+
+def non_hashable_atomic(allow_theoretical: bool = False) -> st.SearchStrategy[object]:
+    return st.one_of(js_array_buffers(allow_shared=allow_theoretical))
 
 
 # https://hypothesis.works/articles/recursive-data/
-any_object = st.recursive(
-    any_atomic | non_hashable_atomic,
-    lambda children: st.one_of(
-        # The rest are recursive types
-        st.dictionaries(
-            keys=any_atomic,
-            values=children,
-        ),
-        # JSMap can handle non-hashable objects as keys
-        js_maps(keys=children, values=children),
-        js_objects(values=children),
-        dense_js_arrays(
-            elements=children,
-            properties=js_objects(
-                # Extra properties should only be names, not extra array indexes
-                keys=name_properties,
+def any_object(allow_theoretical: bool = False) -> st.SearchStrategy[object]:
+    _any_atomic = any_atomic(allow_theoretical=allow_theoretical)
+    return st.recursive(
+        _any_atomic | non_hashable_atomic(allow_theoretical=allow_theoretical),
+        lambda children: st.one_of(
+            # The rest are recursive types
+            st.dictionaries(
+                keys=_any_atomic,
                 values=children,
+            ),
+            # JSMap can handle non-hashable objects as keys
+            js_maps(keys=children, values=children),
+            js_objects(values=children),
+            dense_js_arrays(
+                elements=children,
+                properties=js_objects(
+                    # Extra properties should only be names, not extra array indexes
+                    keys=name_properties,
+                    values=children,
+                    max_size=10,
+                ),
                 max_size=10,
             ),
-            max_size=10,
-        ),
-        sparse_js_arrays(
-            elements=children,
-            max_element_count=32,
-            properties=js_objects(
-                # Extra properties should only be names, not extra array indexes
-                keys=name_properties,
-                values=children,
-                max_size=10,
+            sparse_js_arrays(
+                elements=children,
+                max_element_count=32,
+                properties=js_objects(
+                    # Extra properties should only be names, not extra array indexes
+                    keys=name_properties,
+                    values=children,
+                    max_size=10,
+                ),
             ),
+            st.sets(elements=_any_atomic),
+            # JSSet can handle non-hashable elements
+            js_sets(elements=children),
+            js_errors(causes=children),
         ),
-        st.sets(elements=any_atomic),
-        # JSSet can handle non-hashable elements
-        js_sets(elements=children),
-        js_errors(causes=children),
-    ),
-    max_leaves=3,  # TODO: tune this, perhaps increase in CI
-)
+        max_leaves=3,  # TODO: tune this, perhaps increase in CI
+    )

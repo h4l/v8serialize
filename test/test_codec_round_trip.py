@@ -56,6 +56,9 @@ from .strategies import (
 
 CreateContexts = Callable[[], tuple[DefaultEncodeContext, DefaultDecodeContext]]
 
+any_theoretical_object = any_object(allow_theoretical=True)
+any_theoretical_atomic = any_atomic(allow_theoretical=True)
+
 
 @pytest.fixture(scope="session")
 def create_rw_ctx() -> CreateContexts:
@@ -204,7 +207,7 @@ def test_codec_rt_naive_datetimes(value: datetime) -> None:
     assert rts.eof
 
 
-@given(value=js_maps(keys=any_object, values=any_object))
+@given(value=js_maps(keys=any_theoretical_object, values=any_theoretical_object))
 def test_codec_rt_jsmap(
     value: JSMap[object, object], create_rw_ctx: CreateContexts
 ) -> None:
@@ -219,7 +222,7 @@ def test_codec_rt_jsmap(
     assert decode_ctx.stream.eof
 
 
-@given(value=js_sets(elements=any_object))
+@given(value=js_sets(elements=any_theoretical_object))
 def test_codec_rt_jsset(value: set[object], create_rw_ctx: CreateContexts) -> None:
     encode_ctx, decode_ctx = create_rw_ctx()
 
@@ -231,7 +234,7 @@ def test_codec_rt_jsset(value: set[object], create_rw_ctx: CreateContexts) -> No
     assert decode_ctx.stream.eof
 
 
-@given(value=js_objects(values=any_object))
+@given(value=js_objects(values=any_theoretical_object))
 def test_codec_rt_js_object(
     value: JSObject[object], create_rw_ctx: CreateContexts
 ) -> None:
@@ -259,7 +262,7 @@ js_object_raw_properties = st.lists(
         ),
         # maybe we should use something simple here as we care about keys, not
         # values here.
-        any_object,
+        any_theoretical_object,
     ),
 )
 
@@ -287,11 +290,11 @@ def test_codec_rt_js_object_raw_properties(
 
 @given(
     value=dense_js_arrays(
-        elements=st.one_of(st.just(JSHole), any_object),
+        elements=st.one_of(st.just(JSHole), any_theoretical_object),
         properties=js_objects(
             # Extra properties should only be names, not extra array indexes
             keys=name_properties,
-            values=any_atomic,
+            values=any_theoretical_atomic,
             max_size=10,
         ),
         max_size=10,
@@ -319,11 +322,11 @@ def test_codec_rt_js_array_dense(
 
 @given(
     value=sparse_js_arrays(
-        elements=any_object,
+        elements=any_theoretical_object,
         properties=js_objects(
             # Extra properties should only be names, not extra array indexes
             keys=name_properties,
-            values=any_atomic,
+            values=any_theoretical_atomic,
             max_size=10,
         ),
         max_element_count=64,
@@ -354,7 +357,7 @@ def test_codec_rt_js_array_sparse(
     assert decode_ctx.stream.eof
 
 
-@given(value=js_array_buffers)
+@given(value=js_array_buffers(allow_shared=True))
 def test_codec_rt_js_array_buffer(
     value: JSArrayBuffer | JSSharedArrayBuffer | JSArrayBufferTransfer,
     create_rw_ctx: CreateContexts,
@@ -421,7 +424,7 @@ def test_codec_rt_object_identity__simple(
     assert result["a"] is not result["b"]
 
 
-@given(value=any_object)
+@given(value=any_object(allow_theoretical=True))
 def test_codec_rt_object(
     value: object,
     create_rw_ctx: CreateContexts,
@@ -495,7 +498,7 @@ def test_codec_rt_nodejs_array_buffer_host_object(
     assert decode_ctx.stream.eof
 
 
-@given(value=js_regexps)
+@given(value=js_regexps(allow_linear=True))
 def test_codec_rt_js_regexp(
     value: JSRegExp,
     create_rw_ctx: CreateContexts,

@@ -123,7 +123,7 @@ def echoclient(
     return V8SerializationEchoServerClient(httpclient, server_url)
 
 
-@given(start_value=any_object)
+@given(start_value=any_object(allow_theoretical=False))
 def test_codec_rt_object(
     start_value: object, echoclient: V8SerializationEchoServerClient
 ) -> None:
