@@ -1,59 +1,68 @@
-import v8 from "node:v8";
-import http from "node:http";
-import consumers from "node:stream/consumers";
-import { inspect } from "node:util";
+import { toArrayBuffer } from "@std/streams/to-array-buffer";
+import { encodeBase64 } from "jsr:@std/encoding/base64";
 
-// Create a local server to receive data from
-const server = http.createServer(async (req, res) => {
-  const url = new URL(
-    req.url ?? "/",
-    `http://${req.headers.host ?? "localhost"}`,
-  );
+import v8 from "node:v8";
+// import { inspect } from "node:util";
+
+Deno.serve({}, async (req, info) => {
+  const url = new URL(req.url);
+
   // console.log(`${req.method} ${req.url} ${JSON.stringify(req.headers)}`);
   if (url.pathname != "/") {
-    res.statusCode = 404;
-    return res.end("URL must be /\n");
+    return new Response("URL must be /\n", { status: 404 });
   }
 
   if (req.method === "POST") {
-    if (req.headers["content-type"] != "application/x-v8-serialized") {
-      res.statusCode = 400;
-      return res.end("Content-Type must be application/x-v8-serialized\n");
+    if (req.headers.get("content-type") != "application/x-v8-serialized") {
+      return new Response(
+        "Content-Type must be application/x-v8-serialized\n",
+        { status: 400 },
+      );
     }
-    const body = await consumers.buffer(req);
+    if (!req.body) {
+      return new Response(
+        "Request body is empty\n",
+        { status: 400 },
+      );
+    }
+
+    const body = await toArrayBuffer(req.body);
     let object: unknown;
     try {
-      object = v8.deserialize(body);
+      object = v8.deserialize(new Uint8Array(body));
     } catch (e) {
-      res.writeHead(400);
-      return res.end(`Unable to deserialize V8-serialized data: ${e}\n`);
+      // Return a 200 response because use of the API is correct, even though
+      // the data is invalid.
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: `Unable to deserialize V8-serialized data: ${e}`,
+        }),
+        { headers: { "content-type": "application/json" } },
+      );
     }
-    const interpretation = inspect(object, {
-      depth: null,
-      maxStringLength: null,
-      maxArrayLength: null,
-    });
+
+    const interpretation = Deno.inspect(object, { depth: 10 });
     const serializationBase64 = v8.serialize(object).toString("base64");
     console.log(
       `req: ${
-        body.toString("base64")
+        encodeBase64(body)
       }, interpretation: ${interpretation}, resp: ${serializationBase64}`,
     );
-    res.writeHead(200, { "Content-Type": "application/json" });
-    return res.end(JSON.stringify({
-      interpretation,
-      serialization: {
-        encoding: "base64",
-        data: serializationBase64,
-      },
-    }));
+    return new Response(
+      JSON.stringify({
+        success: true,
+        interpretation,
+        serialization: {
+          encoding: "base64",
+          data: serializationBase64,
+        },
+      }),
+      { headers: { "content-type": "application/json" } },
+    );
   } else if (req.method === "GET") {
-    res.writeHead(200, { "Content-Type": "text/plain" });
-    return res.end("POST v8-serialized data to /\n");
+    return new Response("POST V8-serialized data to /\n", { status: 200 });
   } else {
-    res.writeHead(405);
-    res.end("Method not allowed\n");
+    return new Response("Method not allowed\n", { status: 405 });
   }
 });
-
-server.listen(8000);
