@@ -4,7 +4,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from v8serialize.constants import SerializationTag, kLatestVersion
+from v8serialize.constants import JSErrorName, SerializationTag, kLatestVersion
 from v8serialize.decode import DefaultDecodeContext, ReadableTagStream, TagMapper, loads
 from v8serialize.encode import (
     DefaultEncodeContext,
@@ -15,7 +15,7 @@ from v8serialize.encode import (
 from v8serialize.errors import DecodeV8CodecError
 from v8serialize.jstypes.jsarray import JSArray
 from v8serialize.jstypes.jsbuffers import JSArrayBuffer, JSUint8Array
-from v8serialize.jstypes.jserror import JSErrorData
+from v8serialize.jstypes.jserror import JSError, JSErrorData
 
 
 @given(st.integers(min_value=1))
@@ -148,6 +148,15 @@ def test_decode_array_buffer_as_error_cause(example: object) -> None:
     assert encode_ctx.stream.data.count(b"foobar") == 1
 
     result = loads(
-        encode_ctx.stream.data, tag_mappers=[TagMapper(js_error_type=JSErrorData)]
+        encode_ctx.stream.data,
+        tag_mappers=[TagMapper(js_error_builder=JSErrorData.builder)],
     )
     assert result == example
+
+
+def test_decode_legacy_v15_error_stack() -> None:
+    # V8 used to encode errors with the stack string after the cause, which is
+    # incompatible with the current fixed field order it uses (with stack before
+    # cause). This is an example of such an error encoding.
+    result = loads(b'\xff\x0frEm"\x00cI\x00s"\x00.')
+    assert result == JSError(message="", name=JSErrorName.EvalError, stack="", cause=0)

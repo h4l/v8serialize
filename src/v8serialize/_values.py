@@ -100,41 +100,18 @@ class ArrayBufferViewConstructor(Protocol[BufferT_con, ViewT_co]):
 
 
 class AnyJSError(Protocol):
-    @property
-    def name(self) -> str: ...
-    @property
-    def message(self) -> str | None: ...
-    @property
-    def stack(self) -> str | None: ...
-    @property
-    def cause(self) -> object | None: ...
+    # properties from protocols mess up concrete classes if they exist at runtime
+    if TYPE_CHECKING:
+
+        @property
+        def name(self) -> str | JSErrorName: ...
+        @name.setter
+        def name(self, name: JSErrorName) -> None: ...
+
+        message: str | None
+        stack: str | None
+        cause: object | None
 
 
-class AnyJSErrorSettableCause(AnyJSError, Protocol):
-    """AnyJSError with a settable cause property."""
-
-    cause: object | None
-
-
-class JSErrorConstructor(Protocol[T_co]):
-    def __call__(
-        self, *, name: JSErrorName, message: str | None, stack: str | None
-    ) -> T_co: ...
-
-
-if TYPE_CHECKING:
-    JSErrorSettableCauseT_co = TypeVar(
-        "JSErrorSettableCauseT_co",
-        bound=AnyJSErrorSettableCause,
-        covariant=True,
-        default=AnyJSErrorSettableCause,
-    )
-else:
-    JSErrorSettableCauseT_co = TypeVar(
-        "JSErrorSettableCauseT_co", bound=AnyJSErrorSettableCause, covariant=True
-    )
-
-
-class JSErrorSettableCauseConstructor(
-    JSErrorConstructor[JSErrorSettableCauseT_co], Protocol[JSErrorSettableCauseT_co]
-): ...
+class JSErrorBuilder(Protocol[T_co]):
+    def __call__(self, partial: AnyJSError, /) -> tuple[T_co, AnyJSError]: ...

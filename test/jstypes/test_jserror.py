@@ -25,6 +25,28 @@ def test_JSError_types() -> None:
 def test_JSError_init() -> None:
     jserror = JSError("msg", name=JSErrorName.UriError, stack="...", cause={})
     assert jserror.message == "msg"
-    assert jserror.name == "UriError"
+    assert jserror.name == JSErrorName.UriError
     assert jserror.stack == "..."
     assert jserror.cause == {}
+
+
+def test_JSError_builder() -> None:
+    jserror, state = JSError.builder(
+        JSErrorData(message="msg", name=JSErrorName.UriError, stack="...", cause={})
+    )
+    assert jserror is state
+    state.name = JSErrorName.EvalError
+    state.message = "example"
+    state.cause = 1
+    state.stack = "foo"
+    assert jserror == JSError(
+        "example", name=JSErrorName.EvalError, stack="foo", cause=1
+    )
+
+
+def test_JSError_repr() -> None:
+    jserror = JSError("msg", name=JSErrorName.UriError, stack="...", cause={})
+    assert repr(jserror) == (
+        "JSError(message='msg', name=<JSErrorName.UriError: 'UriError'>, "
+        "stack='...', cause={})"
+    )

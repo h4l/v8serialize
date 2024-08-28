@@ -31,13 +31,12 @@ from typing import (
 )
 
 from v8serialize._values import (
-    AnyJSErrorSettableCause,
+    AnyJSError,
     ArrayBufferConstructor,
     ArrayBufferTransferConstructor,
     ArrayBufferViewConstructor,
     BufferT,
-    JSErrorConstructor,
-    JSErrorSettableCauseConstructor,
+    JSErrorBuilder,
     SharedArrayBufferConstructor,
     SharedArrayBufferId,
     TransferId,
@@ -80,7 +79,7 @@ from v8serialize.jstypes.jsbuffers import (
     JSTypedArray,
     create_view,
 )
-from v8serialize.jstypes.jserror import JSError
+from v8serialize.jstypes.jserror import JSError, JSErrorData
 from v8serialize.jstypes.jsmap import JSMap
 from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject
 from v8serialize.jstypes.jsregexp import JSRegExp
@@ -133,7 +132,7 @@ class ArrayReadResult(NamedTuple):
 
 class JSErrorReadResult(NamedTuple, Generic[T]):
     js_error: T
-    cause: object | None
+    js_error_data: AnyJSError
 
 
 class ReferencedObject(NamedTuple, Generic[T]):
@@ -398,9 +397,29 @@ class ReadableTagStream:
             f"(not a valid error tag)"
         )
 
+    @overload
     def read_js_error(
-        self, ctx: DecodeContext, *, error: JSErrorConstructor[T], tag: bool = False
-    ) -> ReferencedObject[JSErrorReadResult[T]]:
+        self, ctx: DecodeContext, *, error: JSErrorBuilder[T], tag: bool = False
+    ) -> ReferencedObject[T]: ...
+
+    @overload
+    def read_js_error(
+        self, ctx: DecodeContext, *, error: None = None, tag: bool = False
+    ) -> ReferencedObject[AnyJSError]: ...
+
+    def read_js_error(
+        self,
+        ctx: DecodeContext,
+        *,
+        error: JSErrorBuilder[T] | None = None,
+        tag: bool = False,
+    ) -> ReferencedObject[T] | ReferencedObject[AnyJSError]:
+        # The current V8 serialization logic uses a fixed order for error
+        # fields, so we take the same approach. In principle we could read them
+        # in a loop for maximum compatibility with varying serialization
+        # strategies. It seems likely that any other implementations will need
+        # to retain compatibility with V8's fixed order, so this seems fine.
+        error_data: AnyJSError = JSErrorData()
         if tag:
             self.read_tag(SerializationTag.kError)
         etag = self.read_error_tag()
@@ -408,26 +427,54 @@ class ReadableTagStream:
         error_name = JSErrorName.for_error_tag(etag)
         if error_name is not JSErrorName.Error:
             etag = self.read_error_tag()
+        error_data.name = error_name
 
         message: object = None
         if etag is SerializationErrorTag.Message:
             message = ctx.decode_object(tag=self.read_tag(tag=JS_STRING_TAGS))
             etag = self.read_error_tag()
         assert message is None or isinstance(message, str)
+        error_data.message = message
 
+        stack_seen = False
         stack: object = None
         if etag is SerializationErrorTag.Stack:
+            stack_seen = True
             stack = ctx.decode_object(tag=self.read_tag(tag=JS_STRING_TAGS))
             etag = self.read_error_tag()
         assert stack is None or isinstance(stack, str)
+        error_data.stack = stack
 
-        error_obj = error(name=error_name, message=message, stack=stack)
+        error_obj, error_data = (
+            (error_data, error_data) if error is None else error(error_data)
+        )
         serialized_id = self.objects.record_reference(error_obj)
 
         cause: object = None
         if etag is SerializationErrorTag.Cause:
             cause = ctx.decode_object()
             etag = self.read_error_tag()
+        error_data.cause = cause
+
+        # A change in Nov 2023 made a change to the Error [de]serialization that
+        # affects backwards comparability, but didn't change the format version
+        # number: https://chromium-review.googlesource.com/c/v8/v8/+/5012806
+        # Before this change, `stack` was written after `cause` (here), and
+        # V8 read error properties in any order, by looping and reading
+        # whichever field occurred next until End was seen.
+        #
+        # After this change, `stack` was written before the `cause`, (not here),
+        # and V8 would only read error fields in the new order. As a result, V8
+        # after this change could not read errors with stacks serialized by the
+        # old implementation (although the format number was unchanged).
+        #
+        # In order to support both versions, we try to re-read the stack in this
+        # position if we didn't previously read it.
+        if not stack_seen and etag is SerializationErrorTag.Stack:
+            stack = ctx.decode_object(tag=self.read_tag(tag=JS_STRING_TAGS))
+            etag = self.read_error_tag()
+            assert stack is None or isinstance(stack, str)
+            error_data.stack = stack
 
         if etag is not SerializationErrorTag.End:
             self.throw(
@@ -435,7 +482,10 @@ class ReadableTagStream:
                 f"{etag.name}"
             )
 
-        return ReferencedObject(serialized_id, JSErrorReadResult(error_obj, cause))
+        return cast(
+            ReferencedObject[T] | ReferencedObject[AnyJSError],
+            ReferencedObject(serialized_id, error_obj),
+        )
 
     def read_js_date(
         self, *, tz: tzinfo | None = None, tag: bool = False
@@ -953,7 +1003,7 @@ class TagMapper(TagMapperObject):
     js_array_type: JSArrayType
     js_constants: Mapping[ConstantTags, object]
     host_object_deserializer: HostObjectDeserializer[object] | None
-    js_error_type: JSErrorSettableCauseConstructor
+    js_error_builder: JSErrorBuilder[object]
     default_timezone: tzinfo | None
 
     def __init__(
@@ -966,7 +1016,7 @@ class TagMapper(TagMapperObject):
         js_array_type: JSArrayType | None = None,
         js_constants: Mapping[ConstantTags, object] | None = None,
         host_object_deserializer: HostObjectDeserializer[object] | None = None,
-        js_error_type: JSErrorSettableCauseConstructor | None = None,
+        js_error_builder: JSErrorBuilder[object] | None = None,
         default_timezone: tzinfo | None = None,
     ) -> None:
         self.default_tag_mapper = default_tag_mapper
@@ -975,7 +1025,7 @@ class TagMapper(TagMapperObject):
         self.js_object_type = js_object_type or JSObject
         self.js_array_type = js_array_type or JSArray
         self.host_object_deserializer = host_object_deserializer
-        self.js_error_type = js_error_type or JSError
+        self.js_error_builder = js_error_builder or JSError.builder
         self.default_timezone = default_timezone
 
         _js_constants = dict(js_constants) if js_constants is not None else {}
@@ -1189,9 +1239,8 @@ class TagMapper(TagMapperObject):
 
     def deserialize_js_error(
         self, tag: Literal[SerializationTag.kError], ctx: DecodeContext
-    ) -> AnyJSErrorSettableCause:
-        _, (js_error, cause) = ctx.stream.read_js_error(ctx, error=self.js_error_type)
-        js_error.cause = cause
+    ) -> object:
+        _, js_error = ctx.stream.read_js_error(ctx, error=self.js_error_builder)
         return js_error
 
     def deserialize_unsupported_wasm(

@@ -528,7 +528,7 @@ def test_codec_rt_js_error(value: JSErrorData) -> None:
     decode_ctx = DefaultDecodeContext(
         data=encode_ctx.stream.data,
         # Change default error type to deserialize as JSErrorData
-        tag_mappers=[TagMapper(js_error_type=JSErrorData)],
+        tag_mappers=[TagMapper(js_error_builder=JSErrorData.builder)],
     )
 
     encode_ctx.encode_object(value)
