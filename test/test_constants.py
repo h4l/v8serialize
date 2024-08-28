@@ -3,8 +3,9 @@ import re
 from functools import reduce
 
 import pytest
+from packaging.version import Version
 
-from v8serialize.constants import JSRegExpFlag, SerializationErrorTag
+from v8serialize.constants import JSRegExpFlag, SerializationErrorTag, SerializationFeature
 from v8serialize.errors import JSRegExpV8CodecError
 
 
@@ -77,3 +78,13 @@ def test_RegExpFlag__from_python_flags() -> None:
 
 def test_ErrorTag() -> None:
     assert SerializationErrorTag.EvalErrorPrototype == ord("E")
+
+
+def test_SerializationFeature() -> None:
+    assert SerializationFeature.CircularErrorCause.first_v8_version == Version(
+        "12.1.109"
+    )
+    assert (
+        SerializationFeature.CircularErrorCause.first_v8_version
+        > SerializationFeature.MaxCompatibility.first_v8_version
+    )

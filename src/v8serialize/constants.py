@@ -20,6 +20,8 @@ from typing import (
     overload,
 )
 
+from packaging.version import Version
+
 from v8serialize.errors import JSRegExpV8CodecError
 
 kLatestVersion: Final = 15
@@ -370,6 +372,115 @@ class JSErrorName(StrEnum):
             if x.error_tag is error_tag:
                 return x
         return JSErrorName.Error
+
+
+class SerializationFeature(IntFlag):
+    """Changes to serialization within format versions that affect compatibility.
+
+    V8 makes changes to its serialization format without bumping the version
+    number, and these changes affect backwards compatibility by making versions
+    before the change unable to deserialize data encoded by versions with the
+    change.
+
+    (Based on comments in V8's value-serializer.cc code) V8's compatibility
+    policy is that data written by older versions must be deserializable by
+    newer versions, but does not require that data written by newer versions is
+    deserializable by older versions. To remain compatible with older versions,
+    it's necessary to avoid writing data with features newer than the earliest
+    version of V8 that needs to read serialized data.
+
+    In general, only writing features that existed at the point that a new
+    format version was released will ensure that all V8 versions will continue
+    to be able to read the data in the future.
+
+    This flag names the format changes that have occurred, to allow enabling and
+    disabling support for them when encoding data.
+    """
+
+    MaxCompatibility = 0, "10.0.29"
+    """First version with format version v15.
+
+    https://github.com/v8/v8/commit/fc23bc1de29f415f5e3bc080055b67fb3ea19c53
+    """
+
+    RegExpUnicodeSets = 1, "10.7.123"
+    """Enable writing RegExp with the UnicodeSets flag.
+
+    This wasn't a format change in the serializer itself, but versions of V8
+    without support for this flag will not be able to handle RegExp using it.
+
+    The commit adding the `v` flag was made on 2022-09-03:
+    https://github.com/v8/v8/commit/5d4567279e30e1e74588c022861b1d8dfc354a4e
+
+    Note that it seems the flag wasn't correctly validated by the serializer, so
+    initially V8 could deserialize RegExps that incorrectly used `u` and `v`
+    flags at the same time:
+    https://github.com/v8/v8/commit/492a4920f011fa2ceeadfe99022d8d573e7d74a6
+    We consistently enforce this in JSRegExp.
+    """
+
+    ResizableArrayBuffers = 2, "11.0.193"
+    """Enable writing Resizable ArrayBuffers.
+
+    This was introduced in v15 Dec 2022:
+    https://github.com/v8/v8/commit/3f17de8d3aa447cbedd8047efb90086b936f8d63
+
+    V8 Versions supporting v15 before this cannot deserialize values containing
+    resizable ArrayBuffers.
+    """
+
+    CircularErrorCause = 4, "12.1.109"
+    """
+    Support for serializing errors with cause objects referencing the error
+    was added to v15 in Nov 2023:
+    https://github.com/v8/v8/commit/5ff265b202a593d7f45348c2a3f0d4dd5fdff74e
+
+    Versions before this are not able to de-serialize errors linking to
+    themselves in their cause. Also, versions before this change serialize error
+    stack after the cause, whereas versions after this serialize the stack
+    before the cause and are not able to handle the previous stack encoding.
+
+    We are able to support reading both formats ourselves, despite V8 not being
+    able to read errors written before this change (despite the format remaining
+    at 15). The new error layout can be read by V8 versions before the change.
+
+    However we must avoid writing errors with self-referencing cause values
+    unless this feature is enabled.
+    """
+
+    Float16Array = 8, "12.4.133"
+    """
+    Support for encoding typed array views holding Float16 elements.
+
+    Added to v15 2024-03-03:
+    https://github.com/v8/v8/commit/8fcd3f809ba5c71f7a29bc6623c1f93a9eac72fe
+
+    Versions with v15 support before this will not be able to decode data
+    containing such arrays. This added the ArrayBufferViewTag.kFloat16Array
+    constant.
+    """
+
+    __first_v8_version: Version
+
+    if not TYPE_CHECKING:
+
+        def __new__(
+            cls,
+            flag: int,
+            first_v8_version: str,
+        ) -> Self:
+            obj = int.__new__(cls, flag)
+            obj._value_ = flag
+            obj.__first_v8_version = Version(first_v8_version)
+            return obj
+
+    if TYPE_CHECKING:
+
+        def __invert__(self) -> Self: ...
+
+    @property
+    def first_v8_version(self) -> Version:
+        return self.__first_v8_version
 
 
 if TYPE_CHECKING:
