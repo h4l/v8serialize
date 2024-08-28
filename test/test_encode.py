@@ -3,12 +3,18 @@ from datetime import datetime
 
 import pytest
 
-from v8serialize.constants import JSRegExpFlag
+from v8serialize.constants import JSRegExpFlag, SerializationFeature
 from v8serialize.decode import loads
-from v8serialize.encode import dumps
+from v8serialize.encode import (
+    DefaultEncodeContext,
+    FeatureNotEnabledEncodeV8CodecError,
+    UnmappedValueEncodeV8CodecError,
+    WritableTagStream,
+    dumps,
+)
 from v8serialize.jstypes import JSRegExp
 from v8serialize.jstypes.jsarray import JSArray
-from v8serialize.jstypes.jsbuffers import JSArrayBuffer
+from v8serialize.jstypes.jsbuffers import JSArrayBuffer, JSFloat16Array
 from v8serialize.jstypes.jserror import JSError
 from v8serialize.jstypes.jsmap import JSMap
 from v8serialize.jstypes.jsobject import JSObject
@@ -55,3 +61,39 @@ def test_python_collections(py_value: object, js_value: object) -> None:
     deserialized = loads(serialized)
 
     assert deserialized == js_value
+
+
+def test_feature_float16__cannot_write_float16array_when_disabled() -> None:
+    f16 = JSFloat16Array(JSArrayBuffer(b"\x00\xff"))
+
+    ctx = DefaultEncodeContext(
+        stream=WritableTagStream(features=~SerializationFeature.Float16Array)
+    )
+
+    with pytest.raises(
+        UnmappedValueEncodeV8CodecError,
+        match="No object mapper was able to write the value",
+    ):
+        ctx.encode_object(f16)
+
+    with pytest.raises(
+        FeatureNotEnabledEncodeV8CodecError,
+        match="Cannot write Float16Array when the Float16Array "
+        "SerializationFeature is not enabled",
+    ) as exc_info:
+        ctx.stream.write_js_array_buffer_view(f16)
+
+    assert exc_info.value.feature_required == SerializationFeature.Float16Array
+
+
+def test_feature_float16__can_write_float16array_when_enabled() -> None:
+    f16 = JSFloat16Array(JSArrayBuffer(b"\xaa\xbb"))
+
+    ctx = DefaultEncodeContext(
+        stream=WritableTagStream(features=SerializationFeature.Float16Array)
+    )
+
+    ctx.stream.write_header()
+    ctx.encode_object(f16)
+    result = loads(ctx.stream.data)
+    assert result == f16

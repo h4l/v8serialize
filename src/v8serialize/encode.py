@@ -43,9 +43,11 @@ from v8serialize.constants import (
     MAX_ARRAY_LENGTH_REPR,
     UINT32_RANGE,
     ArrayBufferViewFlags,
+    ArrayBufferViewTag,
     ConstantTags,
     JSErrorName,
     SerializationErrorTag,
+    SerializationFeature,
     SerializationTag,
     TagConstraint,
     kLatestVersion,
@@ -100,6 +102,20 @@ class UnmappedValueEncodeV8CodecError(EncodeV8CodecError, ValueError):
     @property  # type: ignore[no-redef]
     def value(self) -> object:
         return self.args[1]
+
+
+@dataclass(init=False)
+class FeatureNotEnabledEncodeV8CodecError(EncodeV8CodecError):
+    """
+    Raised when a WritableTagStream is commanded to write data that requires a
+    `SerializationFeature` that is not enabled.
+    """
+
+    feature_required: SerializationFeature
+
+    def __init__(self, message: str, *, feature_required: SerializationFeature) -> None:
+        super(FeatureNotEnabledEncodeV8CodecError, self).__init__(message)
+        self.feature_required = feature_required
 
 
 def _encode_zigzag(number: int) -> int:
@@ -157,6 +173,10 @@ class WritableTagStream:
         compare=False,
         repr=False,
         init=False,
+    )
+
+    features: SerializationFeature = field(
+        default=SerializationFeature.MaxCompatibility
     )
 
     def __post_init__(self) -> None:
@@ -606,6 +626,15 @@ class WritableTagStream:
     def write_js_array_buffer_view(
         self, buffer_view: AnyArrayBufferView, *, identity: object | None = None
     ) -> None:
+        if (
+            SerializationFeature.Float16Array not in self.features
+            and buffer_view.view_tag == ArrayBufferViewTag.kFloat16Array
+        ):
+            raise FeatureNotEnabledEncodeV8CodecError(
+                "Cannot write Float16Array when the Float16Array "
+                "SerializationFeature is not enabled.",
+                feature_required=SerializationFeature.Float16Array,
+            )
         self.objects.record_reference(buffer_view if identity is None else identity)
         self.write_tag(SerializationTag.kArrayBufferView)
         self.write_varint(buffer_view.view_tag.value)
@@ -970,6 +999,11 @@ class ObjectMapper(ObjectMapperObject):
         ctx: EncodeContext,
         next: SerializeNextFn,
     ) -> None:
+        if (
+            value.view_tag == ArrayBufferViewTag.kFloat16Array
+            and SerializationFeature.Float16Array not in ctx.stream.features
+        ):
+            return next(value)
         ctx.encode_object(value.backing_buffer)
         ctx.stream.write_js_array_buffer_view(value)
 

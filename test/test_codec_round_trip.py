@@ -6,7 +6,12 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from v8serialize.constants import JS_PRIMITIVE_OBJECT_TAGS, JSErrorName, SerializationTag
+from v8serialize.constants import (
+    JS_PRIMITIVE_OBJECT_TAGS,
+    JSErrorName,
+    SerializationFeature,
+    SerializationTag,
+)
 from v8serialize.decode import DefaultDecodeContext, ReadableTagStream, TagMapper
 from v8serialize.encode import (
     DefaultEncodeContext,
@@ -63,7 +68,11 @@ any_theoretical_atomic = any_atomic(allow_theoretical=True)
 @pytest.fixture(scope="session")
 def create_rw_ctx() -> CreateContexts:
     def create_rw_ctx() -> tuple[DefaultEncodeContext, DefaultDecodeContext]:
-        encode_ctx = DefaultEncodeContext(object_mappers=[ObjectMapper()])
+        encode_ctx = DefaultEncodeContext(
+            object_mappers=[ObjectMapper()],
+            # Enable all features
+            stream=WritableTagStream(features=~SerializationFeature.MaxCompatibility),
+        )
         decode_ctx = DefaultDecodeContext(
             data=encode_ctx.stream.data, tag_mappers=[TagMapper()]
         )
