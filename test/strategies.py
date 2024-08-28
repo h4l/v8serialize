@@ -7,7 +7,12 @@ from hypothesis import assume
 from hypothesis import strategies as st
 
 from v8serialize._values import SharedArrayBufferId, TransferId
-from v8serialize.constants import MAX_ARRAY_LENGTH, JSErrorName, JSRegExpFlag
+from v8serialize.constants import (
+    MAX_ARRAY_LENGTH,
+    JSErrorName,
+    JSRegExpFlag,
+    SerializationFeature,
+)
 from v8serialize.jstypes import JSObject, JSUndefined
 from v8serialize.jstypes._equality import same_value_zero
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
@@ -255,8 +260,9 @@ def js_array_buffer_views(
             not allow_nan
             and view_format.view_type.data_format.data_type is DataType.Float
         ):
-            with view.get_buffer() as data:
-                assume(not any(math.isnan(f) for f in data))
+            with view.get_buffer() as buf:
+                assert isinstance(buf, memoryview)
+                assume(not any(math.isnan(f) for f in buf))
 
         return view
 
@@ -394,9 +400,8 @@ def js_sets(
 
 def any_atomic(
     allow_theoretical: bool = False,
-    min_nodejs: Literal[18] | None = None,
+    features: SerializationFeature = ~SerializationFeature.MaxCompatibility,
 ) -> st.SearchStrategy[object]:
-    support_nodejs_18 = min_nodejs is not None and min_nodejs <= 18
     return st.one_of(
         st.integers(),
         # NaN breaks equality when nested inside objects. We test with nan in
@@ -410,8 +415,7 @@ def any_atomic(
         js_regexps(
             sources=st.text() if allow_theoretical else None,
             allow_linear=allow_theoretical,
-            # Node18 doesn't support UnicodeSets flag
-            allow_unicode_sets=not support_nodejs_18,
+            allow_unicode_sets=SerializationFeature.RegExpUnicodeSets in features,
         ),
         # Use naive datetimes for general tests to avoid needing to normalise tz.
         # (Can't serialize tz, so aware datetimes come back as naive or a fixed tz;
@@ -421,8 +425,27 @@ def any_atomic(
     )
 
 
-def non_hashable_atomic(allow_theoretical: bool = False) -> st.SearchStrategy[object]:
-    return st.one_of(js_array_buffers(allow_shared=allow_theoretical))
+def non_hashable_atomic(
+    allow_theoretical: bool = False,
+    features: SerializationFeature = ~SerializationFeature.MaxCompatibility,
+) -> st.SearchStrategy[object]:
+    array_buffers = js_array_buffers(
+        allow_shared=allow_theoretical,
+        allow_resizable=SerializationFeature.ResizableArrayBuffers in features,
+    )
+    if SerializationFeature.Float16Array in features:
+        view_formats = None  # default
+    else:
+        view_formats = st.sampled_from(
+            sorted(
+                set(ArrayBufferViewStructFormat)
+                - {ArrayBufferViewStructFormat.Float16Array}
+            )
+        )
+    return st.one_of(
+        array_buffers,
+        js_array_buffer_views(backing_buffers=array_buffers, view_formats=view_formats),
+    )
 
 
 # https://hypothesis.works/articles/recursive-data/
@@ -430,11 +453,12 @@ def non_hashable_atomic(allow_theoretical: bool = False) -> st.SearchStrategy[ob
 def any_object(
     allow_theoretical: bool = False,
     max_leaves: int = 3,
-    min_nodejs: Literal[18] | None = None,
+    features: SerializationFeature = ~SerializationFeature.MaxCompatibility,
 ) -> st.SearchStrategy[object]:
-    _any_atomic = any_atomic(allow_theoretical=allow_theoretical)
+    _any_atomic = any_atomic(allow_theoretical=allow_theoretical, features=features)
     return st.recursive(
-        _any_atomic | non_hashable_atomic(allow_theoretical=allow_theoretical),
+        _any_atomic
+        | non_hashable_atomic(allow_theoretical=allow_theoretical, features=features),
         lambda children: st.one_of(
             # The rest are recursive types
             st.dictionaries(
