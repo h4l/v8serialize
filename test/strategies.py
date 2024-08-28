@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import cache
 from typing import Final, Literal, Optional, TypeVar, cast, overload
 
 from hypothesis import strategies as st
@@ -148,7 +149,9 @@ def sparse_js_arrays(
     ).map(create_array)
 
 
-fixed_js_array_buffers = st.binary().map(lambda data: JSArrayBuffer(data))
+fixed_js_array_buffers = st.binary(max_size=1024 * 1024 * 2).map(
+    lambda data: JSArrayBuffer(data)
+)
 
 resizable_js_array_buffers = st.builds(
     lambda data, headroom_byte_length: JSArrayBuffer(
@@ -156,7 +159,7 @@ resizable_js_array_buffers = st.builds(
         max_byte_length=min(UINT32_MAX, len(data) + headroom_byte_length),
         resizable=True,
     ),
-    st.binary(),
+    st.binary(max_size=1024 * 1024 * 2),
     uint32s,
 )
 
@@ -273,11 +276,16 @@ def js_error_data(
     )
 
 
-def js_regexp_flags(allow_linear: bool = False) -> st.SearchStrategy[JSRegExpFlag]:
+def js_regexp_flags(
+    allow_linear: bool = False, allow_unicode_sets: bool = True
+) -> st.SearchStrategy[JSRegExpFlag]:
 
     def normalise_unicode_flags(flags: int | JSRegExpFlag) -> JSRegExpFlag:
         if not allow_linear and flags & JSRegExpFlag.Linear:
             flags &= ~JSRegExpFlag.Linear  # unset Linear
+
+        if not allow_unicode_sets:
+            flags &= ~JSRegExpFlag.UnicodeSets
 
         if flags & JSRegExpFlag.Unicode and flags & JSRegExpFlag.UnicodeSets:
             # Need to un-set one of the two as they're incompatible.
@@ -294,9 +302,23 @@ def js_regexp_flags(allow_linear: bool = False) -> st.SearchStrategy[JSRegExpFla
     return st.builds(JSRegExpFlag, values)
 
 
-def js_regexps(allow_linear: bool = False) -> st.SearchStrategy[JSRegExp]:
+# Note that "" is not really a valid source, but we normalise it to "(?:)" which is.
+valid_js_regexp_sources = st.sampled_from(["", r"^\w+$", r"ab+c", r"(\w+)\s(\w+)"])
+
+
+def js_regexps(
+    sources: st.SearchStrategy[str] | None = None,
+    allow_linear: bool = False,
+    allow_unicode_sets: bool = True,
+) -> st.SearchStrategy[JSRegExp]:
+    if sources is None:
+        sources = valid_js_regexp_sources
     return st.builds(
-        JSRegExp, source=st.text(), flags=js_regexp_flags(allow_linear=allow_linear)
+        JSRegExp,
+        source=sources,
+        flags=js_regexp_flags(
+            allow_linear=allow_linear, allow_unicode_sets=allow_unicode_sets
+        ),
     )
 
 
@@ -351,7 +373,11 @@ def js_sets(
     )
 
 
-def any_atomic(allow_theoretical: bool = False) -> st.SearchStrategy[object]:
+def any_atomic(
+    allow_theoretical: bool = False,
+    min_nodejs: Literal[18] | None = None,
+) -> st.SearchStrategy[object]:
+    support_nodejs_18 = min_nodejs is not None and min_nodejs <= 18
     return st.one_of(
         st.integers(),
         # NaN breaks equality when nested inside objects. We test with nan in
@@ -362,7 +388,12 @@ def any_atomic(allow_theoretical: bool = False) -> st.SearchStrategy[object]:
         st.just(None),
         st.just(True),
         st.just(False),
-        js_regexps(allow_linear=allow_theoretical),
+        js_regexps(
+            sources=st.text() if allow_theoretical else None,
+            allow_linear=allow_theoretical,
+            # Node18 doesn't support UnicodeSets flag
+            allow_unicode_sets=not support_nodejs_18,
+        ),
         # Use naive datetimes for general tests to avoid needing to normalise tz.
         # (Can't serialize tz, so aware datetimes come back as naive or a fixed tz;
         # epoch timestamp always matches though.)
@@ -376,7 +407,12 @@ def non_hashable_atomic(allow_theoretical: bool = False) -> st.SearchStrategy[ob
 
 
 # https://hypothesis.works/articles/recursive-data/
-def any_object(allow_theoretical: bool = False) -> st.SearchStrategy[object]:
+@cache
+def any_object(
+    allow_theoretical: bool = False,
+    max_leaves: int = 3,
+    min_nodejs: Literal[18] | None = None,
+) -> st.SearchStrategy[object]:
     _any_atomic = any_atomic(allow_theoretical=allow_theoretical)
     return st.recursive(
         _any_atomic | non_hashable_atomic(allow_theoretical=allow_theoretical),
@@ -414,5 +450,5 @@ def any_object(allow_theoretical: bool = False) -> st.SearchStrategy[object]:
             js_sets(elements=children),
             js_errors(causes=children),
         ),
-        max_leaves=3,  # TODO: tune this, perhaps increase in CI
+        max_leaves=max_leaves,  # TODO: tune this, perhaps increase in CI
     )
