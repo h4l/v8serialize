@@ -45,8 +45,18 @@ def test_JSError_builder() -> None:
 
 
 def test_JSError_repr() -> None:
-    jserror = JSError("msg", name=JSErrorName.UriError, stack="...", cause={})
+    jserror = JSError("msg", name=JSErrorName.UriError, stack="Boom", cause={})
     assert repr(jserror) == (
-        "JSError(message='msg', name=<JSErrorName.UriError: 'UriError'>, "
-        "stack='...', cause={})"
+        "JSError('msg', name=<JSErrorName.UriError: 'UriError'>, stack='Boom', "
+        "cause={})"
+    )
+
+    # repr is recursion safe with cycles in cause
+    jserror.cause = jserror
+    assert (
+        repr(jserror)
+        == """\
+JSError('msg', name=<JSErrorName.UriError: 'UriError'>, stack='Boom', cause=\
+JSError('msg', name=<JSErrorName.UriError: 'UriError'>, stack='Boom', cause=...))\
+"""
     )

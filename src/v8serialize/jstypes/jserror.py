@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Final, Self
 from v8serialize._values import AnyJSError, JSErrorBuilder
 from v8serialize.constants import JSErrorName
 from v8serialize.errors import V8CodecError
+from v8serialize.jstypes import _repr
 from v8serialize.jstypes._v8traceback import (
     format_exception_for_v8 as format_exception_for_v8,  # re-export
 )
@@ -146,6 +147,9 @@ class JSError(AnyJSError, V8CodecError):
     def builder(cls, initial_js_error: AnyJSError, /) -> tuple[Self, Self]:
         js_error = cls.from_js_error(initial_js_error)
         return js_error, js_error
+
+    def __repr__(self) -> str:
+        return _repr.js_repr(self)
 
 
 if TYPE_CHECKING:

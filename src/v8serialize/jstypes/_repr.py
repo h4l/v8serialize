@@ -1,19 +1,42 @@
 from __future__ import annotations
 
+from _thread import get_ident
 from itertools import islice
 from reprlib import Repr
 from typing import TYPE_CHECKING, Any, Collection, Iterable
 
+from v8serialize.constants import JSErrorName
 from v8serialize.jstypes.jsarrayproperties import SparseArrayProperties
 
 if TYPE_CHECKING:
     from v8serialize.jstypes.jsarray import JSArray
+    from v8serialize.jstypes.jserror import JSError
     from v8serialize.jstypes.jsmap import JSMap
     from v8serialize.jstypes.jsobject import JSObject
     from v8serialize.jstypes.jsset import JSSet
 
 
-class JSRepr(Repr):
+class RecursiveReprMixin(Repr):
+    """reprlib.recursive_repr as a Repr class mixin."""
+
+    __repr_running: set[tuple[int, int]] = set()
+
+    def repr1_safe(self, x: object, level: int) -> str:
+        if level <= 0:
+            return self.fillvalue
+        repr_running = self.__repr_running
+        key = id(x), get_ident()
+        if key in repr_running:
+            return self.fillvalue
+        repr_running.add(key)
+        try:
+            result = self.repr1(x, level)
+        finally:
+            repr_running.discard(key)
+        return result
+
+
+class JSRepr(RecursiveReprMixin, Repr):
     """Generate repr strings for JS types.
 
     This implements the repr strings used by JSObject and JSArray, which can be
@@ -208,6 +231,27 @@ class JSRepr(Repr):
         if not obj:
             return "JSSet()"
         return self._repr_iterable(obj, level, "JSSet([", "])", self.maxset)
+
+    def repr_JSError(self, obj: JSError, level: int) -> str:
+        args = [
+            self.repr1_safe(obj.message, level - 1),
+            (
+                None
+                if obj.name == JSErrorName.Error
+                else f"name={self.repr1_safe(obj.name, level - 1)}"
+            ),
+            (
+                None
+                if obj.stack is None
+                else f"stack={self.repr1_safe(obj.stack, level - 1)}"
+            ),
+            (
+                None
+                if obj.cause is None
+                else f"cause={self.repr1_safe(obj.cause, level - 1)}"
+            ),
+        ]
+        return f"JSError({self._join((arg for arg in args if arg), level)})"
 
 
 def _contains_single_piece(pieces: list[str]) -> bool:
