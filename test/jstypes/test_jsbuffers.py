@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from array import array
 from dataclasses import FrozenInstanceError
 from typing import TYPE_CHECKING
 
@@ -15,6 +16,7 @@ from v8serialize.jstypes.jsbuffers import (
     JSArrayBufferTransfer,
     JSDataView,
     JSInt8Array,
+    JSInt32Array,
     JSSharedArrayBuffer,
     JSUint8Array,
 )
@@ -202,3 +204,37 @@ def test_JSArrayBufferView__init__byte_length_is_detected_when_not_resizable() -
     assert JSUint8Array(JSArrayBuffer(b"abcd")).byte_length == 4
     assert JSUint8Array(JSArrayBuffer(b"abcd"), byte_length=3).byte_length == 3
     assert JSUint8Array(JSArrayBuffer(b"abcd", resizable=True)).byte_length == None
+
+
+def test_JSArrayBufferView__eq__follows_data() -> None:
+    # Views are equal if their buffers contain the same data, regardless of the
+    # backing buffer size. This follows the behaviour of memoryview().
+
+    view1 = JSUint8Array(JSArrayBuffer(array("b", [1, 2, 3, 4])), byte_length=2)
+    view2 = JSInt32Array(
+        JSArrayBuffer(array("I", [0, 1, 2, 3])), byte_offset=4, byte_length=8
+    )
+    with (
+        view1.get_buffer_as_memoryview() as data1,
+        view2.get_buffer_as_memoryview() as data2,
+    ):
+        assert data1.tolist() == data2.tolist()
+        assert data1.tobytes() != data2.tobytes()
+
+    assert view1 == view2
+
+
+def test_JSArrayBufferView__hash() -> None:
+    view_ro = JSUint8Array(
+        JSArrayBuffer(array("b", [1, 2, 3, 4]), readonly=True), byte_length=2
+    )
+    view_rw = JSUint8Array(
+        JSArrayBuffer(array("b", [1, 2, 3, 4]), readonly=False), byte_length=2
+    )
+
+    assert view_ro.readonly
+    assert not view_rw.readonly
+
+    assert isinstance(hash(view_ro), int)
+    with pytest.raises(TypeError):
+        hash(view_rw)

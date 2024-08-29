@@ -341,6 +341,30 @@ class JSArrayBufferView(Generic[JSArrayBufferT, AnyBufferT]):
 
         return mv
 
+    def __eq__(self, value: object) -> bool:
+        if self is value:
+            return True
+        if isinstance(value, JSArrayBufferView):
+            try:
+                with (
+                    self.get_buffer_as_memoryview() as self_data,
+                    value.get_buffer_as_memoryview() as value_data,
+                ):
+                    return self_data == value_data
+            except NotImplementedError:
+                pass
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        try:
+            with self.get_buffer_as_memoryview() as data:
+                # data may not be hashable, depending on backing buffer
+                return hash(data)
+        except NotImplementedError:
+            raise TypeError(
+                f"cannot hash {type(self).__name__} with inaccessible buffer"
+            )
+
 
 TypedViewTag = Literal[
     ArrayBufferViewTag.kInt8Array,
