@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import math
 from dataclasses import FrozenInstanceError
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -13,7 +16,11 @@ from v8serialize.jstypes.jsbuffers import (
     JSDataView,
     JSInt8Array,
     JSSharedArrayBuffer,
+    JSUint8Array,
 )
+
+if TYPE_CHECKING:
+    from typing_extensions import Buffer
 
 
 def test_ArrayBufferViewStructFormat() -> None:
@@ -166,3 +173,32 @@ def test_subtype_registration(ab_type: type) -> None:
     # Serialization of ArrayBuffer types relies on them being subclasses of
     # BaseJSArrayBuffer
     assert issubclass(ab_type, BaseJSArrayBuffer)
+
+
+@pytest.mark.parametrize(
+    "buffer,view_ro_arg,view_ro",
+    [
+        (JSArrayBuffer(b"", readonly=True), True, True),
+        (JSArrayBuffer(b"", readonly=True), None, True),
+        (JSArrayBuffer(b"", readonly=False), None, False),
+        (JSArrayBuffer(b"", readonly=False), True, True),
+    ],
+)
+def test_JSArrayBufferView__init__readonly(
+    buffer: Buffer, view_ro_arg: bool | None, view_ro: bool
+) -> None:
+    view = JSUint8Array(buffer, readonly=view_ro_arg)
+    assert view.readonly is view_ro
+
+
+def test_JSArrayBufferView__init__readonly_conflict() -> None:
+    with pytest.raises(
+        ValueError, match=r"Cannot create a writable view of a readonly buffer"
+    ):
+        JSUint8Array(JSArrayBuffer(b"", readonly=True), readonly=False)
+
+
+def test_JSArrayBufferView__init__byte_length_is_detected_when_not_resizable() -> None:
+    assert JSUint8Array(JSArrayBuffer(b"abcd")).byte_length == 4
+    assert JSUint8Array(JSArrayBuffer(b"abcd"), byte_length=3).byte_length == 3
+    assert JSUint8Array(JSArrayBuffer(b"abcd", resizable=True)).byte_length == None

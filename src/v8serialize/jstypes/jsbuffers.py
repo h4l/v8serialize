@@ -250,7 +250,7 @@ class JSArrayBufferView(Generic[JSArrayBufferT, AnyBufferT]):
         view_tag: ArrayBufferViewTag = ArrayBufferViewTag.kUint8Array,
         byte_offset: int = 0,
         byte_length: int | None = None,
-        readonly: bool = False,
+        readonly: bool | None = None,
     ) -> None:
         if byte_offset < 0:
             raise ValueError("byte_offset cannot be negative")
@@ -261,9 +261,30 @@ class JSArrayBufferView(Generic[JSArrayBufferT, AnyBufferT]):
         self.view_format = ArrayBufferViewStructFormat(view_tag)
 
         # Can't access some backing buffers — they may raise NotImplementedError
+        self.readonly = False  # initial value to inspect the backing buffer
+        buffer_readonly: bool
         try:
-            with memoryview(backing_buffer) as mv:
+            with self.get_buffer_as_memoryview() as mv:
                 buffer_readonly = mv.readonly
+                buffer_resizable = not buffer_readonly and (
+                    isinstance(self.backing_buffer, bytearray)
+                    or (
+                        isinstance(self.backing_buffer, JSArrayBuffer)
+                        and self.backing_buffer.resizable
+                    )
+                )
+
+                # Make the default, implied length concrete if the buffer is not
+                # resizable — cannot be length tracking if the buffer is not
+                # resizable.
+                if not buffer_resizable and self.byte_length is None:
+                    self.byte_length = mv.nbytes
+
+                if buffer_readonly and readonly is False:
+                    raise ValueError(
+                        "Cannot create a writable view of a readonly buffer"
+                    )
+
         except NotImplementedError:
             buffer_readonly = True
 
@@ -360,7 +381,7 @@ class JSTypedArray(
         byte_length: (
             int | None
         ) = None,  # TODO: serialized  data uses 0 when flags are resizable
-        readonly: bool = False,
+        readonly: bool | None = None,
     ) -> None:
         super(JSTypedArray, self).__init__(
             backing_buffer,
