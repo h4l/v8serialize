@@ -97,3 +97,40 @@ def test_feature_float16__can_write_float16array_when_enabled() -> None:
     ctx.encode_object(f16)
     result = loads(ctx.stream.data)
     assert result == f16
+
+
+def test_feature_resizable_array_buffers__resizable_arrays_are_written_as_regular_when_disabled() -> (  # noqa: B950
+    None
+):
+    buf = JSArrayBuffer(b"foo", max_byte_length=32)
+    assert buf.resizable
+
+    ctx = DefaultEncodeContext(
+        stream=WritableTagStream(features=~SerializationFeature.ResizableArrayBuffers)
+    )
+
+    ctx.stream.write_header()
+    ctx.encode_object(buf)
+    result = loads(ctx.stream.data)
+    assert isinstance(result, JSArrayBuffer)
+    assert result == JSArrayBuffer(b"foo")
+    assert not result.resizable
+    assert result.max_byte_length == 3
+
+
+def test_feature_resizable_array_buffers__resizable_arrays_are_written_as_resizable_when_enabled() -> (  # noqa: B950
+    None
+):
+    buf = JSArrayBuffer(b"foo", max_byte_length=32)
+    assert buf.resizable
+
+    ctx = DefaultEncodeContext(
+        stream=WritableTagStream(features=SerializationFeature.ResizableArrayBuffers)
+    )
+
+    ctx.stream.write_header()
+    ctx.encode_object(buf)
+    result = loads(ctx.stream.data)
+    assert isinstance(result, JSArrayBuffer)
+    assert result == JSArrayBuffer(b"foo", max_byte_length=32)
+    assert result.resizable

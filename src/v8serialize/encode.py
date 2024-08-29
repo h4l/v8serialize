@@ -568,7 +568,10 @@ class WritableTagStream:
         identity: object | None = None,
     ) -> None:
         if isinstance(buffer, AnyArrayBuffer):
-            if buffer.resizable:
+            if (
+                buffer.resizable
+                and SerializationFeature.ResizableArrayBuffers in self.features
+            ):
                 self._write_js_array_buffer_resizable(buffer, identity=identity)
             else:
                 self._write_js_array_buffer(buffer, identity=identity)
@@ -582,7 +585,10 @@ class WritableTagStream:
     def _write_js_array_buffer(
         self, buffer: AnyArrayBuffer, *, identity: object | None = None
     ) -> None:
-        assert not buffer.resizable
+        assert (
+            not buffer.resizable
+            or SerializationFeature.ResizableArrayBuffers not in self.features
+        )
         self.objects.record_reference(buffer if identity is None else identity)
         self.write_tag(SerializationTag.kArrayBuffer)
         with memoryview(buffer.data) as buffer_data:
