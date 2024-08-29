@@ -1074,6 +1074,7 @@ class TagMapper(TagMapperObject):
         r(SerializationTag.kSharedObject, TagMapper.deserialize_v8_shared_object_reference)  # noqa: B950
         r(SerializationTag.kWasmModuleTransfer, TagMapper.deserialize_unsupported_wasm)
         r(SerializationTag.kWasmMemoryTransfer, TagMapper.deserialize_unsupported_wasm)
+        r(SerializationTag.kHostObject, TagMapper.deserialize_host_object)
 
         # fmt: on
 
