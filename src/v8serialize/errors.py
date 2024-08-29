@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass, fields
 from typing import TYPE_CHECKING, ByteString, cast
 
 if TYPE_CHECKING:
@@ -20,11 +20,12 @@ class V8CodecError(BaseException):  # FIXME: should inherit Exception
         return cast(str, self.args[0])
 
     def __str__(self) -> str:
-        field_values = asdict(self)
-        message = field_values.pop("message")
-        values_fmt = ", ".join(f"{f}={v!r}" for (f, v) in field_values.items())
+        field_values = [
+            (f.name, getattr(self, f.name)) for f in fields(self) if f.name != "message"
+        ]
+        values_fmt = ", ".join(f"{f}={v!r}" for (f, v) in field_values)
 
-        return f"{message}{": " if values_fmt else ""}{values_fmt}"
+        return f"{self.message}{": " if values_fmt else ""}{values_fmt}"
 
 
 # TODO: str/repr needs customising to abbreviate the data field

@@ -26,6 +26,32 @@ def test_v8codecerror_str_with_fields() -> None:
     )
 
 
+@dataclass(init=False)
+class RecursiveV8CodecError(V8CodecError):
+    obj: object
+
+    def __init__(self, message: str, *, obj: object) -> None:
+        super().__init__(message)
+        self.obj = obj
+
+
+def test_v8codecerror_str_with_recursive_dataclass_field() -> None:
+    @dataclass(repr=False, init=False)
+    class RecursiveThing:
+        obj: object
+
+        def __init__(self) -> None:
+            self.obj = self
+
+        def __repr__(self) -> str:
+            return "RecursiveThing()"
+
+    assert (
+        str(RecursiveV8CodecError("Example", obj=RecursiveThing()))
+        == "Example: obj=RecursiveThing()"
+    )
+
+
 def test_v8codecerror_str_without_fields() -> None:
     assert str(V8CodecError("Something went wrong")) == "Something went wrong"
 
