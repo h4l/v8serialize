@@ -375,7 +375,7 @@ class WritableTagStream:
     def write_js_error(
         self, error: AnyJSError, ctx: EncodeContext, *, identity: object | None = None
     ) -> None:
-        self.objects.record_reference(error if identity is None else identity)
+        identity = error if identity is None else identity
         self.write_tag(SerializationTag.kError)
         error_tag = JSErrorName.for_error_name(error.name).error_tag
         if error_tag is not None:  # "Error" is the default and has no tag
@@ -391,7 +391,16 @@ class WritableTagStream:
         cause = error.cause
         if cause is not None:
             self.write_varint(SerializationErrorTag.Cause)
-            ctx.encode_object(cause)
+            if SerializationFeature.CircularErrorCause in self.features:
+                self.objects.record_reference(identity)
+                ctx.encode_object(cause)
+            else:
+                with self.objects.record_acyclic_reference(
+                    identity,
+                    error_detail="Errors cannot reference themselves in their "
+                    "cause without CircularErrorCause enabled",
+                ):
+                    ctx.encode_object(cause)
         self.write_varint(SerializationErrorTag.End)
 
     def write_js_date(self, value: datetime, *, identity: object | None = None) -> None:

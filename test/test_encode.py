@@ -8,9 +8,11 @@ from v8serialize.decode import loads
 from v8serialize.encode import (
     DefaultEncodeContext,
     FeatureNotEnabledEncodeV8CodecError,
+    ObjectMapper,
     UnmappedValueEncodeV8CodecError,
     WritableTagStream,
     dumps,
+    serialize_object_references,
 )
 from v8serialize.jstypes import JSRegExp
 from v8serialize.jstypes.jsarray import JSArray
@@ -20,6 +22,7 @@ from v8serialize.jstypes.jsmap import JSMap
 from v8serialize.jstypes.jsobject import JSObject
 from v8serialize.jstypes.jsset import JSSet
 from v8serialize.jstypes.jsundefined import JSUndefined
+from v8serialize.references import IllegalCyclicReferenceV8CodecError
 
 
 @pytest.mark.parametrize(
@@ -134,3 +137,44 @@ def test_feature_resizable_array_buffers__resizable_arrays_are_written_as_resiza
     assert isinstance(result, JSArrayBuffer)
     assert result == JSArrayBuffer(b"foo", max_byte_length=32)
     assert result.resizable
+
+
+def test_feature_cyclic_error_cause__cyclic_errors_not_allowed_when_disabled() -> None:
+    err = JSError("I broke myself")
+    err.cause = err
+
+    ctx = DefaultEncodeContext(
+        object_mappers=[serialize_object_references, ObjectMapper()],
+        stream=WritableTagStream(features=~SerializationFeature.CircularErrorCause),
+    )
+
+    ctx.stream.write_header()
+    with pytest.raises(
+        IllegalCyclicReferenceV8CodecError,
+    ) as exc_info:
+        ctx.encode_object(err)
+
+    assert (
+        "An illegal cyclic reference was made to an object: Errors cannot "
+        "reference themselves in their cause without CircularErrorCause enabled:"
+        in str(exc_info.value)
+    )
+
+
+def test_feature_cyclic_error_cause__cyclic_errors_are_allowed_when_enabled() -> None:
+    err = JSError("I broke myself")
+    err.cause = err
+
+    ctx = DefaultEncodeContext(
+        object_mappers=[serialize_object_references, ObjectMapper()],
+        stream=WritableTagStream(features=SerializationFeature.CircularErrorCause),
+    )
+
+    ctx.stream.write_header()
+    ctx.encode_object(err)
+    result = loads(ctx.stream.data)
+
+    assert isinstance(result, JSError)
+    assert result == err
+    assert result is not err
+    assert result.cause is result

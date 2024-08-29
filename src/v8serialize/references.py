@@ -1,9 +1,19 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import NewType
+from typing import TYPE_CHECKING, Any, Final, Generator, Generic, NewType, overload
 
 from v8serialize.errors import V8CodecError
+
+if TYPE_CHECKING:
+    from typing_extensions import TypeVar
+
+    T = TypeVar("T", default=object)
+else:
+    from typing import TypeVar
+
+    T = TypeVar("T")
 
 
 @dataclass()
@@ -27,6 +37,17 @@ class SerializedIdOutOfRangeV8CodecError(ObjectReferenceV8CodecError):
     def __init__(self, message: str, serialized_id: SerializedId) -> None:
         super(SerializedIdOutOfRangeV8CodecError, self).__init__(message)
         self.serialized_id = serialized_id
+
+
+@dataclass(slots=True, init=False)
+class IllegalCyclicReferenceV8CodecError(ObjectReferenceV8CodecError):
+    serialized_id: SerializedId
+    obj: object
+
+    def __init__(self, message: str, serialized_id: SerializedId, obj: object) -> None:
+        super(IllegalCyclicReferenceV8CodecError, self).__init__(message)
+        self.serialized_id = serialized_id
+        self.obj = obj
 
 
 SerializedId = NewType("SerializedId", int)
@@ -53,7 +74,11 @@ class SerializedObjectLog:
 
     def get_serialized_id(self, obj: object) -> SerializedId:
         try:
-            return self._serialized_id_by_pyid[id(obj)]
+            serialized_id = self._serialized_id_by_pyid[id(obj)]
+            value = self._object_by_serialized_id[serialized_id]
+            if isinstance(value, ForwardReference):
+                value.get_value()  # throw if not yet set
+            return serialized_id
         except KeyError:
             raise ObjectNotSerializedV8CodecError(
                 "Object has not been recorded in the log", obj=obj
@@ -74,6 +99,33 @@ class SerializedObjectLog:
         self._serialized_id_by_pyid[id(obj)] = serialized_id
         return serialized_id
 
+    @contextmanager
+    def record_acyclic_reference(
+        self, obj: object, *, error_detail: str | None = None
+    ) -> Generator[SerializedId, None, None]:
+        """Create a reference to an object that's initially inaccessible.
+
+        This is a context manager, the object cannot be dereferenced or resolved
+        until the context manager block ends.
+        """
+        forward_reference = ForwardReference()
+        serialized_id = self.record_reference(obj)
+        self.replace_reference(serialized_id, forward_reference)
+
+        try:
+            yield serialized_id
+        except ForwardReferenceError as e:
+            if e.forward_reference is forward_reference:
+                msg = "An illegal cyclic reference was made to an object"
+                if error_detail:
+                    msg = f"{msg}: {error_detail}"
+                raise IllegalCyclicReferenceV8CodecError(
+                    msg, serialized_id=serialized_id, obj=obj
+                ) from e
+            raise
+        finally:
+            forward_reference.set_value(obj)
+
     def replace_reference(self, serialized_id: SerializedId, value: object) -> None:
         if serialized_id != len(self._object_by_serialized_id) - 1:
             raise ValueError(
@@ -82,3 +134,47 @@ class SerializedObjectLog:
                 f"serialized_id={serialized_id}"
             )
         self._object_by_serialized_id[serialized_id] = value
+
+
+_sentinel: Final[Any] = object()
+
+
+class ForwardReferenceError(ReferenceError, Generic[T]):
+    forward_reference: ForwardReference[T]
+
+    def __init__(self, message: str, forward_reference: ForwardReference[T]) -> None:
+        super().__init__(message)
+        self.forward_reference = forward_reference
+
+
+@dataclass(slots=True, init=False)
+class ForwardReference(Generic[T]):
+    __value: T
+
+    @overload
+    def __init__(self) -> None: ...
+
+    @overload
+    def __init__(self, *, value: T) -> None: ...
+
+    def __init__(self, *, value: T = _sentinel) -> None:
+        self.__value = value
+
+    def get_value(self) -> T:
+        value = self.__value
+        if value is _sentinel:
+            raise ForwardReferenceError("ForwardReference has no value set", self)
+        return value
+
+    def set_value(self, value: T) -> None:
+        if self.__value is not _sentinel:
+            raise ForwardReferenceError("ForwardReference already has a value", self)
+        self.__value = value
+
+    def __repr__(self) -> str:
+        if self.__value is _sentinel:
+            return "ForwardReference()"
+        try:
+            return f"ForwardReference(value={self.__value!r})"
+        except RecursionError:
+            return "ForwardReference(value=...)"
