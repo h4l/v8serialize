@@ -658,9 +658,9 @@ class WritableTagStream:
         self.write_uint32(buffer_view.byte_length or 0, tag=None)
 
         flags = ArrayBufferViewFlags(0)
-        if isinstance(buffer_view, JSArrayBuffer) and buffer_view.resizable:
+        if buffer_view.is_backing_buffer_resizable:
             flags |= ArrayBufferViewFlags.IsBufferResizable
-        if buffer_view.byte_length is None:
+        if buffer_view.is_length_tracking:
             flags |= ArrayBufferViewFlags.IsLengthTracking
 
         self.write_varint(flags)
