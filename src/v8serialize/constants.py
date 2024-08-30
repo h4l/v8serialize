@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import functools
 import operator
 import re
 from dataclasses import dataclass
-from enum import IntEnum, IntFlag, StrEnum
+from enum import Enum, IntEnum, IntFlag, StrEnum
 from functools import lru_cache, reduce
 from types import MappingProxyType
 from typing import (
@@ -374,6 +375,19 @@ class JSErrorName(StrEnum):
         return JSErrorName.Error
 
 
+@functools.total_ordering
+class SymbolicVersion(Enum):
+    Unreleased = "Unreleased"
+    """A value greater than all Version instances."""
+
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, Version):
+            return False
+        if isinstance(other, SymbolicVersion):
+            return False
+        return NotImplemented
+
+
 class SerializationFeature(IntFlag):
     """Changes to serialization within format versions that affect compatibility.
 
@@ -448,7 +462,7 @@ class SerializationFeature(IntFlag):
     unless this feature is enabled.
     """
 
-    Float16Array = 8, "12.4.133"
+    Float16Array = 8, SymbolicVersion.Unreleased
     """
     Support for encoding typed array views holding Float16 elements.
 
@@ -460,18 +474,22 @@ class SerializationFeature(IntFlag):
     constant.
     """
 
-    __first_v8_version: Version
+    __first_v8_version: Version | Literal[SymbolicVersion.Unreleased]
 
     if not TYPE_CHECKING:
 
         def __new__(
             cls,
             flag: int,
-            first_v8_version: str,
+            first_v8_version: str | Literal[SymbolicVersion.Unreleased],
         ) -> Self:
             obj = int.__new__(cls, flag)
             obj._value_ = flag
-            obj.__first_v8_version = Version(first_v8_version)
+            obj.__first_v8_version = (
+                Version(first_v8_version)
+                if isinstance(first_v8_version, str)
+                else first_v8_version
+            )
             return obj
 
     if TYPE_CHECKING:
@@ -479,7 +497,7 @@ class SerializationFeature(IntFlag):
         def __invert__(self) -> Self: ...
 
     @property
-    def first_v8_version(self) -> Version:
+    def first_v8_version(self) -> Version | Literal[SymbolicVersion.Unreleased]:
         return self.__first_v8_version
 
 

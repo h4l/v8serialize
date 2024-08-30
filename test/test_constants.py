@@ -5,7 +5,12 @@ from functools import reduce
 import pytest
 from packaging.version import Version
 
-from v8serialize.constants import JSRegExpFlag, SerializationErrorTag, SerializationFeature
+from v8serialize.constants import (
+    JSRegExpFlag,
+    SerializationErrorTag,
+    SerializationFeature,
+    SymbolicVersion,
+)
 from v8serialize.errors import JSRegExpV8CodecError
 
 
@@ -88,3 +93,10 @@ def test_SerializationFeature() -> None:
         SerializationFeature.CircularErrorCause.first_v8_version
         > SerializationFeature.MaxCompatibility.first_v8_version
     )
+
+
+def test_SymbolicVersion() -> None:
+    assert SymbolicVersion.Unreleased > Version("0.0.0")
+    assert Version("0.0.0") < SymbolicVersion.Unreleased
+    assert SymbolicVersion.Unreleased > Version("99999999999.0.0")
+    assert Version("99999999999.0.0") < SymbolicVersion.Unreleased
