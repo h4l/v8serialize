@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import http from "node:http";
-import { env } from "node:process";
+import process, { env } from "node:process";
 import consumers from "node:stream/consumers";
 import { inspect } from "node:util";
 import v8 from "node:v8";
@@ -81,38 +81,43 @@ type HttpResponse = http.ServerResponse<http.IncomingMessage> & {
   req: http.IncomingMessage;
 };
 
-async function handleRequest(
-  req: http.IncomingMessage,
-  res: HttpResponse,
-): Promise<HttpResponse> {
-  const url = new URL(
-    req.url ?? "/",
-    `http://${req.headers.host ?? "localhost"}`,
-  );
-  if (url.pathname != "/") {
-    res.statusCode = 404;
-    return res.end("URL must be /\n");
+class EchoService {
+  constructor(private serverMeta: ServerMeta) {
   }
 
-  if (req.method === "POST") {
-    if (req.headers["content-type"] != "application/x-v8-serialized") {
-      res.statusCode = 400;
-      return res.end("Content-Type must be application/x-v8-serialized\n");
+  async handleRequest(
+    req: http.IncomingMessage,
+    res: HttpResponse,
+  ): Promise<HttpResponse> {
+    const url = new URL(
+      req.url ?? "/",
+      `http://${req.headers.host ?? "localhost"}`,
+    );
+    if (url.pathname != "/") {
+      res.statusCode = 404;
+      return res.end("URL must be /\n");
     }
 
-    const body = await consumers.buffer(req);
-    const result = reSerialize(body);
+    if (req.method === "POST") {
+      if (req.headers["content-type"] != "application/x-v8-serialized") {
+        res.statusCode = 400;
+        return res.end("Content-Type must be application/x-v8-serialized\n");
+      }
 
-    logReserialization(body, result);
+      const body = await consumers.buffer(req);
+      const result = reSerialize(body);
 
-    res.writeHead(200, { "Content-Type": "application/json" });
-    return res.end(JSON.stringify(result));
-  } else if (req.method === "GET") {
-    res.writeHead(200, { "Content-Type": "text/plain" });
-    return res.end("POST V8-serialized data to /\n");
-  } else {
-    res.writeHead(405);
-    return res.end("Method not allowed\n");
+      logReserialization(body, result);
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify(result));
+    } else if (req.method === "GET") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify(this.serverMeta, undefined, 2));
+    } else {
+      res.writeHead(405);
+      return res.end("Method not allowed\n");
+    }
   }
 }
 
@@ -173,20 +178,132 @@ function reSerialize(payload: Buffer): ReSerializeResult {
   };
 }
 
-const server = http.createServer(async (req, res) => {
-  try {
-    await handleRequest(req, res);
-  } catch (e) {
-    console.error(`Failed to handle request`, e);
-    if (!res.headersSent) {
-      res.writeHead(500, "Internal server error");
-    }
-    res.end();
-  }
-});
+export enum SerializationFeature {
+  CircularErrorCause = "CircularErrorCause",
+  Float16Array = "Float16Array",
+  RegExpUnicodeSets = "RegExpUnicodeSets",
+  ResizableArrayBuffers = "ResizableArrayBuffers",
+}
 
-server.listen(settings.listen.port, settings.listen.hostname, () => {
-  if (settings.log.listen) {
-    console.error(`Listening on ${inspect(server.address())}`);
-  }
-});
+export const serializationFeatures = Object.keys(
+  SerializationFeature,
+) as SerializationFeature[];
+serializationFeatures.sort();
+
+export type SerializationFeatureDetectors = Record<
+  SerializationFeature,
+  () => boolean
+>;
+
+export const serializationFeatureDetectors: SerializationFeatureDetectors = {
+  [SerializationFeature.RegExpUnicodeSets]() {
+    try {
+      new RegExp(".*", "v");
+      return true;
+    } catch (_) {
+      return false;
+    }
+  },
+  [SerializationFeature.CircularErrorCause]() {
+    const value = new Error();
+    value.cause = value;
+    try {
+      const result = v8.deserialize(v8.serialize(value));
+      return result instanceof Error && result.cause === result;
+    } catch (_) {
+      return false;
+    }
+  },
+  [SerializationFeature.Float16Array]() {
+    const Float16Array = (globalThis as Record<string, unknown>)
+      .Float16Array as Float64ArrayConstructor;
+
+    if (!Float16Array) return false;
+    try {
+      const result = v8.deserialize(v8.serialize(Float16Array.from([1])));
+      return result instanceof Float16Array && result[0] === 1;
+    } catch (_) {
+      return false;
+    }
+  },
+  [SerializationFeature.ResizableArrayBuffers]() {
+    // Note that node's custom array serialization applies to views and Buffer,
+    // ArrayBuffer is serialized normally.
+    try {
+      const value = new ArrayBuffer(
+        ...[2, { maxByteLength: 8 }] as unknown as [number],
+      );
+      const result = v8.deserialize(v8.serialize(value));
+      return result instanceof ArrayBuffer &&
+        !!result["resizable" as keyof ArrayBuffer];
+    } catch (_) {
+      return false;
+    }
+  },
+};
+
+export function getSupportedSerializationFeatures(
+  detectors: SerializationFeatureDetectors = serializationFeatureDetectors,
+): Map<
+  SerializationFeature,
+  boolean
+> {
+  return new Map(
+    serializationFeatures.map((feat) => [feat, detectors[feat]()] as const),
+  );
+}
+
+export type ServerMeta = {
+  name: string;
+  info: string;
+  versions: Record<string, string>;
+  supportedSerializationFeatures: Record<SerializationFeature, boolean>;
+};
+
+export function getServerMeta(): ServerMeta {
+  const supportedSerializationFeatures = getSupportedSerializationFeatures();
+
+  return {
+    name: "v8serialize-echoserver",
+    info: "POST V8-serialized data to /",
+    versions: Object.fromEntries(
+      Object.entries(process.versions).filter((
+        entry,
+      ): entry is [string, string] => typeof entry[1] === "string"),
+    ),
+    supportedSerializationFeatures: Object.fromEntries(
+      supportedSerializationFeatures.entries(),
+    ) as Record<SerializationFeature, boolean>,
+  };
+}
+
+export function main() {
+  const serverMeta = getServerMeta();
+  console.error(JSON.stringify(serverMeta, undefined, 2));
+  const echoService = new EchoService(serverMeta);
+
+  const server = http.createServer(async (req, res) => {
+    try {
+      await echoService.handleRequest(req, res);
+    } catch (e) {
+      console.error(`Failed to handle request`, e);
+      if (!res.headersSent) {
+        res.writeHead(500, "Internal server error");
+      }
+      res.end();
+    }
+  });
+
+  server.listen(settings.listen.port, settings.listen.hostname, () => {
+    if (settings.log.listen) {
+      console.error(
+        JSON.stringify({ "status": "Listening", "on": server.address() }),
+      );
+    }
+  });
+  return server;
+}
+
+if (import.meta.main) {
+  main();
+}

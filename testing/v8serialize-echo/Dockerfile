@@ -20,14 +20,13 @@ FROM denoland/deno:bin-${DNT_DENO_VERSION:-latest} AS dnt-deno
 
 
 FROM node:${DNT_NODE_VERSION:-latest} AS npm-package
-ARG ECHOSERVER_VERSION
 
 COPY --from=dnt-deno /deno /usr/local/bin/deno
 
 WORKDIR /build
 
 COPY . ./
-RUN deno -A scripts/build_npm.ts "${ECHOSERVER_VERSION:?}"
+RUN deno -A scripts/build_npm.ts
 RUN npm pack ./npm
 
 
@@ -50,4 +49,4 @@ EXPOSE 8000
 USER node
 
 ENTRYPOINT ["/sbin/tini", "--", "docker-entrypoint.sh"]
-CMD ["-e", "require('v8serialize-echoserver')"]
+CMD ["-e", "require('v8serialize-echoserver').main()"]
