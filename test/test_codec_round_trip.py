@@ -496,14 +496,12 @@ def test_codec_rt_nodejs_array_buffer_host_object(
     # buffer that the view references, so the rest of the initial buffer is not
     # present in the result.
     assert result.byte_offset == 0
-    assert result.is_length_tracking
-    assert result.byte_length is None
+    assert not result.is_length_tracking
+    assert result.byte_length == value.byte_length
     assert type(result) is type(value)
-    assert result.view_format == value.view_format
+    assert result.data_format == value.data_format
     assert result.view_tag == value.view_tag
-    assert bytes(result.get_buffer_as_memoryview()) == bytes(
-        value.get_buffer_as_memoryview()
-    )
+    assert result == value
     assert decode_ctx.stream.eof
 
 

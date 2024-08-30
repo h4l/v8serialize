@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import math
+import re
 from array import array
 from dataclasses import FrozenInstanceError
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import pytest
 
@@ -11,14 +12,20 @@ from v8serialize.constants import ArrayBufferViewTag
 from v8serialize.jstypes.jsbuffers import (
     ArrayBufferViewStructFormat,
     BaseJSArrayBuffer,
+    BoundsJSArrayBufferError,
     ByteLengthJSArrayBufferError,
+    DataType,
+    ItemSizeJSArrayBufferError,
     JSArrayBuffer,
     JSArrayBufferTransfer,
+    JSArrayBufferView,
     JSDataView,
     JSInt8Array,
     JSInt32Array,
     JSSharedArrayBuffer,
     JSUint8Array,
+    JSUint16Array,
+    JSUint32Array,
 )
 
 if TYPE_CHECKING:
@@ -26,17 +33,19 @@ if TYPE_CHECKING:
 
 
 def test_ArrayBufferViewStructFormat() -> None:
-    assert ArrayBufferViewStructFormat.Int16Array.struct_format == "h"
-    assert ArrayBufferViewStructFormat.Int16Array.itemsize == 2
+    assert ArrayBufferViewStructFormat.Int16Array.view_type.data_format.format == "h"
+    assert ArrayBufferViewStructFormat.Int16Array.view_type.data_format.byte_length == 2
 
     sf = ArrayBufferViewStructFormat(ArrayBufferViewTag.kBigUint64Array)
     assert sf.view_tag is ArrayBufferViewTag.kBigUint64Array
-    assert sf.itemsize == 8
+    assert sf.view_type.data_format.byte_length == 8
 
     hash(ArrayBufferViewStructFormat.Int8Array)
 
     with pytest.raises(FrozenInstanceError):
-        ArrayBufferViewStructFormat.Int8Array.struct_format = "c"
+        ArrayBufferViewStructFormat.Int8Array.view_type = (
+            ArrayBufferViewStructFormat.Uint8Array.view_type
+        )
 
 
 def test_int8array() -> None:
@@ -59,7 +68,7 @@ def test_dataview() -> None:
     view = JSDataView(buffer)
 
     assert view.view_tag is ArrayBufferViewTag.kDataView
-    assert view.view_format is ArrayBufferViewStructFormat.DataView
+    assert view.data_format.data_type == DataType.Bytes
 
     with view.get_buffer() as buf:
         buf.set_float64(8, math.pi)
@@ -187,32 +196,123 @@ def test_subtype_registration(ab_type: type) -> None:
     ],
 )
 def test_JSArrayBufferView__init__readonly(
-    buffer: Buffer, view_ro_arg: bool | None, view_ro: bool
+    buffer: Buffer, view_ro_arg: Literal[True] | None, view_ro: bool
 ) -> None:
     view = JSUint8Array(buffer, readonly=view_ro_arg)
-    assert view.readonly is view_ro
+    with view.get_buffer() as buf:
+        assert buf.readonly is view_ro
 
 
-def test_JSArrayBufferView__init__readonly_conflict() -> None:
-    with pytest.raises(
-        ValueError, match=r"Cannot create a writable view of a readonly buffer"
-    ):
-        JSUint8Array(JSArrayBuffer(b"", readonly=True), readonly=False)
+def test_JSArrayBufferView__init__readonly_cannot_be_false() -> None:
+    with pytest.raises(ValueError, match=r"readonly must be True or None"):
+        JSUint8Array(JSArrayBuffer(b""), readonly=False)  # type: ignore[arg-type]
 
 
 def test_JSArrayBufferView__init__byte_length_is_detected_when_not_resizable() -> None:
-    assert JSUint8Array(JSArrayBuffer(b"abcd")).byte_length == 4
-    assert JSUint8Array(JSArrayBuffer(b"abcd"), byte_length=3).byte_length == 3
-    assert JSUint8Array(JSArrayBuffer(b"abcd", resizable=True)).byte_length == None
+    fixed = JSUint16Array(JSArrayBuffer(b"aabbccdd"))
+    assert not fixed.is_length_tracking
+    assert fixed.item_length is None
+    assert fixed.byte_length == 8
+
+    fixed_exact = JSUint16Array(JSArrayBuffer(b"aabbccdd"), item_length=3)
+    assert not fixed_exact.is_length_tracking
+    assert fixed_exact.item_length == 3
+    assert fixed_exact.byte_length == 6
+
+    resizable = JSUint8Array(JSArrayBuffer(b"aabbccdd", resizable=True))
+    assert resizable.backing_buffer.resizable
+    assert resizable.is_length_tracking
+    assert resizable.item_length is None
+    assert resizable.byte_length == 8
+
+
+def test_JSArrayBufferView__from_bytes() -> None:
+    with pytest.raises(
+        ItemSizeJSArrayBufferError,
+        match=r"byte_offset must be a multiple of the itemsize",
+    ) as err1:
+        JSUint32Array.from_bytes(b"1234", byte_offset=3)
+    assert err1.value.itemsize == 4
+    assert err1.value.byte_offset == 3
+    assert err1.value.byte_length is None
+
+    with pytest.raises(
+        ItemSizeJSArrayBufferError,
+        match=r"byte_length must be a multiple of the itemsize",
+    ) as err1:
+        JSUint32Array.from_bytes(b"1234", byte_length=5)
+    assert err1.value.itemsize == 4
+    assert err1.value.byte_offset == 0
+    assert err1.value.byte_length == 5
+
+    with pytest.raises(
+        BoundsJSArrayBufferError,
+        match=r"backing_buffer byte length must be a multiple of the itemsize "
+        r"when the view does not have an explicit byte_length",
+    ) as err2:
+        JSUint32Array.from_bytes(b"12345")
+    assert err2.value.byte_offset == 0
+    assert err2.value.byte_length is None
+    assert err2.value.buffer_byte_length == 5
+
+    with pytest.raises(
+        BoundsJSArrayBufferError,
+        match=r"byte_offset is not within the bounds of the backing_buffer",
+    ) as err2:
+        JSUint32Array.from_bytes(b"1234", byte_offset=8)
+    assert err2.value.byte_offset == 8
+    assert err2.value.byte_length is None
+    assert err2.value.buffer_byte_length == 4
+
+    with pytest.raises(
+        BoundsJSArrayBufferError,
+        match=r"byte_offset is not within the bounds of the backing_buffer",
+    ) as err2:
+        JSUint32Array.from_bytes(b"1234", byte_offset=4, byte_length=4)
+    assert err2.value.byte_offset == 4
+    assert err2.value.byte_length == 4
+    assert err2.value.buffer_byte_length == 4
+
+    view = JSUint32Array.from_bytes(b"1234")
+    assert view.byte_offset == 0
+    assert view.byte_length == 4
+
+    view = JSUint32Array.from_bytes(b"1234", byte_offset=4)
+    assert view.byte_offset == 4
+    assert view.byte_length == 0
+
+    view = JSUint32Array.from_bytes(b"1234" * 3, byte_offset=4, byte_length=8)
+    assert view.byte_offset == 4
+    assert view.byte_length == 8
+
+
+def test_JSArrayBufferView__eq__length_tracking_resizable() -> None:
+    view1 = JSUint8Array.from_bytes(b"1234")
+    assert not (view1.is_length_tracking or view1.is_backing_buffer_resizable)
+
+    resizable_buf = JSArrayBuffer(b"1234", max_byte_length=8)
+    assert resizable_buf.resizable
+
+    view2 = JSUint8Array.from_bytes(resizable_buf)
+    assert view2.is_length_tracking and view2.is_backing_buffer_resizable
+
+    view2 = JSUint8Array.from_bytes(resizable_buf, byte_length=4)
+    assert not view2.is_length_tracking and view2.is_backing_buffer_resizable
 
 
 def test_JSArrayBufferView__eq__follows_data() -> None:
     # Views are equal if their buffers contain the same data, regardless of the
     # backing buffer size. This follows the behaviour of memoryview().
+    JSUint8Array.data_format.format
 
-    view1 = JSUint8Array(JSArrayBuffer(array("b", [1, 2, 3, 4])), byte_length=2)
+    view1 = JSUint8Array(
+        JSArrayBuffer(array(JSUint8Array.data_format.format, [1, 2, 3, 4])),
+        item_length=2,
+    )
     view2 = JSInt32Array(
-        JSArrayBuffer(array("I", [0, 1, 2, 3])), byte_offset=4, byte_length=8
+        JSArrayBuffer(array(JSInt32Array.data_format.format, [0, 1, 2, 3])),
+        item_offset=1,
+        item_length=2,
     )
     with (
         view1.get_buffer_as_memoryview() as data1,
@@ -226,15 +326,54 @@ def test_JSArrayBufferView__eq__follows_data() -> None:
 
 def test_JSArrayBufferView__hash() -> None:
     view_ro = JSUint8Array(
-        JSArrayBuffer(array("b", [1, 2, 3, 4]), readonly=True), byte_length=2
+        JSArrayBuffer(
+            array(JSUint8Array.data_format.format, [1, 2, 3, 4]), readonly=True
+        ),
+        item_length=2,
     )
     view_rw = JSUint8Array(
-        JSArrayBuffer(array("b", [1, 2, 3, 4]), readonly=False), byte_length=2
+        JSArrayBuffer(
+            array(JSUint8Array.data_format.format, [1, 2, 3, 4]), readonly=False
+        ),
+        item_length=2,
     )
 
-    assert view_ro.readonly
-    assert not view_rw.readonly
+    with view_ro.get_buffer() as buf:
+        assert buf.readonly
+    with view_rw.get_buffer() as buf:
+        assert not buf.readonly
 
     assert isinstance(hash(view_ro), int)
-    with pytest.raises(TypeError):
+    with pytest.raises((TypeError, ValueError)):
         hash(view_rw)
+
+
+@pytest.mark.parametrize(
+    "view,expected_repr",
+    [
+        (JSUint8Array(b""), "JSUint8Array(b'')"),
+        (JSUint32Array(memoryview(b"")), "JSUint32Array(<memory at ...>)"),
+        (
+            JSDataView(JSArrayBuffer(bytes(b"abcd"))),
+            # TODO: make the JSArrayBuffer repr match __init__
+            "JSDataView(JSArrayBuffer(_data=bytearray(b'abcd'), "
+            "max_byte_length=4, resizable=False))",
+        ),
+    ],
+)
+def test_JSArrayBufferView__repr(view: JSArrayBufferView, expected_repr: str) -> None:
+    assert match_wildcard(expected_repr, repr(view))
+
+
+def match_wildcard(
+    pattern: str,
+    subject: str,
+    wildcard: str = "...",
+    wildcard_pattern: str = ".+",
+    full_match: bool = True,
+    flags: re.RegexFlag = re.NOFLAG,
+) -> re.Match[str] | None:
+    regex = wildcard_pattern.join((re.escape(p) for p in pattern.split(wildcard)))
+    if full_match:
+        regex = f"^{regex}$"
+    return re.search(regex, subject, flags=flags)
