@@ -1,7 +1,9 @@
+import math
 from datetime import datetime
 from functools import cache
 from typing import Final, Literal, Optional, TypeVar, cast, overload
 
+from hypothesis import assume
 from hypothesis import strategies as st
 
 from v8serialize._values import SharedArrayBufferId, TransferId
@@ -14,6 +16,7 @@ from v8serialize.jstypes.jsarray import JSArray
 from v8serialize.jstypes.jsarrayproperties import JSHole
 from v8serialize.jstypes.jsbuffers import (
     ArrayBufferViewStructFormat,
+    DataType,
     JSArrayBuffer,
     JSArrayBufferTransfer,
     JSDataView,
@@ -176,7 +179,8 @@ array_buffer_transfers = uint32s.map(
 @overload
 def js_array_buffers(
     *,
-    allow_shared: Literal[False] = False,
+    allow_shared: Literal[False] = ...,
+    allow_resizable: bool = ...,
 ) -> st.SearchStrategy[JSArrayBuffer]: ...
 
 
@@ -184,19 +188,21 @@ def js_array_buffers(
 def js_array_buffers(
     *,
     allow_shared: Literal[True] | bool,
+    allow_resizable: bool = ...,
 ) -> st.SearchStrategy[JSArrayBuffer | JSArrayBufferTransfer | JSSharedArrayBuffer]: ...
 
 
 def js_array_buffers(
     *,
     allow_shared: bool = False,
+    allow_resizable: bool = True,
 ) -> st.SearchStrategy[JSArrayBuffer | JSArrayBufferTransfer | JSSharedArrayBuffer]:
     strategies: list[
         st.SearchStrategy[JSArrayBuffer | JSArrayBufferTransfer | JSSharedArrayBuffer]
-    ] = [
-        fixed_js_array_buffers,
-        resizable_js_array_buffers,
-    ]
+    ] = [fixed_js_array_buffers]
+
+    if allow_resizable:
+        strategies.append(resizable_js_array_buffers)
     if allow_shared:
         strategies.extend([shared_array_buffers, array_buffer_transfers])
     return st.one_of(*strategies)
@@ -208,6 +214,7 @@ def js_array_buffer_views(
         | None
     ) = None,
     view_formats: st.SearchStrategy[ViewFormat] | None = None,
+    allow_nan: bool = False,
 ) -> st.SearchStrategy[JSTypedArray | JSDataView]:
     if backing_buffers is None:
         backing_buffers = js_array_buffers()
@@ -228,18 +235,30 @@ def js_array_buffer_views(
                 st.integers(min_value=0, max_value=2**32 - 1)
             )
 
-        byte_offset = data.draw(st.integers(min_value=0, max_value=buffer_byte_length))
+        itemsize = view_format.view_type.data_format.byte_length
+        max_item_length = buffer_byte_length // itemsize
+        item_offset = data.draw(
+            st.integers(min_value=0, max_value=buffer_byte_length // itemsize)
+        )
         item_length = data.draw(
-            st.integers(
-                min_value=0,
-                max_value=(buffer_byte_length - byte_offset) // view_format.itemsize,
-            )
+            st.integers(min_value=0, max_value=max_item_length - item_offset)
+            | st.none()
         )
-        byte_length = item_length * view_format.itemsize
 
-        return view_format.view_type(
-            backing_buffer, byte_offset=byte_offset, byte_length=byte_length
+        view = view_format.view_type(
+            backing_buffer, item_offset=item_offset, item_length=item_length
         )
+
+        # because the buffer data is random, it is possible for it to contain
+        # NaN values, which screw up equality.
+        if (
+            not allow_nan
+            and view_format.view_type.data_format.data_type is DataType.Float
+        ):
+            with view.get_buffer() as data:
+                assume(not any(math.isnan(f) for f in data))
+
+        return view
 
     return st.builds(
         create, data=st.data(), view_format=view_formats, backing_buffer=backing_buffers
