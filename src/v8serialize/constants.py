@@ -492,6 +492,15 @@ class SerializationFeature(IntFlag):
             )
             return obj
 
+    @classmethod
+    @functools.lru_cache  # noqa: B019 # OK because static method
+    def for_name(cls, name: str, /) -> SerializationFeature:
+        # Allow looking up flags by name
+        for value in SerializationFeature:
+            if value._name_ == name:
+                return value
+        raise LookupError(name)
+
     if TYPE_CHECKING:
 
         def __invert__(self) -> Self: ...

@@ -95,6 +95,16 @@ def test_SerializationFeature() -> None:
     )
 
 
+def test_SerializationFeature__for_name() -> None:
+    assert (
+        SerializationFeature.for_name("CircularErrorCause")
+        is SerializationFeature.CircularErrorCause
+    )
+
+    with pytest.raises(LookupError, match=r"^Frob$"):
+        SerializationFeature.for_name("Frob")
+
+
 def test_SymbolicVersion() -> None:
     assert SymbolicVersion.Unreleased > Version("0.0.0")
     assert Version("0.0.0") < SymbolicVersion.Unreleased
