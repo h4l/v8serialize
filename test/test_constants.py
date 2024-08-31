@@ -105,6 +105,34 @@ def test_SerializationFeature__for_name() -> None:
         SerializationFeature.for_name("Frob")
 
 
+@pytest.mark.parametrize(
+    "v8_version, features",
+    [
+        (Version("0"), None),
+        (Version("10.0.28"), None),
+        (Version("10.0.28"), None),
+        (Version("10.0.29"), SerializationFeature.MaxCompatibility),
+        (Version("10.6.0"), SerializationFeature.MaxCompatibility),
+        (Version("10.7.123"), SerializationFeature.RegExpUnicodeSets),
+        ("10.7.123", SerializationFeature.RegExpUnicodeSets),
+        (
+            Version("15.0.0"),
+            # Float16Array cannot be included as its version is not released
+            ~SerializationFeature.MaxCompatibility - SerializationFeature.Float16Array,
+        ),
+        (SymbolicVersion.Unreleased, ~SerializationFeature.MaxCompatibility),
+    ],
+)
+def test_SerializationFeature__supported_by(
+    v8_version: Version, features: SerializationFeature | None
+) -> None:
+    if features is None:
+        with pytest.raises(LookupError, match=r"V8 version .+ is earlier than"):
+            SerializationFeature.supported_by(v8_version=v8_version)
+    else:
+        assert SerializationFeature.supported_by(v8_version=v8_version) == features
+
+
 def test_SymbolicVersion() -> None:
     assert SymbolicVersion.Unreleased > Version("0.0.0")
     assert Version("0.0.0") < SymbolicVersion.Unreleased

@@ -15,6 +15,7 @@ from typing import (
     Literal,
     Mapping,
     Self,
+    TypeAlias,
     TypeGuard,
     TypeVar,
     cast,
@@ -23,6 +24,7 @@ from typing import (
 
 from packaging.version import Version
 
+from v8serialize._versions import parse_lenient_version
 from v8serialize.errors import JSRegExpV8CodecError
 
 kLatestVersion: Final = 15
@@ -388,6 +390,9 @@ class SymbolicVersion(Enum):
         return NotImplemented
 
 
+UnreleasedVersion: TypeAlias = Literal[SymbolicVersion.Unreleased]
+
+
 class SerializationFeature(IntFlag):
     """Changes to serialization within format versions that affect compatibility.
 
@@ -474,14 +479,14 @@ class SerializationFeature(IntFlag):
     constant.
     """
 
-    __first_v8_version: Version | Literal[SymbolicVersion.Unreleased]
+    __first_v8_version: Version | UnreleasedVersion
 
     if not TYPE_CHECKING:
 
         def __new__(
             cls,
             flag: int,
-            first_v8_version: str | Literal[SymbolicVersion.Unreleased],
+            first_v8_version: str | UnreleasedVersion,
         ) -> Self:
             obj = int.__new__(cls, flag)
             obj._value_ = flag
@@ -506,8 +511,40 @@ class SerializationFeature(IntFlag):
         def __invert__(self) -> Self: ...
 
     @property
-    def first_v8_version(self) -> Version | Literal[SymbolicVersion.Unreleased]:
+    def first_v8_version(self) -> Version | UnreleasedVersion:
         return self.__first_v8_version
+
+    @classmethod
+    @functools.lru_cache  # noqa: B019 # OK because static method
+    def supported_by(
+        cls, *, v8_version: Version | UnreleasedVersion | str
+    ) -> SerializationFeature:
+        """Get the optional serialization features supported by a V8 version or newer.
+
+        Versions of V8 newer than the specified `v8_version` are expected to
+        continue to be able to read data serialized with these features, because
+        V8 requires that changes to its serialization allow newer versions to
+        read data written by older versions. See the
+        [information in V8's serializer code for details][v8-compat-comment].
+
+        [v8-compat-comment]: https://github.com/v8/v8/blob/\
+42d57fc8309677f13bfb4a443723a4c7306ec1b7/src/objects/value-serializer.cc#L51
+        """
+        if isinstance(v8_version, str):
+            v8_version = parse_lenient_version(v8_version)
+
+        if v8_version < cls.MaxCompatibility.first_v8_version:
+            raise LookupError(
+                f"V8 version {v8_version} is earlier than the first V8 version "
+                f"that supports serialization format {kLatestVersion}. "
+                f"v8_version must be >= {cls.MaxCompatibility.first_v8_version}"
+            )
+
+        features = cls.MaxCompatibility
+        for feature in cls:
+            if feature.first_v8_version <= v8_version:
+                features |= feature
+        return features
 
 
 if TYPE_CHECKING:

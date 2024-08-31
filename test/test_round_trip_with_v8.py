@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import subprocess
 import warnings
 from base64 import b64decode
@@ -15,8 +14,9 @@ import httpx
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
-from packaging.version import VERSION_PATTERN, InvalidVersion, Version
+from packaging.version import InvalidVersion, Version
 
+from v8serialize._versions import parse_lenient_version
 from v8serialize.constants import SerializationFeature
 from v8serialize.decode import AnyTagMapper, TagMapper, loads
 from v8serialize.encode import DefaultEncodeContext, ObjectMapper, WritableTagStream
@@ -29,35 +29,6 @@ if TYPE_CHECKING:
     from _pytest.mark import ParameterSet
 
 MIN_ECHOSERVER_VERSION: Final = Version("0.2.0")
-
-LENIENT_VERSION_PATTERN = re.compile(
-    f"^(?P<version>{VERSION_PATTERN})(?:-(?P<suffix>\\S+))?$", re.VERBOSE
-)
-
-
-def parse_lenient_version(version: str) -> Version:
-    """
-    >>> parse_lenient_version("12.9.202.2-rusty")
-    <Version('12.9.202.2+rusty')>
-    >>> parse_lenient_version("12.9.202.2")
-    <Version('12.9.202.2')>
-    >>> parse_lenient_version("  afsdf ")  # doctest: +IGNORE_EXCEPTION_DETAIL
-    Traceback (most recent call last):
-    packaging.version.InvalidVersion:   afsdf
-    """
-    match = LENIENT_VERSION_PATTERN.match(version)
-    if not match:
-        raise InvalidVersion(version)
-
-    # We allow trailing local part starting with a dash. The Python version
-    # expects a local part to start with a + and contain anything, but doesn't
-    # allow a - suffix. Note that if the default pattern's local part matches,
-    # we must have no suffix, as local will have consumed it all.
-    lenient_suffix = match.group("suffix")
-    if lenient_suffix:
-        assert not match.group("local")
-        return Version(f"{match.group('version')}+{lenient_suffix}")
-    return Version(version)
 
 
 def get_echoserver_urls() -> Mapping[str, httpx.URL]:
