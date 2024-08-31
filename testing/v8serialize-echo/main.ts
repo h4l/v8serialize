@@ -5,6 +5,8 @@ import consumers from "node:stream/consumers";
 import { inspect } from "node:util";
 import v8 from "node:v8";
 
+export const ECHOSERVER_VERSION = "0.2.0";
+
 function parseSettings() {
   const logWithColor: boolean = env.V8SERIALIZE_LOG_WITH_COLOR === "true";
   const logListen: boolean = env.V8SERIALIZE_LOG_LISTEN !== "false";
@@ -255,6 +257,7 @@ export function getSupportedSerializationFeatures(
 
 export type ServerMeta = {
   name: string;
+  serverVersion: string;
   info: string;
   versions: Record<string, string>;
   supportedSerializationFeatures: Record<SerializationFeature, boolean>;
@@ -265,6 +268,7 @@ export function getServerMeta(): ServerMeta {
 
   return {
     name: "v8serialize-echoserver",
+    serverVersion: ECHOSERVER_VERSION,
     info: "POST V8-serialized data to /",
     versions: Object.fromEntries(
       Object.entries(process.versions).filter((
