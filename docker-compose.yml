@@ -1,0 +1,28 @@
+name: v8serialize
+services:
+  echoserver-node-22:
+    container_name: ${COMPOSE_PROJECT_NAME:?}-echoserver-node-22
+    image: ghcr.io/h4l/v8serialize/echoserver:${ECHOSERVER_VERSION:?}-node-22
+    networks: [v8serialize]
+    labels:
+      com.github.h4l.v8serialize.echoserver: "true"
+
+  echoserver-node-18:
+    container_name: ${COMPOSE_PROJECT_NAME:?}-echoserver-node-18
+    image: ghcr.io/h4l/v8serialize/echoserver:${ECHOSERVER_VERSION:?}-node-18
+    networks: [v8serialize]
+    labels:
+      com.github.h4l.v8serialize.echoserver: "true"
+
+  echoserver-deno:
+    container_name: ${COMPOSE_PROJECT_NAME:?}-echoserver-deno
+    image: ghcr.io/h4l/v8serialize/echoserver:${ECHOSERVER_VERSION:?}-deno-1.46.1
+    networks: [v8serialize]
+    labels:
+      com.github.h4l.v8serialize.echoserver: "true"
+
+
+networks:
+  v8serialize:
+    external: ${V8SERIALIZE_NETWORK_EXTERNAL:-false}
+    name: ${V8SERIALIZE_NETWORK:-v8serialize}

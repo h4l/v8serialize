@@ -1,34 +1,114 @@
 from __future__ import annotations
 
+import json
+import os
+import re
+import subprocess
+import warnings
 from base64 import b64decode
 from dataclasses import dataclass
-from enum import Enum, StrEnum, auto
-from typing import Generator, Self, Sequence
+from enum import StrEnum
+from pathlib import Path
+from typing import TYPE_CHECKING, Final, Generator, Mapping, Self, Sequence
 
 import httpx
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
-from packaging.version import Version
+from packaging.version import VERSION_PATTERN, InvalidVersion, Version
 
 from v8serialize.constants import SerializationFeature
 from v8serialize.decode import AnyTagMapper, TagMapper, loads
-from v8serialize.encode import (
-    DefaultEncodeContext,
-    Encoder,
-    ObjectMapper,
-    WritableTagStream,
-    dumps,
-)
+from v8serialize.encode import DefaultEncodeContext, ObjectMapper, WritableTagStream
 from v8serialize.extensions import node_js_array_buffer_view_host_object_handler
 
 from .strategies import any_object
 
+if TYPE_CHECKING:
+    # not exported publicly :/
+    from _pytest.mark import ParameterSet
 
-class V8Target(Enum):
-    Node18 = auto()
-    Node22 = auto()
-    Deno1_46 = auto()
+MIN_ECHOSERVER_VERSION: Final = Version("0.2.0")
+
+LENIENT_VERSION_PATTERN = re.compile(
+    f"^(?P<version>{VERSION_PATTERN})(?:-(?P<suffix>\\S+))?$", re.VERBOSE
+)
+
+
+def parse_lenient_version(version: str) -> Version:
+    """
+    >>> parse_lenient_version("12.9.202.2-rusty")
+    <Version('12.9.202.2+rusty')>
+    >>> parse_lenient_version("12.9.202.2")
+    <Version('12.9.202.2')>
+    >>> parse_lenient_version("  afsdf ")  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    packaging.version.InvalidVersion:   afsdf
+    """
+    match = LENIENT_VERSION_PATTERN.match(version)
+    if not match:
+        raise InvalidVersion(version)
+
+    # We allow trailing local part starting with a dash. The Python version
+    # expects a local part to start with a + and contain anything, but doesn't
+    # allow a - suffix. Note that if the default pattern's local part matches,
+    # we must have no suffix, as local will have consumed it all.
+    lenient_suffix = match.group("suffix")
+    if lenient_suffix:
+        assert not match.group("local")
+        return Version(f"{match.group('version')}+{lenient_suffix}")
+    return Version(version)
+
+
+def get_echoserver_urls() -> Mapping[str, httpx.URL]:
+    value = os.environ.get("V8SERIALIZE_ECHOSERVERS")
+
+    if not value:
+        return {}
+
+    if value.lstrip().startswith("{"):
+        return parse_echoserver_urls(value)
+
+    if value == "scripts/list-echoservers.sh":
+        script_path = Path(__file__).parent.parent / value
+        try:
+            output = subprocess.check_output(script_path)
+        except subprocess.CalledProcessError as e:
+            raise ValueError(
+                f"Failed to run {value!r} to find available echoservers "
+                "(see pytest captured stderr for output)"
+            ) from e
+        return parse_echoserver_urls(output.decode())
+
+    raise ValueError(
+        f"Unable to list available echoservers: V8SERIALIZE_ECHOSERVERS is not "
+        f"a recognised value: {value!r}"
+    )
+
+
+def parse_echoserver_urls(raw_urls_json: str | None = None) -> Mapping[str, httpx.URL]:
+    if not raw_urls_json:
+        return {}
+    try:
+        raw_urls = json.loads(raw_urls_json)
+    except ValueError as e:
+        raise ValueError(f"V8SERIALIZE_ECHOSERVERS envar is not valid JSON: {e}") from e
+
+    if not isinstance(raw_urls, dict):
+        raise ValueError(
+            f"V8SERIALIZE_ECHOSERVERS value does not contain "
+            f"an object/dict of URLs: {raw_urls!r}"
+        )
+    try:
+        return {name: httpx.URL(raw_url) for name, raw_url in raw_urls.items()}
+    except ValueError as e:
+        raise ValueError(
+            f"V8SERIALIZE_ECHOSERVERS value contains an invalid URL: {e}"
+        ) from e
+
+
+def get_get_echoserver_urls_as_params() -> Sequence[ParameterSet]:
+    return [pytest.param(url, id=name) for name, url in get_echoserver_urls().items()]
 
 
 @dataclass
@@ -106,15 +186,14 @@ class DeserializationError(ValueError):
 @dataclass
 class V8SerializationEchoServerClient:
     httpclient: httpx.Client
-    server_url: httpx.URL
-    v8_version: Version
+    echoserver: EchoServer
 
     def round_trip_serialized_value(
         self, serialized_value: bytes
     ) -> ReSerializedValue | ReSerializationError:
         try:
             resp = self.httpclient.post(
-                self.server_url,
+                self.echoserver.server_url,
                 content=serialized_value,
                 headers={"content-type": "application/x-v8-serialized"},
             )
@@ -138,91 +217,158 @@ class V8SerializationEchoServerClient:
             ) from e
 
 
+@dataclass
+class EchoServer:
+    server_url: httpx.URL
+    meta: EchoServerMeta
+
+    @property
+    def v8_version(self) -> Version:
+        try:
+            return self.meta.versions["v8"]
+        except KeyError:
+            raise LookupError("echoserver meta has no 'v8' version")
+
+    @property
+    def supported_features(self) -> SerializationFeature:
+        features = SerializationFeature.MaxCompatibility
+        for feature, is_supported in self.meta.supported_serialization_features.items():
+            if is_supported:
+                features |= feature
+        return features
+
+    def __repr__(self) -> str:
+        return (
+            f"<EchoServer "
+            f"server_url={self.server_url} "
+            f"v8_version={self.v8_version} "
+            f"supported_features={self.supported_features!r}"
+            ">"
+        )
+
+
+@dataclass
+class EchoServerMeta:
+    name: str
+    server_version: Version
+    versions: Mapping[str, Version]
+    supported_serialization_features: Mapping[SerializationFeature, bool]
+
+    @classmethod
+    def from_json_object(cls, value: object) -> Self:
+        if not isinstance(value, dict):
+            raise ValueError("value is not a dict")
+
+        name = value.get("name")
+        if not isinstance(name, str):
+            raise ValueError('"name" is not a string')
+
+        raw_server_version = value.get("serverVersion")
+        if not isinstance(raw_server_version, str):
+            raise ValueError('"serverVersion is not a string')
+        try:
+            server_version = Version(raw_server_version)
+        except InvalidVersion as e:
+            raise ValueError(f'"serverVersion" is not a valid version: {e}') from e
+
+        def parse_version(name: str, value: object) -> Version:
+            err: str | InvalidVersion | None = None
+            if not isinstance(value, str):
+                err = f"value is not a string: {value!r}"
+            else:
+                try:
+                    return parse_lenient_version(value)
+                except InvalidVersion as e:
+                    err = e
+            raise ValueError(f"versions[{name!r}] is not a valid version: {err}")
+
+        raw_versions = value.get("versions")
+        if not isinstance(raw_versions, dict):
+            raise ValueError(f'"versions" is not an object: {raw_versions}')
+        versions = {n: parse_version(n, v) for n, v in raw_versions.items()}
+
+        raw_features = value.get("supportedSerializationFeatures")
+        if not isinstance(raw_features, dict):
+            raise ValueError(
+                f'"supportedSerializationFeatures" is not an object: {raw_features}'
+            )
+
+        def parse_feature(
+            name: str, value: object
+        ) -> tuple[SerializationFeature, bool] | None:
+            if not isinstance(value, bool):
+                raise ValueError(
+                    f"['supportedSerializationFeatures'][{name!r}] "
+                    f"is not a boolean: {value!r}"
+                )
+            try:
+                return SerializationFeature.for_name(name), bool(value)
+            except ValueError:
+                warnings.warn(UnknownSerializationFeature(name), stacklevel=1)
+                return None
+
+        supported_serialization_features = {
+            item[0]: item[1]
+            for item in (parse_feature(n, v) for n, v in raw_features.items())
+            if item is not None
+        }
+
+        return cls(
+            name=name,
+            server_version=server_version,
+            versions=versions,
+            supported_serialization_features=supported_serialization_features,
+        )
+
+
+class UnknownSerializationFeature(UserWarning):
+    pass
+
+
+@pytest.fixture(params=get_get_echoserver_urls_as_params(), scope="session")
+def echoserver_url(request: pytest.FixtureRequest) -> httpx.URL:
+    assert isinstance(request.param, httpx.URL)
+    return request.param
+
+
 @pytest.fixture(scope="session")
 def httpclient() -> Generator[httpx.Client, None, None]:
     with httpx.Client() as client:
         yield client
 
 
-@pytest.fixture(autouse=True, scope="session")
-def check_v8_echoserver(httpclient: httpx.Client, server_meta: EchoServerMeta) -> None:
+@pytest.fixture(scope="session")
+def echoserver(httpclient: httpx.Client, echoserver_url: httpx.URL) -> EchoServer:
     try:
-        resp = httpclient.get(server_meta.server_url)
+        resp = httpclient.get(echoserver_url)
         resp.raise_for_status
     except httpx.HTTPError as e:
         raise RuntimeError(f"V8 echo server is not contactable: {e}") from e
 
-
-@dataclass
-class EchoServerMeta:
-    server_url: httpx.URL
-    v8_version: Version
-    extra_features: SerializationFeature
-
-
-@pytest.fixture(
-    scope="session",
-    params=[
-        pytest.param(
-            (
-                "http://v8serialize-echoserver-deno:8000/",
-                "12.9.202",
-                SerializationFeature.Float16Array,
-            ),
-            id="deno",
-        ),
-        pytest.param(
-            ("http://v8serialize-echoserver-node-22:8000/", "12.4.254", None),
-            id="node-22",
-        ),
-        pytest.param(
-            ("http://v8serialize-echoserver-node-18:8000/", "10.2.154", None),
-            id="node-18",
-        ),
-    ],
-)
-def server_meta(request: pytest.FixtureRequest) -> EchoServerMeta:
-    # raw_url = os.environ.get("V8CODEC_V8_ECHO_SERVER_URL") or "http://localhost:8000/"
-    raw_url, raw_version, extra_features = request.param
     try:
-        return EchoServerMeta(
-            server_url=httpx.URL(raw_url),
-            v8_version=Version(raw_version),
-            extra_features=SerializationFeature(extra_features or 0),
-        )
+        meta = EchoServerMeta.from_json_object(resp.json())
     except Exception as e:
-        raise
-        # FIXME:
-        # raise RuntimeError(
-        #     f"V8CODEC_V8_ECHO_SERVER_URL envar is not a valid URL. "
-        #     f"V8CODEC_V8_ECHO_SERVER_URL={raw_url!r}, error={e}"
-        # )
+        raise RuntimeError(
+            f"Unable to read metadata from V8 echoserver {echoserver_url}: {e}"
+        ) from e
+
+    if meta.server_version < MIN_ECHOSERVER_VERSION:
+        pytest.skip(
+            f"Server {echoserver_url} version {meta.server_version} is less "
+            f"than the MIN_ECHOSERVER_VERSION {MIN_ECHOSERVER_VERSION}",
+            allow_module_level=True,
+        )
+
+    echoserver = EchoServer(server_url=echoserver_url, meta=meta)
+    print(echoserver)
+    return echoserver
 
 
 @pytest.fixture(scope="session")
 def echoclient(
-    httpclient: httpx.Client, server_meta: EchoServerMeta
+    httpclient: httpx.Client, echoserver: EchoServer
 ) -> V8SerializationEchoServerClient:
-    return V8SerializationEchoServerClient(
-        httpclient=httpclient,
-        server_url=server_meta.server_url,
-        v8_version=server_meta.v8_version,
-    )
-
-
-@pytest.fixture(scope="session")
-def features(server_meta: EchoServerMeta) -> SerializationFeature:
-    """The serialization features supported by the server's V8 version."""
-    assert (
-        server_meta.v8_version >= SerializationFeature.MaxCompatibility.first_v8_version
-    )
-
-    features = SerializationFeature.MaxCompatibility | server_meta.extra_features
-    for feature in SerializationFeature:
-        if feature.first_v8_version <= server_meta.v8_version:
-            features |= feature
-
-    return features
+    return V8SerializationEchoServerClient(httpclient=httpclient, echoserver=echoserver)
 
 
 # TODO: also test with serialize_object_references (default_object_mappers)
@@ -230,13 +376,14 @@ object_mappers = [ObjectMapper()]
 tag_mappers: Sequence[AnyTagMapper] = [
     TagMapper(host_object_deserializer=node_js_array_buffer_view_host_object_handler)
 ]
-# @pytest.mark.parametrize("object_mappers", [[ObjectMapper()]])
 
 
-def get_any_object_strategy_for_v8target(
-    features: SerializationFeature,
+def get_any_object_strategy(
+    supported_features: SerializationFeature,
 ) -> st.SearchStrategy[object]:
-    return any_object(allow_theoretical=False, max_leaves=10, features=features)
+    return any_object(
+        allow_theoretical=False, max_leaves=10, features=supported_features
+    )
 
 
 @settings(max_examples=1000, deadline=1000)
@@ -244,13 +391,14 @@ def get_any_object_strategy_for_v8target(
 def test_codec_rt_object(
     data: st.DataObject,
     echoclient: V8SerializationEchoServerClient,
-    features: SerializationFeature,
 ) -> None:
-    start_value = data.draw(get_any_object_strategy_for_v8target(features))
+    supported_features = echoclient.echoserver.supported_features
+    start_value = data.draw(get_any_object_strategy(supported_features))
 
     # TODO: support feature flags in dumps()
     encode_ctx = DefaultEncodeContext(
-        object_mappers=object_mappers, stream=WritableTagStream(features=features)
+        object_mappers=object_mappers,
+        stream=WritableTagStream(features=supported_features),
     )
     encode_ctx.stream.write_header()
     encode_ctx.encode_object(start_value)
