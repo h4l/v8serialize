@@ -371,6 +371,21 @@ def echoclient(
     return V8SerializationEchoServerClient(httpclient=httpclient, echoserver=echoserver)
 
 
+@pytest.fixture(scope="session", params=["max-features", "min-features"])
+def enabled_features(
+    echoserver: EchoServer, request: pytest.FixtureRequest
+) -> SerializationFeature:
+    supported_features = echoserver.supported_features
+    if request.param == "max-features":
+        if supported_features == SerializationFeature.MaxCompatibility:
+            pytest.skip(
+                "Server supports no features above baseline, no features to enable."
+            )
+        return supported_features
+    assert request.param == "min-features"
+    return SerializationFeature.MaxCompatibility
+
+
 # TODO: also test with serialize_object_references (default_object_mappers)
 object_mappers = [ObjectMapper()]
 tag_mappers: Sequence[AnyTagMapper] = [
@@ -391,14 +406,14 @@ def get_any_object_strategy(
 def test_codec_rt_object(
     data: st.DataObject,
     echoclient: V8SerializationEchoServerClient,
+    enabled_features: SerializationFeature,
 ) -> None:
-    supported_features = echoclient.echoserver.supported_features
-    start_value = data.draw(get_any_object_strategy(supported_features))
+    start_value = data.draw(get_any_object_strategy(enabled_features))
 
     # TODO: support feature flags in dumps()
     encode_ctx = DefaultEncodeContext(
         object_mappers=object_mappers,
-        stream=WritableTagStream(features=supported_features),
+        stream=WritableTagStream(features=enabled_features),
     )
     encode_ctx.stream.write_header()
     encode_ctx.encode_object(start_value)
