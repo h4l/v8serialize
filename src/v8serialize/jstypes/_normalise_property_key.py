@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from v8serialize.jstypes.jsarrayproperties import MAX_ARRAY_LENGTH
 
 

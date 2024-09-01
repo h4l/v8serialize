@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 
 from packaging.version import VERSION_PATTERN, InvalidVersion, Version

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from itertools import zip_longest
 from traceback import FrameSummary, TracebackException
 from typing import Generator, Iterable, Sequence, cast

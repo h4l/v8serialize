@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from traceback import TracebackException
 from typing import Callable, Never
 

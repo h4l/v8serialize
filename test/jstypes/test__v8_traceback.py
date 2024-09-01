@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from test.jstypes._v8_traceback_error_fixtures import (
     ErrorScenario,
     call_and_capture_tbe,

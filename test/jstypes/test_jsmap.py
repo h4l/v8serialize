@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from math import isnan
 from test.strategies import values_and_objects as mk_values_and_objects
 

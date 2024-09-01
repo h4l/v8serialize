@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from test.strategies import js_regexp_flags
 

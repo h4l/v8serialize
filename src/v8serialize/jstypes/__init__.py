@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from v8serialize.jstypes._equality import JSSameValueZero as JSSameValueZero
 from v8serialize.jstypes._equality import same_value_zero as same_value_zero
 from v8serialize.jstypes.jsarray import JSArray as JSArray

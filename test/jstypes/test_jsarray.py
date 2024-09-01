@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Sequence
 
 from v8serialize.jstypes.jsarray import JSArray

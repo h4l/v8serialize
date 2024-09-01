@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from v8serialize._values import AnyJSError
 from v8serialize.constants import JSErrorName
 from v8serialize.jstypes.jserror import JSError, JSErrorData
