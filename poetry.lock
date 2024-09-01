@@ -12,8 +12,10 @@ files = [
 ]
 
 [package.dependencies]
+exceptiongroup = {version = ">=1.0.2", markers = "python_version < \"3.11\""}
 idna = ">=2.8"
 sniffio = ">=1.1"
+typing-extensions = {version = ">=4.1", markers = "python_version < \"3.11\""}
 
 [package.extras]
 doc = ["Sphinx (>=7)", "packaging", "sphinx-autodoc-typehints (>=1.2.0)", "sphinx-rtd-theme"]
@@ -76,6 +78,8 @@ mypy-extensions = ">=0.4.3"
 packaging = ">=22.0"
 pathspec = ">=0.9.0"
 platformdirs = ">=2"
+tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
+typing-extensions = {version = ">=4.0.1", markers = "python_version < \"3.11\""}
 
 [package.extras]
 colorama = ["colorama (>=0.4.3)"]
@@ -200,8 +204,25 @@ files = [
     {file = "coverage-7.6.1.tar.gz", hash = "sha256:953510dfb7b12ab69d20135a0662397f077c59b1e6379a768e97c59d852ee51d"},
 ]
 
+[package.dependencies]
+tomli = {version = "*", optional = true, markers = "python_full_version <= \"3.11.0a6\" and extra == \"toml\""}
+
 [package.extras]
 toml = ["tomli"]
+
+[[package]]
+name = "exceptiongroup"
+version = "1.2.2"
+description = "Backport of PEP 654 (exception groups)"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "exceptiongroup-1.2.2-py3-none-any.whl", hash = "sha256:3111b9d131c238bec2f8f516e123e14ba243563fb135d3fe885990585aa7795b"},
+    {file = "exceptiongroup-1.2.2.tar.gz", hash = "sha256:47c2edf7c6738fafb49fd34290706d1a1a2f4d1c6df275526b62cbb4aa5393cc"},
+]
+
+[package.extras]
+test = ["pytest (>=6)"]
 
 [[package]]
 name = "flake8"
@@ -282,6 +303,7 @@ files = [
 
 [package.dependencies]
 Flake8 = ">=5"
+TOMLi = {version = "*", markers = "python_version < \"3.11\""}
 
 [package.extras]
 dev = ["pyTest", "pyTest-cov"]
@@ -397,6 +419,7 @@ files = [
 
 [package.dependencies]
 attrs = ">=22.2.0"
+exceptiongroup = {version = ">=1.0.0", markers = "python_version < \"3.11\""}
 sortedcontainers = ">=2.1.0,<3.0.0"
 
 [package.extras]
@@ -501,6 +524,7 @@ files = [
 
 [package.dependencies]
 mypy-extensions = ">=1.0.0"
+tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
 typing-extensions = ">=4.6.0"
 
 [package.extras]
@@ -597,23 +621,25 @@ files = [
 
 [[package]]
 name = "pytest"
-version = "8.3.2"
+version = "7.4.4"
 description = "pytest: simple powerful testing with Python"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.7"
 files = [
-    {file = "pytest-8.3.2-py3-none-any.whl", hash = "sha256:4ba08f9ae7dcf84ded419494d229b48d0903ea6407b030eaec46df5e6a73bba5"},
-    {file = "pytest-8.3.2.tar.gz", hash = "sha256:c132345d12ce551242c87269de812483f5bcc87cdbb4722e48487ba194f9fdce"},
+    {file = "pytest-7.4.4-py3-none-any.whl", hash = "sha256:b090cdf5ed60bf4c45261be03239c2c1c22df034fbffe691abe93cd80cea01d8"},
+    {file = "pytest-7.4.4.tar.gz", hash = "sha256:2cf0005922c6ace4a3e2ec8b4080eb0d9753fdc93107415332f50ce9e7994280"},
 ]
 
 [package.dependencies]
 colorama = {version = "*", markers = "sys_platform == \"win32\""}
+exceptiongroup = {version = ">=1.0.0rc8", markers = "python_version < \"3.11\""}
 iniconfig = "*"
 packaging = "*"
-pluggy = ">=1.5,<2"
+pluggy = ">=0.12,<2.0"
+tomli = {version = ">=1.0.0", markers = "python_version < \"3.11\""}
 
 [package.extras]
-dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
+testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
 
 [[package]]
 name = "pytest-cov"
@@ -635,17 +661,17 @@ testing = ["fields", "hunter", "process-tests", "pytest-xdist", "virtualenv"]
 
 [[package]]
 name = "pytest-insta"
-version = "0.3.0"
+version = "0.2.0"
 description = "A practical snapshot testing plugin for pytest"
 optional = false
-python-versions = ">=3.10,<4.0"
+python-versions = ">=3.8,<4.0"
 files = [
-    {file = "pytest_insta-0.3.0-py3-none-any.whl", hash = "sha256:93a105e3850f2887b120a581923b10bb313d722e00d369377a1d91aa535df704"},
-    {file = "pytest_insta-0.3.0.tar.gz", hash = "sha256:9e6e1c70a021f68ccc4643360b2c2f8326cf3befba85f942c1da17b9caf713f7"},
+    {file = "pytest_insta-0.2.0-py3-none-any.whl", hash = "sha256:e8d8a19f44917fa70102b132ddd4d6afcebe2a31987422dc79458ff849fe1a9e"},
+    {file = "pytest_insta-0.2.0.tar.gz", hash = "sha256:c4e549f3c5aea8acf1ae6da12cffaaf4e4b3b03d9059c5115deab59f37b23867"},
 ]
 
 [package.dependencies]
-pytest = ">=7.2.0,<9.0.0"
+pytest = ">=7.2.0,<8.0.0"
 wrapt = ">=1.14.1,<2.0.0"
 
 [[package]]
@@ -688,6 +714,17 @@ python-versions = "*"
 files = [
     {file = "sortedcontainers-2.4.0-py2.py3-none-any.whl", hash = "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0"},
     {file = "sortedcontainers-2.4.0.tar.gz", hash = "sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88"},
+]
+
+[[package]]
+name = "tomli"
+version = "2.0.1"
+description = "A lil' TOML parser"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
+    {file = "tomli-2.0.1.tar.gz", hash = "sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f"},
 ]
 
 [[package]]
@@ -782,5 +819,5 @@ files = [
 
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.12"
-content-hash = "1444c159bb3e3724fc07db500fc4e3402c37f9fb895a1b50bfeff3f3cff8f105"
+python-versions = "^3.9"
+content-hash = "43e1248d4063c9b3611c83960aebf42e56b068dafb1bcc6768ba8e02295baa7b"
