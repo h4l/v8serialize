@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from re import Pattern, compile
-from typing import AnyStr, Literal, overload
+from typing_extensions import AnyStr, Literal, overload
 
 from v8serialize.constants import JSRegExpFlag
 from v8serialize.errors import JSRegExpV8CodecError

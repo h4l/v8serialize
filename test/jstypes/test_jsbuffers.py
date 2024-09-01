@@ -4,7 +4,7 @@ import math
 import re
 from array import array
 from dataclasses import FrozenInstanceError
-from typing import TYPE_CHECKING, Literal
+from typing_extensions import TYPE_CHECKING, Literal
 
 import pytest
 

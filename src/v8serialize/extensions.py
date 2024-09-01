@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing_extensions import TYPE_CHECKING
 
 from v8serialize._enums import frozen
 from v8serialize.constants import ArrayBufferViewTag

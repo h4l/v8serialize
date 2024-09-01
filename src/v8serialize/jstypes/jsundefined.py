@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Final, Literal, TypeAlias
+from typing_extensions import Final, Literal, TypeAlias
 
 
 class JSUndefinedEnum(Enum):

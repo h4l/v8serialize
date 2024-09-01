@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from _thread import get_ident
 from functools import wraps
-from typing import Final, TypeVar
+from typing_extensions import Final, TypeVar
 
 _RUNNING_EQ_KEYS: Final[set[tuple[int, int]]] = set()
 

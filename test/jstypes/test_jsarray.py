@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Sequence
+from typing_extensions import Sequence
 
 from v8serialize.jstypes.jsarray import JSArray
 from v8serialize.jstypes.jsarrayproperties import JSHole, JSHoleType

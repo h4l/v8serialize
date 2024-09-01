@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from array import array
 from base64 import b64decode
-from typing import TYPE_CHECKING
+from typing_extensions import TYPE_CHECKING
 
 import pytest
 

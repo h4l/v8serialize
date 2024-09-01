@@ -8,7 +8,7 @@ from base64 import b64decode
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING, Final, Generator, Mapping, Self, Sequence
+from typing_extensions import TYPE_CHECKING, Final, Generator, Mapping, Self, Sequence
 
 import httpx
 import pytest

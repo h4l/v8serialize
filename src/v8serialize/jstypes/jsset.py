@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABCMeta
 from dataclasses import dataclass
-from typing import (
+from typing_extensions import (
     TYPE_CHECKING,
     AbstractSet,
     Iterable,
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
     T = TypeVar("T", default=object)
 else:
-    from typing import TypeVar
+    from typing_extensions import TypeVar
 
     T = TypeVar("T")
 

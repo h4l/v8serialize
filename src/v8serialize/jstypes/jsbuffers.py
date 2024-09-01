@@ -8,7 +8,7 @@ from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from enum import Enum
 from types import TracebackType
-from typing import (
+from typing_extensions import (
     TYPE_CHECKING,
     Any,
     ByteString,
@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     AnyBufferT = TypeVar("AnyBufferT", bound=AnyBuffer, default=AnyBuffer)
     BufferT = TypeVar("BufferT", bound=ByteString, default=ByteString)
 else:
-    from typing import TypeVar
+    from typing_extensions import TypeVar
 
     AnyBufferT = TypeVar("AnyBufferT")
     BufferT = TypeVar("BufferT")

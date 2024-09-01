@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum, auto
-from typing import (
+from typing_extensions import (
     TYPE_CHECKING,
     Generic,
     Iterator,

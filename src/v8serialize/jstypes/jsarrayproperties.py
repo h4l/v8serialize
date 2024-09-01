@@ -4,7 +4,7 @@ from bisect import bisect_left
 from dataclasses import dataclass, field
 from enum import Enum
 from itertools import groupby, repeat
-from typing import (
+from typing_extensions import (
     TYPE_CHECKING,
     ClassVar,
     Final,

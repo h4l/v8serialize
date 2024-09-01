@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from enum import Enum, IntEnum, IntFlag, StrEnum
 from functools import lru_cache, reduce
 from types import MappingProxyType
-from typing import (
+from typing_extensions import (
     TYPE_CHECKING,
     AbstractSet,
     Final,

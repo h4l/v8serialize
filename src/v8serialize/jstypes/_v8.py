@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import NewType
+from typing_extensions import NewType
 
 V8SharedValueId = NewType("V8SharedValueId", int)
 

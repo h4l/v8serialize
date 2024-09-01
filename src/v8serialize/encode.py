@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from functools import lru_cache, partial
 from types import NoneType, TracebackType
-from typing import (
+from typing_extensions import (
     TYPE_CHECKING,
     AbstractSet,
     Any,

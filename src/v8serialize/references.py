@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Final, Generator, Generic, NewType, overload
+from typing_extensions import (
+    TYPE_CHECKING,
+    Any,
+    Final,
+    Generator,
+    Generic,
+    NewType,
+    overload,
+)
 
 from v8serialize.errors import V8CodecError
 
@@ -11,7 +19,7 @@ if TYPE_CHECKING:
 
     T = TypeVar("T", default=object)
 else:
-    from typing import TypeVar
+    from typing_extensions import TypeVar
 
     T = TypeVar("T")
 

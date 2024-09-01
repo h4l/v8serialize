@@ -5,7 +5,7 @@ from _thread import get_ident
 from contextlib import contextmanager
 from itertools import islice
 from reprlib import Repr
-from typing import (
+from typing_extensions import (
     TYPE_CHECKING,
     Any,
     Collection,

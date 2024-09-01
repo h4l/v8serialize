@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """This is a simplified demo of the protocols defined in v8serialize.typing."""
 
-from typing import (
+from typing_extensions import (
     TYPE_CHECKING,
     Protocol,
     Sequence,

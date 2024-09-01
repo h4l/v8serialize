@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import FrozenInstanceError
-from typing import TypeVar
+from typing_extensions import TypeVar
 
 TypeT = TypeVar("TypeT", bound=type)
 

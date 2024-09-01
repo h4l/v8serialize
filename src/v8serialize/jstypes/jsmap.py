@@ -4,7 +4,15 @@ from abc import ABCMeta
 from collections.abc import MutableMapping
 from dataclasses import dataclass
 from operator import itemgetter
-from typing import TYPE_CHECKING, Iterable, Iterator, Mapping, TypeGuard, cast, overload
+from typing_extensions import (
+    TYPE_CHECKING,
+    Iterable,
+    Iterator,
+    Mapping,
+    TypeGuard,
+    cast,
+    overload,
+)
 
 from v8serialize.jstypes import _repr
 from v8serialize.jstypes._equality import JSSameValueZero, same_value_zero
@@ -17,7 +25,7 @@ if TYPE_CHECKING:
     KT = TypeVar("KT", default=object)
     VT = TypeVar("VT", default=object)
 else:
-    from typing import TypeVar
+    from typing_extensions import TypeVar
 
     KT = TypeVar("KT")
     VT = TypeVar("VT")

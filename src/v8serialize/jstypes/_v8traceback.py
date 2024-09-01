@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from itertools import zip_longest
 from traceback import FrameSummary, TracebackException
-from typing import Generator, Iterable, Sequence, cast
+from typing_extensions import Generator, Iterable, Sequence, cast
 
 
 def format_exception_for_v8(

@@ -4,7 +4,7 @@ from test.jstypes._v8_traceback_error_fixtures import (
     ErrorScenario,
     call_and_capture_tbe,
 )
-from typing import Callable, Never, cast
+from typing_extensions import Callable, Never, cast
 
 import pytest
 from pytest_insta import SnapshotFixture

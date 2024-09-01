@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Iterable, TypeGuard, overload
+from typing_extensions import TYPE_CHECKING, Iterable, TypeGuard, overload
 
 from v8serialize.jstypes import _repr
 from v8serialize.jstypes.jsarrayproperties import JSHoleType
