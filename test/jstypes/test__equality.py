@@ -1,4 +1,5 @@
 from math import isnan
+from test.strategies import values_and_objects as mk_values_and_objects
 
 import pytest
 from hypothesis import given
@@ -7,8 +8,6 @@ from v8serialize.jstypes._equality import same_value_zero
 from v8serialize.jstypes.jsobject import JSObject
 from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject
 from v8serialize.jstypes.jsundefined import JSUndefined
-
-from .strategies import mk_values_and_objects
 
 values_and_objects = mk_values_and_objects(allow_nan=True, only_hashable=False)
 

@@ -1,4 +1,5 @@
 from math import isnan
+from test.strategies import values_and_objects as mk_values_and_objects
 
 from hypothesis import given
 from hypothesis import strategies as st
@@ -6,8 +7,6 @@ from hypothesis import strategies as st
 from v8serialize.jstypes._equality import same_value_zero
 from v8serialize.jstypes._v8 import V8SharedObjectReference, V8SharedValueId
 from v8serialize.jstypes.jsset import JSSet
-
-from .strategies import mk_values_and_objects
 
 hashable_values_and_objects = mk_values_and_objects(allow_nan=False, only_hashable=True)
 values_and_objects = mk_values_and_objects(allow_nan=False, only_hashable=False)
