@@ -27,6 +27,8 @@ from typing import (
     runtime_checkable,
 )
 
+from packaging.version import Version
+
 from v8serialize._values import (
     AnyArrayBuffer,
     AnyArrayBufferTransfer,
@@ -49,7 +51,9 @@ from v8serialize.constants import (
     SerializationErrorTag,
     SerializationFeature,
     SerializationTag,
+    SymbolicVersion,
     TagConstraint,
+    UnreleasedVersion,
     kLatestVersion,
 )
 from v8serialize.decorators import singledispatchmethod
@@ -1063,15 +1067,37 @@ class Encoder:
     """
 
     object_mappers: Sequence[AnyObjectMapper]
+    features: SerializationFeature
 
-    def __init__(self, object_mappers: Iterable[AnyObjectMapper] | None = None) -> None:
+    def __init__(
+        self,
+        object_mappers: Iterable[AnyObjectMapper] | None = None,
+        features: SerializationFeature | None = None,
+        v8_version: Version | UnreleasedVersion | str | None = None,
+    ) -> None:
         self.object_mappers = (
             default_object_mappers if object_mappers is None else tuple(object_mappers)
         )
 
+        if features is None:
+            features = SerializationFeature.MaxCompatibility
+        if v8_version is not None:
+            features |= SerializationFeature.supported_by(v8_version=v8_version)
+        self.features = features
+
+    @property
+    def first_v8_version(self) -> Version | UnreleasedVersion:
+        """The earliest version of V8 that can read data produced by this Encoder."""
+        return max(f.first_v8_version for f in self.features)
+
     def encode(self, value: object) -> bytearray:
+        """Serialize a value in the V8 serialization format.
+
+        Returns a `bytearray` containing the encoded bytes.
+        """
         ctx = DefaultEncodeContext(
-            stream=WritableTagStream(), object_mappers=self.object_mappers
+            stream=WritableTagStream(features=self.features),
+            object_mappers=self.object_mappers,
         )
         ctx.stream.write_header()
         ctx.encode_object(value)
@@ -1079,8 +1105,14 @@ class Encoder:
 
 
 def dumps(
-    value: object, *, object_mappers: Iterable[AnyObjectMapper] | None = None
+    value: object,
+    *,
+    object_mappers: Iterable[AnyObjectMapper] | None = None,
+    features: SerializationFeature | None = None,
+    v8_version: Version | SymbolicVersion | str | None = None,
 ) -> bytes:
     """Encode a Python value in the V8 serialization format."""
-    encoder = Encoder(object_mappers=object_mappers)
+    encoder = Encoder(
+        object_mappers=object_mappers, features=features, v8_version=v8_version
+    )
     return bytes(encoder.encode(value))

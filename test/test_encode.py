@@ -2,11 +2,13 @@ import re
 from datetime import datetime
 
 import pytest
+from packaging.version import Version
 
 from v8serialize.constants import JSRegExpFlag, SerializationFeature
 from v8serialize.decode import loads
 from v8serialize.encode import (
     DefaultEncodeContext,
+    Encoder,
     FeatureNotEnabledEncodeV8CodecError,
     ObjectMapper,
     UnmappedValueEncodeV8CodecError,
@@ -76,23 +78,23 @@ def test_feature_float16__cannot_write_float16array_when_disabled() -> None:
     with pytest.raises(
         UnmappedValueEncodeV8CodecError,
         match="No object mapper was able to write the value",
-    ) as exc_info:
+    ) as exc_info1:
         ctx.encode_object(f16)
 
     assert (
         "ObjectMapper is not handling JSArrayBufferViews with the Float16Array "
         "tag because <SerializationFeature.Float16Array: 8> is not enabled."
-        in exc_info.value.__notes__
+        in exc_info1.value.__notes__
     )
 
     with pytest.raises(
         FeatureNotEnabledEncodeV8CodecError,
         match="Cannot write Float16Array when the Float16Array "
         "SerializationFeature is not enabled",
-    ) as exc_info:
+    ) as exc_info2:
         ctx.stream.write_js_array_buffer_view(f16)
 
-    assert exc_info.value.feature_required == SerializationFeature.Float16Array
+    assert exc_info2.value.feature_required == SerializationFeature.Float16Array
 
 
 def test_feature_float16__can_write_float16array_when_enabled() -> None:
@@ -184,3 +186,48 @@ def test_feature_cyclic_error_cause__cyclic_errors_are_allowed_when_enabled() ->
     assert result == err
     assert result is not err
     assert result.cause is result
+
+
+def test_Encoder__uses_features_and_v8_version_to_configure_serialization_features() -> (  # noqa: B950
+    None
+):
+    encoder = Encoder()
+    assert encoder.features == SerializationFeature.MaxCompatibility
+
+    encoder = Encoder(features=SerializationFeature.Float16Array)
+    assert encoder.features == SerializationFeature.Float16Array
+
+    assert loads(encoder.encode(JSFloat16Array(b""))) == JSFloat16Array(b"")
+
+    assert (
+        SerializationFeature.ResizableArrayBuffers
+        in Encoder(v8_version=Version("12")).features
+    )
+    assert (
+        SerializationFeature.ResizableArrayBuffers
+        not in Encoder(v8_version="11").features
+    )
+
+    # Specifying both features and v8_version enables features implied by both
+    unicode_sets_version = SerializationFeature.RegExpUnicodeSets.first_v8_version
+    encoder = Encoder(
+        features=SerializationFeature.Float16Array, v8_version=unicode_sets_version
+    )
+    assert unicode_sets_version < SerializationFeature.Float16Array.first_v8_version
+    assert SerializationFeature.RegExpUnicodeSets in encoder.features
+    assert SerializationFeature.Float16Array in encoder.features
+
+
+def test_dumps__uses_features_and_v8_version_to_configure_serialization_features() -> (
+    None
+):
+    err = JSError()
+    err.cause = err
+
+    with pytest.raises(IllegalCyclicReferenceV8CodecError):
+        dumps(err)
+
+    assert loads(dumps(err, features=SerializationFeature.CircularErrorCause)) == err
+
+    circular_err_version = SerializationFeature.CircularErrorCause.first_v8_version
+    assert loads(dumps(err, v8_version=circular_err_version)) == err
