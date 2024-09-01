@@ -21,25 +21,15 @@ from v8serialize.jstypes._v8traceback import (
 @recursive_eq
 @dataclass(slots=True, order=True)
 class _JSErrorData:
-    name: str = field(default=JSErrorName.Error)
     message: str | None = field(default=None)
-    stack: str | None = field(default=None)
-    cause: object | None = field(default=None)
+    name: str = field(default=JSErrorName.Error, kw_only=True)
+    stack: str | None = field(default=None, kw_only=True)
+    cause: object | None = field(default=None, kw_only=True)
 
 
 class JSErrorData(_JSErrorData, AnyJSError, ABC):
     """A minimal representation of JavaScript Error data that isn't a Python
     Exception."""
-
-    if TYPE_CHECKING:
-
-        def __init__(
-            self,
-            name: str = JSErrorName.Error,
-            message: str | None = None,
-            stack: str | None = None,
-            cause: object | None = None,
-        ) -> None: ...
 
     @classmethod
     def from_exception(cls, exc: BaseException) -> Self:
