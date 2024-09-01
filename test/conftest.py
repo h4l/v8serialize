@@ -11,7 +11,7 @@ class FmtException(Fmt[str]):  # type: ignore[no-untyped-call] # __init_subclass
     project_dir: str
 
     def __init__(self) -> None:
-        self.project_dir = f"{Path(__file__, "../..").resolve()}/"
+        self.project_dir = "{}/".format(Path(__file__, "../..").resolve())
 
     def with_absolute_paths(self, trace: str) -> str:
         return re.sub(r'(?<=[("])/…/v8serialize/', self.project_dir, trace)

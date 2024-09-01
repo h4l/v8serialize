@@ -115,11 +115,12 @@ def format_v8_frame(fs: FrameSummary) -> str:
 def format_v8_frame_location(fs: FrameSummary) -> str:
     if fs.filename is None and fs.lineno is None and fs.colno is None:
         return "(unknown location)"
-    return (
-        f"({sub_none(fs.filename, "<unknown>")}:"
-        f"{sub_none(fs.lineno, "<unknown>")}:"
-        f"{sub_none(fs.colno, "<unknown>")})"
-    )
+
+    filename = sub_none(fs.filename, "<unknown>")
+    lineno = sub_none(fs.lineno, "<unknown>")
+    colno = sub_none(fs.colno, "<unknown>")
+
+    return f"({filename}:{lineno}:{colno})"
 
 
 def sub_none(value: object, none_substitute: str) -> str:

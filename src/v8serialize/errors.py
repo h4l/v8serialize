@@ -25,7 +25,9 @@ class V8CodecError(BaseException):  # FIXME: should inherit Exception
         ]
         values_fmt = ", ".join(f"{f}={v!r}" for (f, v) in field_values)
 
-        return f"{self.message}{": " if values_fmt else ""}{values_fmt}"
+        if values_fmt:
+            return f"{self.message}: {values_fmt}"
+        return self.message
 
 
 # TODO: str/repr needs customising to abbreviate the data field
