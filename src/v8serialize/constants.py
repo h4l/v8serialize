@@ -5,7 +5,7 @@ import operator
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
-from enum import Enum, IntEnum, IntFlag, StrEnum
+from enum import Enum, IntEnum, IntFlag
 from functools import lru_cache, reduce
 from types import MappingProxyType
 from typing import TYPE_CHECKING, AbstractSet, Final, Generic, cast
@@ -13,6 +13,7 @@ from typing_extensions import Literal, Self, TypeAlias, TypeGuard, TypeVar, over
 
 from packaging.version import Version
 
+from v8serialize._pycompat.enum import StrEnum
 from v8serialize._versions import parse_lenient_version
 from v8serialize.errors import JSRegExpV8CodecError
 

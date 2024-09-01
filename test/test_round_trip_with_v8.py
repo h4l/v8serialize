@@ -7,7 +7,6 @@ import warnings
 from base64 import b64decode
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
 from typing_extensions import Generator, Self
@@ -18,6 +17,7 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 from packaging.version import InvalidVersion, Version
 
+from v8serialize._pycompat.enum import StrEnum
 from v8serialize._versions import parse_lenient_version
 from v8serialize.constants import SerializationFeature
 from v8serialize.decode import AnyTagMapper, TagMapper, loads
