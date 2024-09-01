@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from traceback import TracebackException
 from typing import TYPE_CHECKING, Final, Self
 
+from v8serialize._recursive_eq import recursive_eq
 from v8serialize._values import AnyJSError, JSErrorBuilder
 from v8serialize.constants import JSErrorName
 from v8serialize.errors import V8CodecError
@@ -17,6 +18,7 @@ from v8serialize.jstypes._v8traceback import (
 # We define this dataclass separately from AnyJSError, because AnyJSError's
 # @property fields seem to confuse @dataclass — it sets property objects as
 # instance field values instead of str.
+@recursive_eq
 @dataclass(slots=True, order=True)
 class _JSErrorData:
     name: str = field(default=JSErrorName.Error)
@@ -85,6 +87,7 @@ def _get_message(tbe: TracebackException) -> str | None:
     return next((ln.rstrip() for ln in tbe.format_exception_only()), None)
 
 
+@recursive_eq
 @JSErrorData.register
 @dataclass(init=False)
 class JSError(AnyJSError, V8CodecError):
@@ -150,6 +153,23 @@ class JSError(AnyJSError, V8CodecError):
 
     def __repr__(self) -> str:
         return _repr.js_repr(self)
+
+    def __eq__(self, other: object) -> bool:
+        if self is other:
+            return True
+        if (
+            isinstance(other, BaseException)
+            and self.__traceback__ != other.__traceback__
+        ):
+            return False
+        if isinstance(other, JSErrorData):
+            return (self.name, self.message, self.stack, self.cause) == (
+                other.name,
+                other.message,
+                other.stack,
+                other.cause,
+            )
+        return NotImplemented
 
 
 if TYPE_CHECKING:
