@@ -1,0 +1,19 @@
+JSArray([
+  'a',
+  JSArray([
+    'a',
+    JSArray([
+      'a',
+      JSArray([
+        'a',
+        JSArray([
+          'a',
+          JSArray([
+            'a',
+            JSArray(...),
+          ]),
+        ]),
+      ]),
+    ]),
+  ]),
+])

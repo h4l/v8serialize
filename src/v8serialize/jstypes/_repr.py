@@ -1,9 +1,20 @@
 from __future__ import annotations
 
+import warnings
 from _thread import get_ident
+from contextlib import contextmanager
 from itertools import islice
 from reprlib import Repr
-from typing import TYPE_CHECKING, Any, Collection, Iterable
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Collection,
+    ContextManager,
+    Final,
+    Generator,
+    Iterable,
+    overload,
+)
 
 from v8serialize.constants import JSErrorName
 from v8serialize.jstypes.jsarrayproperties import SparseArrayProperties
@@ -46,6 +57,30 @@ class JSRepr(RecursiveReprMixin, Repr):
 
     maxjsobject: int
     maxjsarray: int
+
+    @overload
+    def __init__(self) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        *,
+        maxjsobject: int = ...,
+        maxjsarray: int = ...,
+        maxlevel: int = ...,
+        maxtuple: int = ...,
+        maxlist: int = ...,
+        maxarray: int = ...,
+        maxdict: int = ...,
+        maxset: int = ...,
+        maxfrozenset: int = ...,
+        maxdeque: int = ...,
+        maxstring: int = ...,
+        maxlong: int = ...,
+        maxother: int = ...,
+        fillvalue: str = ...,
+        indent: int | None = ...,
+    ) -> None: ...
 
     def __init__(
         self, *args: Any, maxjsobject: int = 20, maxjsarray: int = 20, **kwargs: Any
@@ -276,4 +311,111 @@ default_js_repr = JSRepr(
     maxstring=200,
     maxother=100,
 )
-js_repr = default_js_repr.repr
+
+active_js_repr: JSRepr = default_js_repr
+
+
+def js_repr(obj: object) -> str:
+    """Create an indented/recursively-safe repr with the active repr settings."""
+    return active_js_repr.repr(obj)
+
+
+@overload
+def js_repr_settings(
+    js_repr: JSRepr, *, force_restore: bool = ...
+) -> ContextManager[JSRepr]: ...
+
+
+@overload
+def js_repr_settings(
+    *,
+    maxjsobject: int | None = ...,
+    maxjsarray: int | None = ...,
+    maxlevel: int | None = ...,
+    maxtuple: int | None = ...,
+    maxlist: int | None = ...,
+    maxarray: int | None = ...,
+    maxdict: int | None = ...,
+    maxset: int | None = ...,
+    maxfrozenset: int | None = ...,
+    maxdeque: int | None = ...,
+    maxstring: int | None = ...,
+    maxlong: int | None = ...,
+    maxother: int | None = ...,
+    fillvalue: str | None = ...,
+    indent: int | None = ...,
+    force_restore: bool = ...,
+) -> ContextManager[JSRepr]: ...
+
+
+@contextmanager
+def js_repr_settings(
+    js_repr: JSRepr | None = None,
+    *,
+    force_restore: bool = False,
+    **kwargs: int | str | None,
+) -> Generator[JSRepr, None, None]:
+    """Override the active repr settings for JS types.
+
+    This returns a context manager that will restore the previous settings at
+    the end of the context block.
+
+    If someone changes the js_repr_settings within your block and your block
+    closes before theirs, your block will emit a `JSReprSettingsNotRestored`
+    warning and leave the repr settings unchanged. Pass `force_restore=True` to
+    restore your initial state anyway and not warn.
+    """
+    global active_js_repr
+    initial_js_repr = active_js_repr
+
+    if not js_repr:
+        override_state = {
+            field: getattr(initial_js_repr, field) for field in _known_fields
+        }
+        for k, v in kwargs.items():
+            if k not in override_state:
+                raise TypeError(
+                    f"configure_repr() got an unexpected keyword argument {k!r}"
+                )
+            if v is not None or k == "indent":  # None is a value for indent
+                override_state[k] = v
+        js_repr = JSRepr(**override_state)
+
+    active_js_repr = js_repr
+    try:
+        yield js_repr
+    finally:
+        if active_js_repr is js_repr or force_restore:
+            active_js_repr = initial_js_repr
+        else:
+            warnings.warn(
+                JSReprSettingsNotRestored(
+                    "configure_js_repr() is not restoring the initial JSRepr "
+                    "instance because the active JSRepr instance is no longer "
+                    "the one it created"
+                ),
+                stacklevel=1,
+            )
+
+
+class JSReprSettingsNotRestored(UserWarning):
+    pass
+
+
+_known_fields: Final = (
+    "maxjsobject",
+    "maxjsarray",
+    "maxlevel",
+    "maxtuple",
+    "maxlist",
+    "maxarray",
+    "maxdict",
+    "maxset",
+    "maxfrozenset",
+    "maxdeque",
+    "maxstring",
+    "maxlong",
+    "maxother",
+    "fillvalue",
+    "indent",
+)

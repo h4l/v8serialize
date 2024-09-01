@@ -1,0 +1,19 @@
+JSObject(
+  a=1,
+  b=JSObject(
+    a=1,
+    b=JSObject(
+      a=1,
+      b=JSObject(
+        a=1,
+        b=JSObject(
+          a=1,
+          b=JSObject(
+            a=1,
+            b=JSObject(...),
+          ),
+        ),
+      ),
+    ),
+  ),
+)

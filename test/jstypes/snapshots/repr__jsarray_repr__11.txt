@@ -1,0 +1,8 @@
+JSArray([
+  JSObject(
+    names=JSArray([
+      'Bill',
+      'Bob',
+    ]),
+  ),
+])
