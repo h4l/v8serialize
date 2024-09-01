@@ -76,8 +76,14 @@ def test_feature_float16__cannot_write_float16array_when_disabled() -> None:
     with pytest.raises(
         UnmappedValueEncodeV8CodecError,
         match="No object mapper was able to write the value",
-    ):
+    ) as exc_info:
         ctx.encode_object(f16)
+
+    assert (
+        "ObjectMapper is not handling JSArrayBufferViews with the Float16Array "
+        "tag because <SerializationFeature.Float16Array: 8> is not enabled."
+        in exc_info.value.__notes__
+    )
 
     with pytest.raises(
         FeatureNotEnabledEncodeV8CodecError,

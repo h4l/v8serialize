@@ -1018,7 +1018,15 @@ class ObjectMapper(ObjectMapperObject):
             value.view_tag == ArrayBufferViewTag.kFloat16Array
             and SerializationFeature.Float16Array not in ctx.stream.features
         ):
-            return next(value)
+            try:
+                return next(value)
+            except UnmappedValueEncodeV8CodecError as e:
+                e.add_note(
+                    f"{type(self).__name__} is not handling JSArrayBufferViews "
+                    f"with the Float16Array tag because "
+                    f"{SerializationFeature.Float16Array!r} is not enabled."
+                )
+                raise e
         ctx.encode_object(value.backing_buffer)
         ctx.stream.write_js_array_buffer_view(value)
 
