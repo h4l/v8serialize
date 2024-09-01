@@ -42,11 +42,11 @@ class JSErrorData(_JSErrorData, AnyJSError, ABC):
         ) -> None: ...
 
     @classmethod
-    def from_exception(cls, exc: BaseException) -> JSErrorData:
+    def from_exception(cls, exc: BaseException) -> Self:
         return cls.from_traceback_exception(TracebackException.from_exception(exc))
 
     @classmethod
-    def from_traceback_exception(cls, tbe: TracebackException) -> JSErrorData:
+    def from_traceback_exception(cls, tbe: TracebackException) -> Self:
         message = _get_message(tbe)
         stack = "".join(format_exception_for_v8(tbe)).rstrip()
 
@@ -56,7 +56,7 @@ class JSErrorData(_JSErrorData, AnyJSError, ABC):
         if tbe.__cause__:
             cause = cls.from_traceback_exception(tbe.__cause__)
 
-        return JSErrorData(
+        return cls(
             # We always use just Error as the name, as Python errors can't
             # really be considered to be equivalent to JS Error types. The
             # message property we set will contain the name of the Python error
