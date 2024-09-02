@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic
 from typing_extensions import TypeVar
 
+from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize.constants import (
     FLOAT64_SAFE_INT_RANGE,
     PrimitiveObjectTag,
@@ -17,7 +18,7 @@ else:
     T = TypeVar("T", bound=float | bool | int | str)
 
 
-@dataclass(frozen=True, order=True, slots=True, init=False)
+@dataclass(frozen=True, order=True, init=False, **slots_if310())
 class JSPrimitiveObject(Generic[T], metaclass=ABCMeta):
     value: T
     tag: PrimitiveObjectTag

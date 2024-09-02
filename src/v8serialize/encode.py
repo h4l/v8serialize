@@ -23,6 +23,7 @@ from typing_extensions import (
 
 from packaging.version import Version
 
+from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._values import (
     AnyArrayBuffer,
     AnyArrayBufferTransfer,
@@ -120,7 +121,7 @@ def _encode_zigzag(number: int) -> int:
     return abs(number * 2) - (number < 0)
 
 
-@dataclass(slots=True)
+@dataclass(**slots_if310())
 class TagConstraintRemover(AbstractContextManager[None, None]):
     """Context manager that removes the current tag constraint on a
     WritableTagStream.
@@ -142,13 +143,13 @@ class TagConstraintRemover(AbstractContextManager[None, None]):
 
 
 # FIXME: not used
-@dataclass(slots=True, frozen=True)
+@dataclass(frozen=True, **slots_if310())
 class SerializedObjectReference:
     serialized_tag: SerializationTag
     serialized_id: SerializedId
 
 
-@dataclass(slots=True)
+@dataclass(**slots_if310())
 class WritableTagStream:
     """Write individual tagged data items in the V8 serialization format.
 
@@ -732,7 +733,7 @@ class ObjectMapperObject(Protocol):
 AnyObjectMapper = ObjectMapperObject | SerializeObjectFn
 
 
-@dataclass(slots=True, init=False)
+@dataclass(init=False, **slots_if310())
 class DefaultEncodeContext(EncodeContext):
     object_mappers: Sequence[ObjectMapperObject | SerializeObjectFn]
     stream: WritableTagStream
@@ -788,7 +789,7 @@ class DefaultEncodeContext(EncodeContext):
         return value
 
 
-@dataclass(slots=True)
+@dataclass(**slots_if310())
 class ObjectMapper(ObjectMapperObject):
     """Defines the conversion of Python types into the V8 serialization format.
 

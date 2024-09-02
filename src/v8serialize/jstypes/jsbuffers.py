@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, ClassVar, Generic
 from typing_extensions import Any, Literal, Self, TypeAlias, overload
 
 from v8serialize._enums import frozen
+from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._values import (
     AnyArrayBuffer,
     AnyArrayBufferTransfer,
@@ -44,14 +45,14 @@ def get_buffer(buffer: Buffer, flags: int | inspect.BufferFlags = 0) -> memoryvi
     return memoryview(buffer)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, **slots_if310())
 class BaseJSArrayBuffer(ABC):
     @abstractmethod
     def __buffer__(self, flags: int) -> memoryview: ...
 
 
 @BaseJSArrayBuffer.register
-@dataclass(frozen=True, slots=True, init=False)
+@dataclass(frozen=True, init=False, **slots_if310())
 class JSArrayBuffer(
     AnyArrayBuffer,
     Generic[BufferT],
@@ -198,7 +199,7 @@ class JSArrayBuffer(
 
 
 @BaseJSArrayBuffer.register
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, **slots_if310())
 class JSSharedArrayBuffer(AnySharedArrayBuffer, ABC):
     buffer_id: SharedArrayBufferId
 
@@ -207,7 +208,7 @@ class JSSharedArrayBuffer(AnySharedArrayBuffer, ABC):
 
 
 @BaseJSArrayBuffer.register
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, **slots_if310())
 class JSArrayBufferTransfer(AnyArrayBufferTransfer, ABC):
     transfer_id: TransferId
 
@@ -248,7 +249,7 @@ class DataType(Enum):
         return obj
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, **slots_if310())
 class DataFormat:
     byte_length: int
     data_type: DataType
@@ -269,7 +270,7 @@ class DataFormat:
         return cls(data_type=data_type, format=format, byte_length=byte_length)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, **slots_if310())
 class JSArrayBufferView(Generic[JSArrayBufferT, AnyBufferT]):
     """A view to a range of a byte buffer.
 
@@ -768,7 +769,7 @@ class JSDataView(JSArrayBufferView[JSArrayBufferT, DataViewBuffer]):
         return DataViewBuffer(self.get_buffer_as_memoryview())
 
 
-@dataclass(slots=True, unsafe_hash=True, order=True)
+@dataclass(unsafe_hash=True, order=True, **slots_if310())
 class ViewFormat:
     view_tag: ArrayBufferViewTag
     view_type: type[JSTypedArray] | type[JSDataView]

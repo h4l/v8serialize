@@ -27,6 +27,7 @@ from typing_extensions import (
     runtime_checkable,
 )
 
+from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._values import (
     AnyJSError,
     ArrayBufferConstructor,
@@ -137,7 +138,7 @@ class ReferencedObject(NamedTuple, Generic[T]):
     object: T
 
 
-@dataclass(slots=True)
+@dataclass(**slots_if310())
 class ReadableTagStream:
     data: ByteString
     pos: int = field(default=0)
@@ -828,7 +829,7 @@ class TagReader(Protocol[TagT_con]):
     ) -> object: ...
 
 
-@dataclass(slots=True, init=False)
+@dataclass(init=False, **slots_if310())
 class TagReaderRegistry:
     index: Mapping[SerializationTag, TagReader[SerializationTag]]
     _index: dict[SerializationTag, TagReader[SerializationTag]]
@@ -915,7 +916,7 @@ class TagMapperObject(Protocol):
 AnyTagMapper = TagMapperObject | DeserializeTagFn
 
 
-@dataclass(slots=True, init=False)
+@dataclass(init=False, **slots_if310())
 class DefaultDecodeContext(DecodeContext):
     tag_mappers: Sequence[AnyTagMapper]
     stream: ReadableTagStream
@@ -988,7 +989,7 @@ JSObjectType = Callable[[], JSObject[object]]
 JSArrayType = Callable[[], JSArray[object]]
 
 
-@dataclass(slots=True, init=False)
+@dataclass(init=False, **slots_if310())
 class TagMapper(TagMapperObject):
     """Defines the conversion of V8 serialization tagged data to Python values."""
 

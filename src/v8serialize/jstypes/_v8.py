@@ -4,10 +4,12 @@ from abc import ABC
 from dataclasses import dataclass
 from typing_extensions import NewType
 
+from v8serialize._pycompat.dataclasses import slots_if310
+
 V8SharedValueId = NewType("V8SharedValueId", int)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, **slots_if310())
 class V8SharedObjectReference(ABC):
     """Represents an inaccessible shared object in a V8 process.
 

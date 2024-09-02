@@ -6,11 +6,12 @@ from re import Pattern, compile
 from typing import AnyStr
 from typing_extensions import Literal, overload
 
+from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize.constants import JSRegExpFlag
 from v8serialize.errors import JSRegExpV8CodecError
 
 
-@dataclass(slots=True, frozen=True, order=True)
+@dataclass(frozen=True, order=True, **slots_if310())
 class JSRegExp:
     """A JavaScript RegExp.
 

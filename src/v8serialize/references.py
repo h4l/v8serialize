@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final, Generic
 from typing_extensions import Any, Generator, NewType, overload
 
+from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize.errors import V8CodecError
 
 if TYPE_CHECKING:
@@ -22,7 +23,7 @@ class ObjectReferenceV8CodecError(V8CodecError, KeyError):
     pass
 
 
-@dataclass(slots=True, init=False)
+@dataclass(init=False, **slots_if310())
 class ObjectNotSerializedV8CodecError(ObjectReferenceV8CodecError):
     obj: object
 
@@ -31,7 +32,7 @@ class ObjectNotSerializedV8CodecError(ObjectReferenceV8CodecError):
         self.obj = obj
 
 
-@dataclass(slots=True, init=False)
+@dataclass(init=False, **slots_if310())
 class SerializedIdOutOfRangeV8CodecError(ObjectReferenceV8CodecError):
     serialized_id: SerializedId
 
@@ -40,7 +41,7 @@ class SerializedIdOutOfRangeV8CodecError(ObjectReferenceV8CodecError):
         self.serialized_id = serialized_id
 
 
-@dataclass(slots=True, init=False)
+@dataclass(init=False, **slots_if310())
 class IllegalCyclicReferenceV8CodecError(ObjectReferenceV8CodecError):
     serialized_id: SerializedId
     obj: object
@@ -54,7 +55,7 @@ class IllegalCyclicReferenceV8CodecError(ObjectReferenceV8CodecError):
 SerializedId = NewType("SerializedId", int)
 
 
-@dataclass(slots=True, init=False)
+@dataclass(init=False, **slots_if310())
 class SerializedObjectLog:
     """References to the objects occurring in V8 serialized data.
 
@@ -148,7 +149,7 @@ class ForwardReferenceError(ReferenceError, Generic[T]):
         self.forward_reference = forward_reference
 
 
-@dataclass(slots=True, init=False)
+@dataclass(init=False, **slots_if310())
 class ForwardReference(Generic[T]):
     __value: T
 

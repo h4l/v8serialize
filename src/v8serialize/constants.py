@@ -13,6 +13,7 @@ from typing_extensions import Literal, Self, TypeAlias, TypeGuard, TypeVar, over
 
 from packaging.version import Version
 
+from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._pycompat.enum import StrEnum
 from v8serialize._versions import parse_lenient_version
 from v8serialize.errors import JSRegExpV8CodecError
@@ -550,7 +551,7 @@ else:
 TagSet = AbstractSet[TagT_co]
 
 
-@dataclass(slots=True, frozen=True)
+@dataclass(frozen=True, **slots_if310())
 class TagConstraint(Generic[TagT_co]):
     name: str
     allowed_tags: TagSet[TagT_co]

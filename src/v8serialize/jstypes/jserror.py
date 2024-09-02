@@ -6,6 +6,7 @@ from traceback import TracebackException
 from typing import TYPE_CHECKING, Final
 from typing_extensions import Self
 
+from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._recursive_eq import recursive_eq
 from v8serialize._values import AnyJSError, JSErrorBuilder
 from v8serialize.constants import JSErrorName
@@ -20,7 +21,7 @@ from v8serialize.jstypes._v8traceback import (
 # @property fields seem to confuse @dataclass — it sets property objects as
 # instance field values instead of str.
 @recursive_eq
-@dataclass(slots=True, order=True)
+@dataclass(order=True, **slots_if310())
 class _JSErrorData:
     message: str | None = field(default=None)
     name: str = field(default=JSErrorName.Error, kw_only=True)

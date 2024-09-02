@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from typing_extensions import TypeGuard, overload
 
+from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize.jstypes import _repr
 from v8serialize.jstypes.jsarrayproperties import JSHoleType
 from v8serialize.jstypes.jsobject import JSObject
@@ -30,7 +31,7 @@ def _supports_iterable(
     return callable(getattr(o, "__iter__", None))
 
 
-@dataclass(slots=True, init=False)
+@dataclass(init=False, **slots_if310())
 class JSArray(JSObject["T"]):
     """A JavaScript Array.
 

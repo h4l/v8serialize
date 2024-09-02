@@ -4,6 +4,8 @@ from collections.abc import ByteString
 from dataclasses import dataclass, fields
 from typing import TYPE_CHECKING, cast
 
+from v8serialize._pycompat.dataclasses import slots_if310
+
 if TYPE_CHECKING:
     from v8serialize.constants import SerializationTag
 
@@ -69,7 +71,7 @@ class UnmappedTagDecodeV8CodecError(DecodeV8CodecError):
         return cast("SerializationTag", self.args[1])
 
 
-@dataclass(slots=True, init=False)
+@dataclass(init=False, **slots_if310())
 class NormalizedKeyError(KeyError):
     """A key was not found, but the searched-for key was a normalized version of
     the provided key."""

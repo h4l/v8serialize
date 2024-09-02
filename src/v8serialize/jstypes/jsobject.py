@@ -8,6 +8,7 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING
 from typing_extensions import Any, overload
 
+from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize.errors import NormalizedKeyError
 from v8serialize.jstypes import _repr
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
@@ -32,7 +33,7 @@ MIN_SPARSE_ARRAY_SIZE = 16
 MIN_DENSE_ARRAY_USED_RATIO = 1 / 4
 
 
-@dataclass(slots=True, init=False)
+@dataclass(init=False, **slots_if310())
 class JSObject(MutableMapping[str | int, "T"], ABC):
     """A Python model of JavaScript plain objects, limited to the behaviour that
     can be transferred with V8 serialization (which is essentially the behaviour
