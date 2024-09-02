@@ -15,14 +15,18 @@ from dataclasses import dataclass, field
 from datetime import datetime, tzinfo
 from functools import partial
 from types import MappingProxyType
-from typing import TYPE_CHECKING, AbstractSet, Callable, Final, Generic, cast
-from typing_extensions import (
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Callable,
+    Final,
     Generator,
+    Generic,
     Literal,
     NamedTuple,
-    Never,
     Protocol,
     TypeVar,
+    cast,
     overload,
     runtime_checkable,
 )
@@ -85,6 +89,8 @@ from v8serialize.jstypes.jsset import JSSet
 from v8serialize.references import SerializedId, SerializedObjectLog
 
 if TYPE_CHECKING:
+    from typing_extensions import Never, TypeAlias
+
     from _typeshed import SupportsRead
 
 T = TypeVar("T")
@@ -481,7 +487,7 @@ class ReadableTagStream:
             )
 
         return cast(
-            ReferencedObject[T] | ReferencedObject[AnyJSError],
+            "ReferencedObject[T] | ReferencedObject[AnyJSError]",
             ReferencedObject(serialized_id, error_obj),
         )
 
@@ -814,8 +820,8 @@ class HostObjectDeserializerObj(Protocol[T_co]):
     def deserialize_host_object(self) -> HostObjectDeserializerFn[T_co]: ...
 
 
-HostObjectDeserializer = (
-    HostObjectDeserializerObj[T_co] | HostObjectDeserializerFn[T_co]
+HostObjectDeserializer: TypeAlias = (
+    "HostObjectDeserializerObj[T_co] | HostObjectDeserializerFn[T_co]"
 )
 
 
@@ -913,7 +919,7 @@ class TagMapperObject(Protocol):
     deserialize: DeserializeTagFn
 
 
-AnyTagMapper = TagMapperObject | DeserializeTagFn
+AnyTagMapper: TypeAlias = "TagMapperObject | DeserializeTagFn"
 
 
 @dataclass(init=False, **slots_if310())

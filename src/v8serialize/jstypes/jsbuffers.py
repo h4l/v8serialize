@@ -27,7 +27,7 @@ from v8serialize.errors import V8CodecError
 if TYPE_CHECKING:
     from typing_extensions import Buffer, Self, TypeAlias, TypeVar
 
-    AnyBuffer: TypeAlias = ByteString | Buffer
+    AnyBuffer: TypeAlias = "ByteString | Buffer"
     AnyBufferT = TypeVar("AnyBufferT", bound=AnyBuffer, default=AnyBuffer)
     BufferT = TypeVar("BufferT", bound=ByteString, default=ByteString)
 else:
@@ -217,7 +217,7 @@ class JSArrayBufferTransfer(AnyArrayBufferTransfer, ABC):
 
 if TYPE_CHECKING:
     AnyArrayBufferData: TypeAlias = (
-        AnyBuffer | JSArrayBuffer | JSSharedArrayBuffer | JSArrayBufferTransfer
+        "AnyBuffer | JSArrayBuffer | JSSharedArrayBuffer | JSArrayBufferTransfer"
     )
     JSArrayBufferT = TypeVar(
         "JSArrayBufferT", bound=AnyArrayBufferData, default=AnyArrayBufferData
@@ -514,7 +514,7 @@ TypedViewTag = Literal[
 
 if TYPE_CHECKING:
     ViewTagT = TypeVar("ViewTagT", bound=TypedViewTag, default=TypedViewTag)
-    ElementT = TypeVar("ElementT", bound=int | float, default=int | float)
+    ElementT = TypeVar("ElementT", bound="int | float", default="int | float")
 else:
     ViewTagT = TypeVar("ViewTagT")
     ElementT = TypeVar("ElementT")

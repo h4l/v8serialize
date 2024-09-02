@@ -694,7 +694,7 @@ class HostObjectSerializerObj(Protocol[T_con]):
 
 
 HostObjectSerializer: TypeAlias = (
-    HostObjectSerializerObj[T_con] | HostObjectSerializerFn[T_con]
+    "HostObjectSerializerObj[T_con] | HostObjectSerializerFn[T_con]"
 )
 
 
@@ -732,7 +732,7 @@ class ObjectMapperObject(Protocol):
     serialize: SerializeObjectFn
 
 
-AnyObjectMapper = ObjectMapperObject | SerializeObjectFn
+AnyObjectMapper: TypeAlias = "ObjectMapperObject | SerializeObjectFn"
 
 
 @dataclass(init=False, **slots_if310())

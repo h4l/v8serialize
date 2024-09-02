@@ -63,7 +63,7 @@ else:
 
 if TYPE_CHECKING:
 
-    class SparseSequence(Sequence[_T_co | _HoleT_co], Generic[_T_co, _HoleT_co]):
+    class SparseSequence(Sequence["_T_co | _HoleT_co"], Generic[_T_co, _HoleT_co]):
         """A Sequence that can have holes — indexes with no value present.
 
         Similar to an ordered dict with int keys, but the empty values have a type
@@ -127,7 +127,7 @@ class Order(Enum):
 if TYPE_CHECKING:
 
     class SparseMutableSequence(
-        MutableSequence[_T_co | _HoleT_co], SparseSequence[_T_co, _HoleT_co]
+        MutableSequence["_T_co | _HoleT_co"], SparseSequence[_T_co, _HoleT_co]
     ):
         """A writable extension of SparseSequence."""
 

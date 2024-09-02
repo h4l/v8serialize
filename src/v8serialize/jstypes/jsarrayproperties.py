@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from _typeshed import SupportsItems, SupportsKeysAndGetItem
 
 _KT = TypeVar("_KT")
-KT = TypeVar("KT", bound=int | str)
+KT = TypeVar("KT", bound="int | str")
 T = TypeVar("T")
 
 
@@ -85,7 +85,7 @@ else:
 
 
 @dataclass(**slots_if310())
-class AbstractArrayProperties(ArrayProperties[T], MutableSequence[T | JSHoleType]):
+class AbstractArrayProperties(ArrayProperties[T], MutableSequence["T | JSHoleType"]):
     hole_value: ClassVar[JSHoleType] = JSHole
 
     def __eq__(self, other: object) -> bool:
@@ -310,7 +310,7 @@ class DenseArrayProperties(AbstractArrayProperties[T]):
         i = self._normalise_index(i)
 
         current = self._items[i]
-        self._items[i] = cast(T | JSHoleType, value)
+        self._items[i] = cast("T | JSHoleType", value)
         if current is JSHole:
             if value is not JSHole:
                 self._elements_used += 1

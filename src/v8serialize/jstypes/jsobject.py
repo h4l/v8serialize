@@ -33,7 +33,7 @@ MIN_DENSE_ARRAY_USED_RATIO = 1 / 4
 
 
 @dataclass(init=False, **slots_if310())
-class JSObject(MutableMapping[str | int, "T"], ABC):
+class JSObject(MutableMapping["str | int", "T"], ABC):
     """A Python model of JavaScript plain objects, limited to the behaviour that
     can be transferred with V8 serialization (which is essentially the behaviour
     of [`structuredClone()`]).

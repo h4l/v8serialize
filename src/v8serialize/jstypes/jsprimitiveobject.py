@@ -14,11 +14,13 @@ from v8serialize.constants import (
 if TYPE_CHECKING:
     from typing_extensions import TypeVar
 
-    T = TypeVar("T", bound=float | bool | int | str, default=float | bool | int | str)
+    T = TypeVar(
+        "T", bound="float | bool | int | str", default="float | bool | int | str"
+    )
 else:
     from typing import TypeVar
 
-    T = TypeVar("T", bound=float | bool | int | str)
+    T = TypeVar("T", bound="float | bool | int | str")
 
 
 @dataclass(frozen=True, order=True, init=False, **slots_if310())

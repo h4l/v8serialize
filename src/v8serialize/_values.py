@@ -16,7 +16,7 @@ from v8serialize.constants import ArrayBufferViewTag, JSErrorName
 if TYPE_CHECKING:
     from typing_extensions import Buffer, TypeAlias
 
-    AnyBuffer: TypeAlias = ByteString | Buffer
+    AnyBuffer: TypeAlias = "ByteString | Buffer"
 
 T_co = TypeVar("T_co", covariant=True)
 
@@ -61,7 +61,7 @@ class AnyArrayBufferView(Protocol):
 
 
 AnyArrayBufferData: TypeAlias = (
-    AnyArrayBuffer | AnySharedArrayBuffer | AnyArrayBufferTransfer
+    "AnyArrayBuffer | AnySharedArrayBuffer | AnyArrayBufferTransfer"
 )
 
 BufferT = TypeVar("BufferT")

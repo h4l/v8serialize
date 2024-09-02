@@ -558,8 +558,8 @@ def test_codec_rt_js_error(value: JSErrorData) -> None:
             assert err_after.name == JSErrorName.Error
             err_after.name = err_before.name
 
-        err_before = cast(JSErrorData | None, err_before.cause)
-        err_after = cast(JSErrorData | None, err_after.cause)
+        err_before = cast("JSErrorData | None", err_before.cause)
+        err_after = cast("JSErrorData | None", err_after.cause)
         assert (err_before and err_after) or not (err_before or err_after)
 
     assert value == result

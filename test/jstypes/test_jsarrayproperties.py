@@ -34,14 +34,14 @@ T = TypeVar("T")
 
 
 @ArrayProperties.register
-class SimpleArrayProperties(list[T | JSHoleType], ArrayProperties[T]):
+class SimpleArrayProperties(list["T | JSHoleType"], ArrayProperties[T]):
     """Very simple but inefficient implementation of ArrayProperties to compare
     against real implementations.
     """
 
     hole_value: ClassVar[JSHoleType] = JSHole
 
-    def __init__(self, values: Iterable[T | JSHoleType] | None = None) -> None:
+    def __init__(self, values: Iterable["T | JSHoleType"] | None = None) -> None:
         if values is not None:
             super().__init__(values)
 
