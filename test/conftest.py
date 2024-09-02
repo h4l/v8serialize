@@ -8,16 +8,17 @@ from pytest_insta import Fmt
 
 class FmtException(Fmt[str]):  # type: ignore[no-untyped-call] # __init_subclass__
     extension = ".exc.txt"
-    project_dir: str
+    project_dir: Path
 
     def __init__(self) -> None:
-        self.project_dir = "{}/".format(Path(__file__, "../..").resolve())
+        self.project_dir = Path(__file__, "../..").resolve()
+        self.project_dir_pattern = re.escape(str(Path(__file__, "../..").resolve()))
 
     def with_absolute_paths(self, trace: str) -> str:
-        return re.sub(r'(?<=[("])/…/v8serialize/', self.project_dir, trace)
+        return re.sub(r'(?<=[("])/…/v8serialize/', f"{self.project_dir}/", trace)
 
     def with_relative_paths(self, trace: str) -> str:
-        return re.sub(r'(?<=[("])/.*/v8serialize/', "/…/v8serialize/", trace)
+        return re.sub(f'(?<=[("]){self.project_dir_pattern}/', "/…/v8serialize/", trace)
 
     def load(self, path: Path) -> str:
         exception_trace = path.read_text()
