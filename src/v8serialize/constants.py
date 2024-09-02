@@ -20,7 +20,7 @@ from typing import (
 from packaging.version import Version
 
 from v8serialize._pycompat.dataclasses import slots_if310
-from v8serialize._pycompat.enum import IterableIntFlag, StrEnum
+from v8serialize._pycompat.enum import IterableFlag, IterableIntFlag, StrEnum
 from v8serialize._pycompat.re import RegexFlag
 from v8serialize._versions import parse_lenient_version
 from v8serialize.errors import JSRegExpV8CodecError
@@ -398,7 +398,7 @@ class SymbolicVersion(Enum):
 UnreleasedVersion: TypeAlias = Literal[SymbolicVersion.Unreleased]
 
 
-class SerializationFeature(IntFlag):
+class SerializationFeature(IterableFlag):
     """Changes to serialization within format versions that affect compatibility.
 
     V8 makes changes to its serialization format without bumping the version
@@ -493,7 +493,7 @@ class SerializationFeature(IntFlag):
             flag: int,
             first_v8_version: str | UnreleasedVersion,
         ) -> Self:
-            obj = int.__new__(cls, flag)
+            obj = object.__new__(cls)
             obj._value_ = flag
             obj.__first_v8_version = (
                 Version(first_v8_version)

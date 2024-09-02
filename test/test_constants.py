@@ -118,7 +118,7 @@ def test_SerializationFeature__for_name() -> None:
         (
             Version("15.0.0"),
             # Float16Array cannot be included as its version is not released
-            ~SerializationFeature.MaxCompatibility - SerializationFeature.Float16Array,
+            ~SerializationFeature.Float16Array,
         ),
         (SymbolicVersion.Unreleased, ~SerializationFeature.MaxCompatibility),
     ],
