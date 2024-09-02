@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import sys
 from traceback import TracebackException
-from typing_extensions import Callable, Never
+from typing import Callable
+from typing_extensions import Never
 
 if sys.version_info < (3, 11):
     from exceptiongroup import ExceptionGroup

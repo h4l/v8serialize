@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import math
 from datetime import datetime
-from typing_extensions import Callable, Literal, cast
+from typing import Callable, cast
+from typing_extensions import Literal
 
 import pytest
 from hypothesis import given

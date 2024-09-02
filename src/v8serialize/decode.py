@@ -3,29 +3,26 @@ from __future__ import annotations
 import codecs
 import operator
 import struct
+from collections.abc import (
+    ByteString,
+    Iterable,
+    Mapping,
+    MutableMapping,
+    MutableSet,
+    Sequence,
+)
 from dataclasses import dataclass, field
 from datetime import datetime, tzinfo
 from functools import partial
 from types import MappingProxyType
+from typing import TYPE_CHECKING, AbstractSet, Callable, Final, Generic, cast
 from typing_extensions import (
-    TYPE_CHECKING,
-    AbstractSet,
-    ByteString,
-    Callable,
-    Final,
     Generator,
-    Generic,
-    Iterable,
     Literal,
-    Mapping,
-    MutableMapping,
-    MutableSet,
     NamedTuple,
     Never,
     Protocol,
-    Sequence,
     TypeVar,
-    cast,
     overload,
     runtime_checkable,
 )

@@ -1,18 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC
+from collections.abc import Iterable, Iterator, Mapping, MutableMapping
 from dataclasses import dataclass
 from itertools import chain
 from types import MappingProxyType
-from typing_extensions import (
-    TYPE_CHECKING,
-    Any,
-    Iterable,
-    Iterator,
-    Mapping,
-    MutableMapping,
-    overload,
-)
+from typing import TYPE_CHECKING
+from typing_extensions import Any, overload
 
 from v8serialize.errors import NormalizedKeyError
 from v8serialize.jstypes import _repr

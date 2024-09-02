@@ -1,16 +1,10 @@
 from __future__ import annotations
 
 from abc import ABCMeta
+from collections.abc import Iterable, Iterator, MutableSet
 from dataclasses import dataclass
-from typing_extensions import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Iterable,
-    Iterator,
-    MutableSet,
-    Self,
-    overload,
-)
+from typing import TYPE_CHECKING, AbstractSet
+from typing_extensions import Self, overload
 
 from v8serialize.jstypes import _repr
 from v8serialize.jstypes._equality import JSSameValueZero, same_value_zero

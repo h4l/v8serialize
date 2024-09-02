@@ -1,16 +1,9 @@
 from __future__ import annotations
 
 import dataclasses
-from typing_extensions import (
-    Any,
-    ClassVar,
-    Iterable,
-    Iterator,
-    Protocol,
-    Sequence,
-    TypeVar,
-    cast,
-)
+from collections.abc import Iterable, Iterator, Sequence
+from typing import ClassVar, cast
+from typing_extensions import Any, Protocol, TypeVar
 
 import pytest
 from hypothesis import strategies as st

@@ -4,22 +4,13 @@ import functools
 import inspect
 import struct
 from abc import ABC, abstractmethod
+from collections.abc import ByteString, Sized
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from enum import Enum
 from types import TracebackType
-from typing_extensions import (
-    TYPE_CHECKING,
-    Any,
-    ByteString,
-    ClassVar,
-    Generic,
-    Literal,
-    Self,
-    Sized,
-    TypeAlias,
-    overload,
-)
+from typing import TYPE_CHECKING, ClassVar, Generic
+from typing_extensions import Any, Literal, Self, TypeAlias, overload
 
 from v8serialize._enums import frozen
 from v8serialize._values import (

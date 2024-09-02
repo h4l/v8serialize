@@ -3,7 +3,8 @@ from __future__ import annotations
 import math
 from datetime import datetime
 from functools import cache
-from typing_extensions import Final, Literal, Optional, TypeVar, cast, overload
+from typing import Final, cast
+from typing_extensions import Literal, TypeVar, overload
 
 from hypothesis import assume
 from hypothesis import strategies as st

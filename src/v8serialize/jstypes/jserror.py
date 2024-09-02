@@ -3,7 +3,8 @@ from __future__ import annotations
 from abc import ABC
 from dataclasses import dataclass, field
 from traceback import TracebackException
-from typing_extensions import TYPE_CHECKING, Final, Self
+from typing import TYPE_CHECKING, Final
+from typing_extensions import Self
 
 from v8serialize._recursive_eq import recursive_eq
 from v8serialize._values import AnyJSError, JSErrorBuilder

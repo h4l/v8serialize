@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from abc import ABCMeta
 from dataclasses import dataclass
-from typing_extensions import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Generic
+from typing_extensions import TypeVar
 
 from v8serialize.constants import (
     FLOAT64_SAFE_INT_RANGE,

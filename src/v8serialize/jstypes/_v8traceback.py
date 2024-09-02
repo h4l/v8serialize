@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from itertools import zip_longest
 from traceback import FrameSummary, TracebackException
-from typing_extensions import Generator, Iterable, Sequence, cast
+from typing import cast
+from typing_extensions import Generator
 
 
 def format_exception_for_v8(

@@ -2,14 +2,9 @@ from __future__ import annotations
 
 """This is a simplified demo of the protocols defined in v8serialize.typing."""
 
-from typing_extensions import (
-    TYPE_CHECKING,
-    Protocol,
-    Sequence,
-    TypeVar,
-    overload,
-    runtime_checkable,
-)
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
+from typing_extensions import Protocol, TypeVar, overload, runtime_checkable
 
 T = TypeVar("T")
 

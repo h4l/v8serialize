@@ -1,28 +1,26 @@
 from __future__ import annotations
 
 from bisect import bisect_left
+from collections.abc import (
+    Iterable,
+    Iterator,
+    Mapping,
+    MutableSequence,
+    Sequence,
+    Sized,
+)
 from dataclasses import dataclass, field
 from enum import Enum
 from itertools import groupby, repeat
+from typing import TYPE_CHECKING, ClassVar, Final, Generic, cast
 from typing_extensions import (
-    TYPE_CHECKING,
-    ClassVar,
-    Final,
     Generator,
-    Generic,
-    Iterable,
-    Iterator,
     Literal,
-    Mapping,
-    MutableSequence,
     Protocol,
     Self,
-    Sequence,
-    Sized,
     TypeAlias,
     TypeGuard,
     TypeVar,
-    cast,
     overload,
     runtime_checkable,
 )

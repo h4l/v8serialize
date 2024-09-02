@@ -1,18 +1,11 @@
 from __future__ import annotations
 
 from abc import ABCMeta
-from collections.abc import MutableMapping
+from collections.abc import Iterable, Iterator, Mapping, MutableMapping
 from dataclasses import dataclass
 from operator import itemgetter
-from typing_extensions import (
-    TYPE_CHECKING,
-    Iterable,
-    Iterator,
-    Mapping,
-    TypeGuard,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, cast
+from typing_extensions import TypeGuard, overload
 
 from v8serialize.jstypes import _repr
 from v8serialize.jstypes._equality import JSSameValueZero, same_value_zero

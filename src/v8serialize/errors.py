@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import ByteString
 from dataclasses import dataclass, fields
-from typing_extensions import TYPE_CHECKING, ByteString, cast
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from v8serialize.constants import SerializationTag

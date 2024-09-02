@@ -2,19 +2,12 @@ from __future__ import annotations
 
 import warnings
 from _thread import get_ident
+from collections.abc import Collection, Iterable
 from contextlib import contextmanager
 from itertools import islice
 from reprlib import Repr
-from typing_extensions import (
-    TYPE_CHECKING,
-    Any,
-    Collection,
-    ContextManager,
-    Final,
-    Generator,
-    Iterable,
-    overload,
-)
+from typing import TYPE_CHECKING, Final
+from typing_extensions import Any, ContextManager, Generator, overload
 
 from v8serialize.constants import JSErrorName
 from v8serialize.jstypes.jsarrayproperties import SparseArrayProperties

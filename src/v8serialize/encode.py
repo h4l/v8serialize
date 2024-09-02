@@ -3,26 +3,20 @@ from __future__ import annotations
 import re
 import struct
 from collections import abc
+from collections.abc import Collection, Iterable, Mapping, Sequence
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import lru_cache, partial
 from types import NoneType, TracebackType
+from typing import TYPE_CHECKING, AbstractSet, AnyStr, cast
 from typing_extensions import (
-    TYPE_CHECKING,
-    AbstractSet,
     Any,
-    AnyStr,
-    Collection,
-    Iterable,
     Literal,
-    Mapping,
     Never,
     Protocol,
-    Sequence,
     TypeAlias,
     TypeVar,
-    cast,
     overload,
     runtime_checkable,
 )

@@ -5,10 +5,12 @@ import os
 import subprocess
 import warnings
 from base64 import b64decode
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing_extensions import TYPE_CHECKING, Final, Generator, Mapping, Self, Sequence
+from typing import TYPE_CHECKING, Final
+from typing_extensions import Generator, Self
 
 import httpx
 import pytest

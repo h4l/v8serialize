@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import ByteString
+from typing import TYPE_CHECKING
 from typing_extensions import (
-    TYPE_CHECKING,
-    ByteString,
     Literal,
     NewType,
     Protocol,

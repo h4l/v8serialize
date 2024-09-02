@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from contextlib import ExitStack
-from typing_extensions import Callable, Generator, TypeAlias
+from typing import Callable
+from typing_extensions import Generator, TypeAlias
 
 import pytest
 from pytest_insta import SnapshotFixture

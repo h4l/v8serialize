@@ -1,17 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Iterator, Mapping, MutableSequence, Sequence
 from enum import Enum, auto
-from typing_extensions import (
-    TYPE_CHECKING,
-    Generic,
-    Iterator,
-    Mapping,
-    MutableSequence,
-    Protocol,
-    Sequence,
-    TypeVar,
-    runtime_checkable,
-)
+from typing import TYPE_CHECKING, Generic
+from typing_extensions import Protocol, TypeVar, runtime_checkable
 
 _T_co = TypeVar("_T_co", covariant=True)
 _VT_co = TypeVar("_VT_co", covariant=True)

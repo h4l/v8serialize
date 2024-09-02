@@ -3,24 +3,13 @@ from __future__ import annotations
 import functools
 import operator
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import Enum, IntEnum, IntFlag, StrEnum
 from functools import lru_cache, reduce
 from types import MappingProxyType
-from typing_extensions import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Final,
-    Generic,
-    Literal,
-    Mapping,
-    Self,
-    TypeAlias,
-    TypeGuard,
-    TypeVar,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, AbstractSet, Final, Generic, cast
+from typing_extensions import Literal, Self, TypeAlias, TypeGuard, TypeVar, overload
 
 from packaging.version import Version
 
