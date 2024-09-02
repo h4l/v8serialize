@@ -9,7 +9,7 @@ from typing_extensions import Generator
 
 def format_exception_for_v8(
     tbe: TracebackException, group_path: Sequence[int] = ()
-) -> Generator[str, None, None]:
+) -> Generator[str]:
     """Render a Python exception in the style of a V8 Error stack trace.
 
     Returns an iterable of strings ending with `"\\n"`. (Join the lines to get a
@@ -60,7 +60,7 @@ def format_exception_for_v8(
         yield from format_v8_stack(related, group_path=())
 
 
-def walk_related(tbe: TracebackException) -> Generator[TracebackException, None, None]:
+def walk_related(tbe: TracebackException) -> Generator[TracebackException]:
     while tbe.__context__ and not tbe.__suppress_context__:
         yield tbe.__context__
         tbe = tbe.__context__
@@ -68,7 +68,7 @@ def walk_related(tbe: TracebackException) -> Generator[TracebackException, None,
 
 def format_v8_stack(
     tbe: TracebackException, *, group_path: Sequence[int]
-) -> Generator[str, None, None]:
+) -> Generator[str]:
     # e.g. "ValueError: foo must be positive"
     yield from tbe.format_exception_only()
 
@@ -95,9 +95,7 @@ def format_group_path(group_path: Sequence[int]) -> str:
     return ".".join(map(str, group_path))
 
 
-def prefix_lines(
-    lines: Iterable[str], prefixes: Iterable[str]
-) -> Generator[str, None, None]:
+def prefix_lines(lines: Iterable[str], prefixes: Iterable[str]) -> Generator[str]:
     last_prefix = ""
     for line, prefix in zip_longest(lines, prefixes):
         if line is None:

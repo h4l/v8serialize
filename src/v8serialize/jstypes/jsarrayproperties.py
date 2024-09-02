@@ -111,7 +111,7 @@ class AbstractArrayProperties(ArrayProperties[T], MutableSequence[T | JSHoleType
 
 def alternating_regions(
     array_properties: ArrayProperties[T],
-) -> Generator[EmptyRegion | OccupiedRegion[T], None, None]:
+) -> Generator[EmptyRegion | OccupiedRegion[T]]:
     length = len(array_properties)
 
     prev_index: int = -1

@@ -355,7 +355,7 @@ def test_JSArrayBufferView__hash() -> None:
         (JSUint8Array(b""), "JSUint8Array(b'')"),
         (JSUint32Array(memoryview(b"")), "JSUint32Array(<memory at ...>)"),
         (
-            JSDataView(JSArrayBuffer(bytes(b"abcd"))),
+            JSDataView(JSArrayBuffer(b"abcd")),
             # TODO: make the JSArrayBuffer repr match __init__
             "JSDataView(JSArrayBuffer(_data=bytearray(b'abcd'), "
             "max_byte_length=4, resizable=False))",
@@ -374,7 +374,7 @@ def match_wildcard(
     full_match: bool = True,
     flags: re.RegexFlag = re.NOFLAG,
 ) -> re.Match[str] | None:
-    regex = wildcard_pattern.join((re.escape(p) for p in pattern.split(wildcard)))
+    regex = wildcard_pattern.join(re.escape(p) for p in pattern.split(wildcard))
     if full_match:
         regex = f"^{regex}$"
     return re.search(regex, subject, flags=flags)

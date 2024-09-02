@@ -52,8 +52,8 @@ def test_equal_to_other_sets_containing_different_object_instances() -> None:
 
 
 def test_eq_with_unhashable_elements() -> None:
-    assert JSSet([{}, {}]) != set([1, 2])
-    assert set([1, 2]) != JSSet([{}, {}])
+    assert JSSet([{}, {}]) != {1, 2}
+    assert {1, 2} != JSSet([{}, {}])
 
 
 def test_eq_with_other_type() -> None:

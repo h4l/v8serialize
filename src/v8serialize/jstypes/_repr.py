@@ -347,7 +347,7 @@ def js_repr_settings(
     *,
     force_restore: bool = False,
     **kwargs: int | str | None,
-) -> Generator[JSRepr, None, None]:
+) -> Generator[JSRepr]:
     """Override the active repr settings for JS types.
 
     This returns a context manager that will restore the previous settings at

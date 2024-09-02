@@ -357,7 +357,7 @@ class JSErrorName(StrEnum):
             JSErrorName(error_name) if error_name in JSErrorName else JSErrorName.Error
         )
 
-    @lru_cache()  # noqa: B019  # OK because static
+    @lru_cache  # noqa: B019  # OK because static
     @staticmethod
     def for_error_tag(error_tag: SerializationErrorTag) -> JSErrorName:
         for x in JSErrorName:

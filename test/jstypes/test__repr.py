@@ -18,7 +18,7 @@ from v8serialize.jstypes.jsobject import JSObject
 
 
 @pytest.fixture
-def indented_js_repr() -> Generator[JSRepr, None, None]:
+def indented_js_repr() -> Generator[JSRepr]:
     with js_repr_settings(indent=2, maxlevel=6) as js_repr:
         yield js_repr
 

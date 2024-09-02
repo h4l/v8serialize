@@ -86,7 +86,7 @@ def dense_js_arrays(
     elements: st.SearchStrategy[T],
     *,
     min_size: int = 0,
-    max_size: Optional[int] = None,
+    max_size: int | None = None,
     properties: st.SearchStrategy[JSObject[T]] | None = None,
 ) -> st.SearchStrategy[JSArray[T]]:
 

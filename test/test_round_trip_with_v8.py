@@ -305,7 +305,7 @@ def echoserver_url(request: pytest.FixtureRequest) -> httpx.URL:
 
 
 @pytest.fixture(scope="session")
-def httpclient() -> Generator[httpx.Client, None, None]:
+def httpclient() -> Generator[httpx.Client]:
     with httpx.Client() as client:
         yield client
 

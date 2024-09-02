@@ -103,7 +103,7 @@ class SerializedObjectLog:
     @contextmanager
     def record_acyclic_reference(
         self, obj: object, *, error_detail: str | None = None
-    ) -> Generator[SerializedId, None, None]:
+    ) -> Generator[SerializedId]:
         """Create a reference to an object that's initially inaccessible.
 
         This is a context manager, the object cannot be dereferenced or resolved
