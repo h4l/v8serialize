@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import functools
-import inspect
 import struct
 from abc import ABC, abstractmethod
 from collections.abc import ByteString, Sized
@@ -13,6 +12,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal, overload
 
 from v8serialize._enums import frozen
 from v8serialize._pycompat.dataclasses import slots_if310
+from v8serialize._pycompat.inspect import BufferFlags
 from v8serialize._values import (
     AnyArrayBuffer,
     AnyArrayBufferTransfer,
@@ -37,7 +37,9 @@ else:
     BufferT = TypeVar("BufferT")
 
 
-def get_buffer(buffer: Buffer, flags: int | inspect.BufferFlags = 0) -> memoryview:
+def get_buffer(
+    buffer: Buffer, flags: int | BufferFlags = BufferFlags.SIMPLE
+) -> memoryview:
     # Python buffer protocol API only available from Python 3.12
     if hasattr(buffer, "__buffer__"):
         return buffer.__buffer__(flags)
@@ -175,7 +177,7 @@ class JSArrayBuffer(
 
     @property
     def data(self) -> memoryview:
-        return self.__buffer__(inspect.BufferFlags.SIMPLE)
+        return self.__buffer__(BufferFlags.SIMPLE)
 
     def __enter__(self) -> JSArrayBuffer[BufferT]:
         return self
@@ -193,7 +195,7 @@ class JSArrayBuffer(
         if isinstance(self.data, memoryview):
             self.data.release()
 
-    def __buffer__(self, flags: int | inspect.BufferFlags) -> memoryview:
+    def __buffer__(self, flags: int | BufferFlags) -> memoryview:
         return get_buffer(self._data, flags)[: self.max_byte_length]
 
 
@@ -631,7 +633,7 @@ class JSBigUint64Array(
 class DataViewBuffer(AbstractContextManager["DataViewBuffer"]):
     buffer: memoryview
 
-    def __buffer__(self, flags: int | inspect.BufferFlags) -> memoryview:
+    def __buffer__(self, flags: int | BufferFlags) -> memoryview:
         return get_buffer(self.buffer, flags)
 
     def __enter__(self) -> Self:
