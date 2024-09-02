@@ -58,7 +58,7 @@ def normalise_property_key(key: str | int | float) -> str | int:
             return key
         key = int_value
 
-    if key.is_integer():
+    if isinstance(key, int) or key.is_integer():
         if 0 <= key < MAX_ARRAY_LENGTH:
             return int(key)
         # Format out-of-range integer floats without decimal point, as JS does

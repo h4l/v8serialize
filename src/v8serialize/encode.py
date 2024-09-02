@@ -357,7 +357,9 @@ class WritableTagStream:
             # no data — nothing to do
             assert value is True or value is False
         elif tag is SerializationTag.kBigIntObject:
-            assert isinstance(value, (int, float)) and value.is_integer()
+            assert isinstance(value, int) or (
+                isinstance(value, float) and value.is_integer()
+            )
             self.write_bigint(int(value), tag=None)
         elif tag is SerializationTag.kNumberObject:
             assert isinstance(value, (float, int))
