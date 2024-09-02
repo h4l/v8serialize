@@ -17,12 +17,11 @@ else:
     T = TypeVar("T")
 
 
-@dataclass(init=False)
 class ObjectReferenceV8CodecError(V8CodecError, KeyError):
     pass
 
 
-@dataclass(init=False, **slots_if310())
+@dataclass(init=False)
 class ObjectNotSerializedV8CodecError(ObjectReferenceV8CodecError):
     obj: object
 
@@ -31,7 +30,7 @@ class ObjectNotSerializedV8CodecError(ObjectReferenceV8CodecError):
         self.obj = obj
 
 
-@dataclass(init=False, **slots_if310())
+@dataclass(init=False)
 class SerializedIdOutOfRangeV8CodecError(ObjectReferenceV8CodecError):
     serialized_id: SerializedId
 
@@ -40,7 +39,7 @@ class SerializedIdOutOfRangeV8CodecError(ObjectReferenceV8CodecError):
         self.serialized_id = serialized_id
 
 
-@dataclass(init=False, **slots_if310())
+@dataclass(init=False)
 class IllegalCyclicReferenceV8CodecError(ObjectReferenceV8CodecError):
     serialized_id: SerializedId
     obj: object
