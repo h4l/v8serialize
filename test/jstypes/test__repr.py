@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from contextlib import ExitStack
 from typing import Callable
 from typing_extensions import Generator, TypeAlias
@@ -34,12 +35,20 @@ def check_repr(snapshot: SnapshotFixture) -> CheckRepr:
     return check_repr
 
 
+py312_plus = pytest.mark.skipif(
+    sys.version_info < (3, 12), reason="Python 3.12+ required"
+)
+py311_plus = pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="Python 3.11+ required"
+)
+
 #
 # See snapshot files in test/jstypes/snapshots/*.txt
 # These tests use https://github.com/vberlier/pytest-insta snapshots.
 #
 
 
+@py312_plus
 @pytest.mark.usefixtures("indented_js_repr")
 def test_jsobject_repr(check_repr: CheckRepr) -> None:
     check_repr(JSObject())
@@ -69,6 +78,9 @@ def test_jsobject_maxjsobject(check_repr: CheckRepr) -> None:
 
         check_repr(JSObject({0: "a"}, b=1))
 
+
+@py312_plus
+def test_jsobject_maxjsobject_indented(check_repr: CheckRepr) -> None:
     with js_repr_settings(indent=2, maxjsobject=1):
         check_repr(JSObject(a=1, b=2))
 
@@ -79,6 +91,7 @@ def test_jsobject_maxjsobject(check_repr: CheckRepr) -> None:
         check_repr(JSObject({0: "a", 1: "b"}, two="c"))
 
 
+@py312_plus
 @pytest.mark.usefixtures("indented_js_repr")
 def test_jsarray_repr(check_repr: CheckRepr) -> None:
     check_repr(JSArray())
@@ -133,6 +146,9 @@ def test_jsarray_maxjsarray(check_repr: CheckRepr) -> None:
 
         check_repr(JSArray(["a", "b"], **{"!": "C"}))
 
+
+@py312_plus
+def test_jsarray_maxjsarray_indented(check_repr: CheckRepr) -> None:
     with js_repr_settings(indent=2, maxjsarray=1):
         check_repr(JSArray(c="C"))
 
@@ -153,6 +169,7 @@ def test_jsarray_maxjsarray(check_repr: CheckRepr) -> None:
         check_repr(JSArray(["a", "b"], **{"!": "C"}))
 
 
+@py311_plus  # fillvalue not supported < 3.11
 def test_js_repr_settings__warns_on_close_if_settings_cannot_be_restored() -> None:
     with js_repr_settings(force_restore=True):
         assert js_repr("abc") == "'abc'"

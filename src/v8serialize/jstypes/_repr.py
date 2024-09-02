@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 class RecursiveReprMixin(Repr):
     """reprlib.recursive_repr as a Repr class mixin."""
 
+    fillvalue: str
     __repr_running: set[tuple[int, int]] = set()
 
     def repr1_safe(self, x: object, level: int) -> str:
@@ -47,6 +48,8 @@ class JSRepr(RecursiveReprMixin, Repr):
     recursive calls.
     """
 
+    fillvalue: str
+    indent: int | None
     maxjsobject: int
     maxjsarray: int
 
@@ -75,12 +78,24 @@ class JSRepr(RecursiveReprMixin, Repr):
     ) -> None: ...
 
     def __init__(
-        self, *args: Any, maxjsobject: int = 20, maxjsarray: int = 20, **kwargs: Any
+        self, *, maxjsobject: int = 20, maxjsarray: int = 20, **kwargs: Any
     ) -> None:
-        super(JSRepr, self).__init__(*args, **kwargs)
+        super(JSRepr, self).__init__()
 
+        # Need to always set the non-3.9 fields:
+        self.fillvalue = kwargs.pop("fillvalue", "...")
+        self.indent = kwargs.pop("indent", None)  # None is a value for indent
         self.maxjsobject = maxjsobject
         self.maxjsarray = maxjsarray
+
+        # Repr init doesn't accept kwargs until 3.12 — set attrs directly
+        for k, v in kwargs.items():
+            if k not in _known_fields:
+                raise TypeError(
+                    f"JSRepr.__init__() got an unexpected keyword argument {k!r}"
+                )
+            if v is not None:
+                setattr(self, k, v)
 
     if TYPE_CHECKING:
 
@@ -95,6 +110,12 @@ class JSRepr(RecursiveReprMixin, Repr):
             maxiter: int,
             trail: str = "",
         ) -> str: ...
+
+    else:
+        if not hasattr(Repr, "_join"):
+            # basic _join without indent for versions < 3.12 without _join()
+            def _join(self, pieces: Iterable[str], level: int) -> str:
+                return ", ".join(pieces)
 
     # We need to maintain insertion order in the repr because that's a defined
     # behaviour of JavaScript objects. The default repr behaviour is to sort
@@ -288,25 +309,6 @@ def _contains_single_piece(pieces: list[str]) -> bool:
     return not ("\n" in piece or "\r" in piece)
 
 
-default_js_repr = JSRepr(
-    indent=None,
-    maxjsobject=100,
-    maxjsarray=100,
-    maxlevel=20,
-    maxtuple=100,
-    maxlist=100,
-    maxarray=100,
-    maxdict=100,
-    maxset=100,
-    maxfrozenset=100,
-    maxdeque=100,
-    maxstring=200,
-    maxother=100,
-)
-
-active_js_repr: JSRepr = default_js_repr
-
-
 def js_repr(obj: object) -> str:
     """Create an indented/recursively-safe repr with the active repr settings."""
     return active_js_repr.repr(obj)
@@ -411,3 +413,22 @@ _known_fields: Final = (
     "fillvalue",
     "indent",
 )
+
+
+default_js_repr = JSRepr(
+    indent=None,
+    maxjsobject=100,
+    maxjsarray=100,
+    maxlevel=20,
+    maxtuple=100,
+    maxlist=100,
+    maxarray=100,
+    maxdict=100,
+    maxset=100,
+    maxfrozenset=100,
+    maxdeque=100,
+    maxstring=200,
+    maxother=100,
+)
+
+active_js_repr: JSRepr = default_js_repr
