@@ -117,7 +117,8 @@ def format_v8_frame_location(fs: FrameSummary) -> str:
 
     filename = sub_none(fs.filename, "<unknown>")
     lineno = sub_none(fs.lineno, "<unknown>")
-    colno = sub_none(fs.colno, "<unknown>")
+    # colno available from 3.11
+    colno = sub_none(getattr(fs, "colno", None), "<unknown>")
 
     return f"({filename}:{lineno}:{colno})"
 
