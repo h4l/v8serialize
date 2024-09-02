@@ -23,12 +23,27 @@ if TYPE_CHECKING:
 # @property fields seem to confuse @dataclass — it sets property objects as
 # instance field values instead of str.
 @recursive_eq
-@dataclass(order=True, **slots_if310())
+@dataclass(order=True, **slots_if310(), init=False)
 class _JSErrorData:
-    message: str | None = field(default=None)
-    name: str = field(default=JSErrorName.Error, kw_only=True)
-    stack: str | None = field(default=None, kw_only=True)
-    cause: object | None = field(default=None, kw_only=True)
+    message: str | None
+    name: str
+    stack: str | None
+    cause: object | None
+
+    # kw_only field option is not available before 3.10, so we need to define
+    # init manually to match JSError.__init__
+    def __init__(
+        self,
+        message: str | None = None,
+        *,
+        name: str = JSErrorName.Error,
+        stack: str | None = None,
+        cause: object | None = None,
+    ) -> None:
+        self.message = message
+        self.name = name
+        self.stack = stack
+        self.cause = cause
 
 
 class JSErrorData(_JSErrorData, AnyJSError, ABC):
