@@ -7,6 +7,7 @@ from typing import AnyStr
 from typing_extensions import Literal, overload
 
 from v8serialize._pycompat.dataclasses import slots_if310
+from v8serialize._pycompat.re import RegexFlag
 from v8serialize.constants import JSRegExpFlag
 from v8serialize.errors import JSRegExpV8CodecError
 
@@ -65,7 +66,7 @@ class JSRegExp:
         else:
             source = pattern.pattern
         try:
-            flags = JSRegExpFlag.from_python_flags(re.RegexFlag(pattern.flags))
+            flags = JSRegExpFlag.from_python_flags(RegexFlag(pattern.flags))
         except JSRegExpV8CodecError as e:
             if throw:
                 raise JSRegExpV8CodecError(

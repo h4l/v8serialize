@@ -9,6 +9,7 @@ from typing_extensions import Literal
 
 import pytest
 
+from v8serialize._pycompat.re import RegexFlag
 from v8serialize.constants import ArrayBufferViewTag
 from v8serialize.jstypes.jsbuffers import (
     ArrayBufferViewStructFormat,
@@ -372,7 +373,7 @@ def match_wildcard(
     wildcard: str = "...",
     wildcard_pattern: str = ".+",
     full_match: bool = True,
-    flags: re.RegexFlag = re.NOFLAG,
+    flags: RegexFlag = RegexFlag.NOFLAG,
 ) -> re.Match[str] | None:
     regex = wildcard_pattern.join(re.escape(p) for p in pattern.split(wildcard))
     if full_match:

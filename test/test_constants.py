@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import operator
-import re
 from functools import reduce
 
 import pytest
 from packaging.version import Version
 
+from v8serialize._pycompat.re import RegexFlag
 from v8serialize.constants import (
     JSRegExpFlag,
     SerializationErrorTag,
@@ -27,13 +27,13 @@ def test_RegExpFlag() -> None:
 
     assert str(JSRegExpFlag(0b111111111)) == "dgilmsuvy"
 
-    assert JSRegExpFlag.IgnoreCase.as_python_flags() == re.IGNORECASE
-    assert JSRegExpFlag.Multiline.as_python_flags() == re.MULTILINE
+    assert JSRegExpFlag.IgnoreCase.as_python_flags() == RegexFlag.IGNORECASE
+    assert JSRegExpFlag.Multiline.as_python_flags() == RegexFlag.MULTILINE
 
     assert (JSRegExpFlag.IgnoreCase | JSRegExpFlag.Multiline).as_python_flags() == (
-        re.IGNORECASE | re.MULTILINE
+        RegexFlag.IGNORECASE | RegexFlag.MULTILINE
     )
-    assert JSRegExpFlag.Global.as_python_flags() == re.RegexFlag.NOFLAG
+    assert JSRegExpFlag.Global.as_python_flags() == RegexFlag.NOFLAG
 
     # Linear has no equivalent in Python, so its presence invalidates tags its with
     assert JSRegExpFlag.Linear.as_python_flags(throw=False) is None
@@ -68,19 +68,17 @@ def test_RegExpFlag__canonical() -> None:
 
 def test_RegExpFlag__from_python_flags() -> None:
 
-    assert JSRegExpFlag.from_python_flags(re.RegexFlag.NOFLAG) == (JSRegExpFlag.NoFlag)
+    assert JSRegExpFlag.from_python_flags(RegexFlag.NOFLAG) == (JSRegExpFlag.NoFlag)
 
-    assert JSRegExpFlag.from_python_flags(
-        re.RegexFlag.MULTILINE | re.RegexFlag.DOTALL
-    ) == (JSRegExpFlag.Multiline | JSRegExpFlag.DotAll)
+    assert JSRegExpFlag.from_python_flags(RegexFlag.MULTILINE | RegexFlag.DOTALL) == (
+        JSRegExpFlag.Multiline | JSRegExpFlag.DotAll
+    )
 
     with pytest.raises(
         JSRegExpV8CodecError,
         match=r"No equivalent JavaScript RegExp flags exist for RegexFlag\.VERBOSE",
     ):
-        assert JSRegExpFlag.from_python_flags(
-            re.RegexFlag.MULTILINE | re.RegexFlag.VERBOSE
-        )
+        assert JSRegExpFlag.from_python_flags(RegexFlag.MULTILINE | RegexFlag.VERBOSE)
 
 
 def test_ErrorTag() -> None:

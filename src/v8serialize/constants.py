@@ -2,19 +2,19 @@ from __future__ import annotations
 
 import functools
 import operator
-import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import Enum, IntEnum, IntFlag
 from functools import lru_cache, reduce
 from types import MappingProxyType
-from typing import TYPE_CHECKING, AbstractSet, Final, Generic, cast
+from typing import TYPE_CHECKING, AbstractSet, Final, Generic
 from typing_extensions import Literal, Self, TypeAlias, TypeGuard, TypeVar, overload
 
 from packaging.version import Version
 
 from v8serialize._pycompat.dataclasses import slots_if310
-from v8serialize._pycompat.enum import StrEnum
+from v8serialize._pycompat.enum import IterableIntFlag, StrEnum
+from v8serialize._pycompat.re import RegexFlag
 from v8serialize._versions import parse_lenient_version
 from v8serialize.errors import JSRegExpV8CodecError
 
@@ -203,31 +203,31 @@ class ArrayBufferViewFlags(IntFlag):
     IsBufferResizable = 2
 
 
-class JSRegExpFlag(IntFlag):
+class JSRegExpFlag(IterableIntFlag):
     """The bit flags for V8's representation of JavaScript RegExp flags.
 
     Defined at: https://github.com/v8/v8/blob/\
 0654522388d6a3782b9831b5de49b0c0abe0f643/src/regexp/regexp-flags.h#L20
     """
 
-    HasIndices = "d", 7, re.NOFLAG
-    Global = "g", 0, re.NOFLAG
-    IgnoreCase = "i", 1, re.IGNORECASE
+    HasIndices = "d", 7, RegexFlag.NOFLAG
+    Global = "g", 0, RegexFlag.NOFLAG
+    IgnoreCase = "i", 1, RegexFlag.IGNORECASE
     Linear = "l", 6, None
-    Multiline = "m", 2, re.MULTILINE
-    DotAll = "s", 5, re.DOTALL
-    Unicode = "u", 4, re.UNICODE
-    UnicodeSets = "v", 8, re.UNICODE
-    Sticky = "y", 3, re.NOFLAG
-    NoFlag = "", None, re.NOFLAG
+    Multiline = "m", 2, RegexFlag.MULTILINE
+    DotAll = "s", 5, RegexFlag.DOTALL
+    Unicode = "u", 4, RegexFlag.UNICODE
+    UnicodeSets = "v", 8, RegexFlag.UNICODE
+    Sticky = "y", 3, RegexFlag.NOFLAG
+    NoFlag = "", None, RegexFlag.NOFLAG
 
     __char: str  # only present on defined values, not combinations
-    __python_flag: re.RegexFlag | None
+    __python_flag: RegexFlag | None
 
     if not TYPE_CHECKING:  # this __new__ breaks the default Enum types if mypy sees it
 
         def __new__(
-            cls, char: str, bit_index: int | None, python_flag: re.RegexFlag | None
+            cls, char: str, bit_index: int | None, python_flag: RegexFlag | None
         ) -> Self:
             value = 0 if bit_index is None else (1 << bit_index)
             obj = int.__new__(cls, value)
@@ -238,7 +238,7 @@ class JSRegExpFlag(IntFlag):
 
     @lru_cache(maxsize=1)  # noqa: B019
     @staticmethod
-    def _python_flag_mapping() -> Mapping[re.RegexFlag, JSRegExpFlag]:
+    def _python_flag_mapping() -> Mapping[RegexFlag, JSRegExpFlag]:
         return MappingProxyType(
             {
                 f.__python_flag: f
@@ -250,15 +250,15 @@ class JSRegExpFlag(IntFlag):
         )
 
     @staticmethod
-    def from_python_flags(python_flags: re.RegexFlag) -> JSRegExpFlag:
-        if python_flags & re.RegexFlag.VERBOSE:
+    def from_python_flags(python_flags: RegexFlag) -> JSRegExpFlag:
+        if python_flags & RegexFlag.VERBOSE:
             raise JSRegExpV8CodecError(
                 "No equivalent JavaScript RegExp flags exist for RegexFlag.VERBOSE"
             )
         mapping = JSRegExpFlag._python_flag_mapping()
         return reduce(
             operator.or_,
-            (mapping[f] for f in re.RegexFlag(python_flags) if f in mapping),
+            (mapping[f] for f in RegexFlag(python_flags) if f in mapping),
             JSRegExpFlag.NoFlag,
         )
 
@@ -267,12 +267,12 @@ class JSRegExpFlag(IntFlag):
         return self & 0b111111111
 
     @overload
-    def as_python_flags(self, *, throw: Literal[False]) -> re.RegexFlag | None: ...
+    def as_python_flags(self, *, throw: Literal[False]) -> RegexFlag | None: ...
 
     @overload
-    def as_python_flags(self, *, throw: Literal[True] = True) -> re.RegexFlag: ...
+    def as_python_flags(self, *, throw: Literal[True] = True) -> RegexFlag: ...
 
-    def as_python_flags(self, *, throw: bool = True) -> re.RegexFlag | None:
+    def as_python_flags(self, *, throw: bool = True) -> RegexFlag | None:
         """The Python re module flags that correspond to this value's active flags.
 
         Some flags don't have a direct equivalent, such as Linear. These result
@@ -281,19 +281,23 @@ class JSRegExpFlag(IntFlag):
         Some flag don't affect Python because they adjust the JavaScript matching
         API which isn't used in Python. For example, HasIndices. These are ignored.
         """
-        flags = reduce(
-            lambda f1, f2: None if f1 is None or f2 is None else f1 | f2,
-            (f.__python_flag for f in self),
-            cast(re.RegexFlag | None, re.NOFLAG),
+        flags = RegexFlag.NOFLAG
+        for f in self:
+            if f.__python_flag is None:
+                break
+            flags |= f.__python_flag
+        else:
+            return flags
+
+        if not throw:
+            return None
+
+        incompatible = ", ".join(
+            f"JSRegExp.{f.name}" for f in self if f.__python_flag is None
         )
-        if flags is None and throw:
-            incompatible = ", ".join(
-                f"JSRegExp.{f.name}" for f in self if f.__python_flag is None
-            )
-            raise JSRegExpV8CodecError(
-                f"No equivalent Python flags exist for {incompatible}"
-            )
-        return flags
+        raise JSRegExpV8CodecError(
+            f"No equivalent Python flags exist for {incompatible}"
+        )
 
     def __str__(self) -> str:
         return "".join(f.__char for f in self)
