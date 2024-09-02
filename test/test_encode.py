@@ -6,6 +6,7 @@ from datetime import datetime
 import pytest
 from packaging.version import Version
 
+from v8serialize._pycompat.exceptions import has_notes
 from v8serialize.constants import JSRegExpFlag, SerializationFeature
 from v8serialize.decode import loads
 from v8serialize.encode import (
@@ -83,7 +84,7 @@ def test_feature_float16__cannot_write_float16array_when_disabled() -> None:
     ) as exc_info1:
         ctx.encode_object(f16)
 
-    assert (
+    assert has_notes(exc_info1.value) and (
         "ObjectMapper is not handling JSArrayBufferViews with the Float16Array "
         "tag because <SerializationFeature.Float16Array: 8> is not enabled."
         in exc_info1.value.__notes__

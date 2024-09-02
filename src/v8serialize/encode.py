@@ -25,6 +25,7 @@ from typing import (
 from packaging.version import Version
 
 from v8serialize._pycompat.dataclasses import slots_if310
+from v8serialize._pycompat.exceptions import add_note
 from v8serialize._values import (
     AnyArrayBuffer,
     AnyArrayBufferTransfer,
@@ -1024,10 +1025,11 @@ class ObjectMapper(ObjectMapperObject):
             try:
                 return next(value)
             except UnmappedValueEncodeV8CodecError as e:
-                e.add_note(
+                add_note(
+                    e,
                     f"{type(self).__name__} is not handling JSArrayBufferViews "
                     f"with the Float16Array tag because "
-                    f"{SerializationFeature.Float16Array!r} is not enabled."
+                    f"{SerializationFeature.Float16Array!r} is not enabled.",
                 )
                 raise e
         ctx.encode_object(value.backing_buffer)
