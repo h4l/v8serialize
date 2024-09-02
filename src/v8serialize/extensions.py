@@ -117,8 +117,8 @@ class NodeBufferFormat(ViewFormat, Enum):
     BigInt64Array = 11, ArrayBufferViewStructFormat.BigInt64Array
     BigUint64Array = 12, ArrayBufferViewStructFormat.BigUint64Array
 
-    @functools.lru_cache  # noqa: B019 # OK because static method
     @staticmethod
+    @functools.lru_cache  # noqa: B019 # OK because static method
     def _missing_(arg: object) -> NodeBufferFormat | None:
         # Allow looking up values by nodejs_code enum value
         for value in NodeBufferFormat:

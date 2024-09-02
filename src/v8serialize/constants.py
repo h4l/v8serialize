@@ -246,8 +246,8 @@ class JSRegExpFlag(IterableIntFlag):
             obj.__python_flag = python_flag
             return obj
 
-    @lru_cache(maxsize=1)  # noqa: B019
     @staticmethod
+    @lru_cache(maxsize=1)  # noqa: B019
     def _python_flag_mapping() -> Mapping[RegexFlag, JSRegExpFlag]:
         return MappingProxyType(
             {
@@ -373,8 +373,8 @@ class JSErrorName(StrEnum):
             JSErrorName(error_name) if error_name in JSErrorName else JSErrorName.Error
         )
 
-    @lru_cache  # noqa: B019  # OK because static
     @staticmethod
+    @lru_cache  # noqa: B019  # OK because static
     def for_error_tag(error_tag: SerializationErrorTag) -> JSErrorName:
         for x in JSErrorName:
             if x.error_tag is error_tag:

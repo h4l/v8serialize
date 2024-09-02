@@ -794,8 +794,8 @@ class ArrayBufferViewStructFormat(ViewFormat, Enum):
     # As in accessing the buffer provides actual bytes objects, not integers.
     DataView = ArrayBufferViewTag.kDataView, JSDataView
 
-    @functools.lru_cache  # noqa: B019 # OK because static method
     @staticmethod
+    @functools.lru_cache  # noqa: B019 # OK because static method
     def _missing_(arg: object) -> ArrayBufferViewStructFormat | None:
         # Allow looking up values by ArrayBufferViewTag enum value
         for value in ArrayBufferViewStructFormat:
