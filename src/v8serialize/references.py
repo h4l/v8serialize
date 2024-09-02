@@ -17,7 +17,7 @@ else:
     T = TypeVar("T")
 
 
-@dataclass()
+@dataclass(init=False)
 class ObjectReferenceV8CodecError(V8CodecError, KeyError):
     pass
 
