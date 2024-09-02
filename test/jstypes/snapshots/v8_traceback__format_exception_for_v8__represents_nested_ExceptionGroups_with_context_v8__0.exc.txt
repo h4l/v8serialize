@@ -1,33 +1,33 @@
 ExceptionGroup: This is fine (2 sub-exceptions)
-    at raise_sub_group_with_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:64:8)
-    at call_and_capture_tbe (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:84:8)
+    at raise_sub_group_with_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:71:8)
+    at call_and_capture_tbe (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:91:8)
 
   ↳ 1: ExceptionGroup: Everything went wrong (2 sub-exceptions)
-        at raise_group_with_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:51:8)
-        at raise_sub_group_with_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:55:12)
+        at raise_group_with_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:58:8)
+        at raise_sub_group_with_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:62:12)
 
       ↳ 1.1: AttributeError: 'ValueError' object has no attribute 'missing_attribute'
-            at failing_operation_with_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:78:12)
-            at raise_group_with_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:42:12)
+            at failing_operation_with_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:85:12)
+            at raise_group_with_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:49:12)
 
         The above exception occurred while handling another exception:
 
         ValueError: Unable to do the thing
-            at failing_operation (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:68:12)
-            at failing_operation_with_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:76:12)
+            at failing_operation (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:75:12)
+            at failing_operation_with_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:83:12)
 
       ↳ 1.2: TypeError: Expected an Apple but received an Orange
-            at failing_operation2 (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:72:12)
-            at raise_group_with_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:47:12)
+            at failing_operation2 (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:79:12)
+            at raise_group_with_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:54:12)
 
   ↳ 2: ExceptionGroup: Everything went wrong (2 sub-exceptions)
-        at raise_group (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:24:8)
-        at raise_sub_group_with_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:60:12)
+        at raise_group (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:31:8)
+        at raise_sub_group_with_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:67:12)
 
       ↳ 2.1: ValueError: Unable to do the thing
-            at failing_operation (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:68:12)
-            at raise_group (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:15:12)
+            at failing_operation (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:75:12)
+            at raise_group (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:22:12)
 
       ↳ 2.2: TypeError: Expected an Apple but received an Orange
-            at failing_operation2 (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:72:12)
-            at raise_group (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:20:12)
+            at failing_operation2 (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:79:12)
+            at raise_group (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:27:12)

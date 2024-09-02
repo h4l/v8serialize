@@ -1,21 +1,21 @@
   + Exception Group Traceback (most recent call last):
-  |   File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 84, in call_and_capture_tbe
+  |   File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 91, in call_and_capture_tbe
   |     fn()
-  |   File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 24, in raise_group
+  |   File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 31, in raise_group
   |     raise ExceptionGroup("Everything went wrong", [fail1, fail2])
   | ExceptionGroup: Everything went wrong (2 sub-exceptions)
   +-+---------------- 1 ----------------
     | Traceback (most recent call last):
-    |   File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 15, in raise_group
+    |   File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 22, in raise_group
     |     self.failing_operation()
-    |   File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 68, in failing_operation
+    |   File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 75, in failing_operation
     |     raise ValueError("Unable to do the thing")
     | ValueError: Unable to do the thing
     +---------------- 2 ----------------
     | Traceback (most recent call last):
-    |   File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 20, in raise_group
+    |   File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 27, in raise_group
     |     self.failing_operation2()
-    |   File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 72, in failing_operation2
+    |   File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 79, in failing_operation2
     |     raise TypeError("Expected an Apple but received an Orange")
     | TypeError: Expected an Apple but received an Orange
     +------------------------------------
