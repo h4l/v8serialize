@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import ByteString
-from typing import TYPE_CHECKING
-from typing_extensions import (
+from typing import (
+    TYPE_CHECKING,
     Literal,
     NewType,
     Protocol,
-    TypeAlias,
     TypeVar,
     overload,
     runtime_checkable,
@@ -15,7 +14,7 @@ from typing_extensions import (
 from v8serialize.constants import ArrayBufferViewTag, JSErrorName
 
 if TYPE_CHECKING:
-    from typing_extensions import Buffer
+    from typing_extensions import Buffer, TypeAlias
 
     AnyBuffer: TypeAlias = ByteString | Buffer
 

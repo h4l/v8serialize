@@ -3,8 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from re import Pattern, compile
-from typing import AnyStr
-from typing_extensions import Literal, overload
+from typing import AnyStr, Literal, overload
 
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._pycompat.re import RegexFlag

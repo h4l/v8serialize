@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from functools import singledispatchmethod as _singledispatchmethod
-from typing import TYPE_CHECKING, Callable, Generic
-from typing_extensions import Any, Concatenate, ParamSpec, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar, overload
 
 from v8serialize.constants import SerializationTag
 
 if TYPE_CHECKING:
     from functools import _SingleDispatchCallable
+    from typing_extensions import Concatenate, ParamSpec
 
 T = TypeVar("T")
 F = TypeVar("F", bound=Callable[..., Any])

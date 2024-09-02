@@ -9,8 +9,7 @@ from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from enum import Enum
 from types import TracebackType
-from typing import TYPE_CHECKING, ClassVar, Generic
-from typing_extensions import Any, Literal, Self, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal, overload
 
 from v8serialize._enums import frozen
 from v8serialize._pycompat.dataclasses import slots_if310
@@ -26,13 +25,13 @@ from v8serialize.constants import ArrayBufferViewTag
 from v8serialize.errors import V8CodecError
 
 if TYPE_CHECKING:
-    from typing_extensions import Buffer, TypeVar
+    from typing_extensions import Buffer, Self, TypeAlias, TypeVar
 
     AnyBuffer: TypeAlias = ByteString | Buffer
     AnyBufferT = TypeVar("AnyBufferT", bound=AnyBuffer, default=AnyBuffer)
     BufferT = TypeVar("BufferT", bound=ByteString, default=ByteString)
 else:
-    from typing_extensions import TypeVar
+    from typing import TypeVar
 
     AnyBufferT = TypeVar("AnyBufferT")
     BufferT = TypeVar("BufferT")

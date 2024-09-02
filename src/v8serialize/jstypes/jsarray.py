@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
-from typing_extensions import TypeGuard, overload
+from typing import TYPE_CHECKING, overload
 
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize.jstypes import _repr
@@ -12,7 +11,7 @@ from v8serialize.jstypes.jsobject import JSObject
 
 if TYPE_CHECKING:
     # We use TypeVar's default param which isn't in stdlib yet.
-    from typing_extensions import TypeVar
+    from typing_extensions import TypeGuard, TypeVar
 
     from _typeshed import SupportsKeysAndGetItem
 

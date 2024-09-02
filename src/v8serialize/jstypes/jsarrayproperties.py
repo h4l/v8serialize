@@ -12,15 +12,16 @@ from collections.abc import (
 from dataclasses import dataclass, field
 from enum import Enum
 from itertools import groupby, repeat
-from typing import TYPE_CHECKING, ClassVar, Final, Generic, cast
-from typing_extensions import (
+from typing import (
+    TYPE_CHECKING,
+    ClassVar,
+    Final,
     Generator,
+    Generic,
     Literal,
     Protocol,
-    Self,
-    TypeAlias,
-    TypeGuard,
     TypeVar,
+    cast,
     overload,
     runtime_checkable,
 )
@@ -29,6 +30,8 @@ from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize.typing import ElementsView, Order, SparseMutableSequence
 
 if TYPE_CHECKING:
+    from typing_extensions import Self, TypeAlias, TypeGuard
+
     from _typeshed import SupportsItems, SupportsKeysAndGetItem
 
 _KT = TypeVar("_KT")

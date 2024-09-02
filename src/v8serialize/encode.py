@@ -9,14 +9,15 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from functools import lru_cache, partial
 from types import NoneType, TracebackType
-from typing import TYPE_CHECKING, AbstractSet, AnyStr, cast
-from typing_extensions import (
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
     Any,
+    AnyStr,
     Literal,
-    Never,
     Protocol,
-    TypeAlias,
     TypeVar,
+    cast,
     overload,
     runtime_checkable,
 )
@@ -72,6 +73,7 @@ from v8serialize.references import SerializedId, SerializedObjectLog
 
 if TYPE_CHECKING:
     from functools import _lru_cache_wrapper
+    from typing_extensions import Never, TypeAlias
 
 T = TypeVar("T")
 T_con = TypeVar("T_con", contravariant=True)

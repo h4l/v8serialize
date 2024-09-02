@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import sys
 from enum import Flag, IntFlag
-from typing import Iterator
-from typing_extensions import Self
+from typing import TYPE_CHECKING, Iterator
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 if sys.version_info < (3, 11):
     from enum import Enum

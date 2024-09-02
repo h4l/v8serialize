@@ -5,8 +5,7 @@ from collections.abc import Iterable, Iterator, Mapping, MutableMapping
 from dataclasses import dataclass
 from itertools import chain
 from types import MappingProxyType
-from typing import TYPE_CHECKING
-from typing_extensions import Any, overload
+from typing import TYPE_CHECKING, Any, overload
 
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize.errors import NormalizedKeyError

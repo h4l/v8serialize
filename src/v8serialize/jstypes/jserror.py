@@ -4,7 +4,6 @@ from abc import ABC
 from dataclasses import dataclass, field
 from traceback import TracebackException
 from typing import TYPE_CHECKING, Final
-from typing_extensions import Self
 
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._recursive_eq import recursive_eq
@@ -15,6 +14,9 @@ from v8serialize.jstypes import _repr
 from v8serialize.jstypes._v8traceback import (
     format_exception_for_v8 as format_exception_for_v8,  # re-export
 )
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 
 # We define this dataclass separately from AnyJSError, because AnyJSError's

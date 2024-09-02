@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from math import isnan
-from typing import Final
-from typing_extensions import NewType
+from typing import Final, NewType
 
 from v8serialize.jstypes.jsundefined import JSUndefinedEnum
 

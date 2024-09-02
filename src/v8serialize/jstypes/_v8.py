@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing_extensions import NewType
+from typing import NewType
 
 from v8serialize._pycompat.dataclasses import slots_if310
 

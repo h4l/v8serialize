@@ -7,8 +7,15 @@ from dataclasses import dataclass
 from enum import Enum, IntEnum, IntFlag
 from functools import lru_cache, reduce
 from types import MappingProxyType
-from typing import TYPE_CHECKING, AbstractSet, Final, Generic
-from typing_extensions import Literal, Self, TypeAlias, TypeGuard, TypeVar, overload
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Final,
+    Generic,
+    Literal,
+    TypeVar,
+    overload,
+)
 
 from packaging.version import Version
 
@@ -17,6 +24,9 @@ from v8serialize._pycompat.enum import IterableIntFlag, StrEnum
 from v8serialize._pycompat.re import RegexFlag
 from v8serialize._versions import parse_lenient_version
 from v8serialize.errors import JSRegExpV8CodecError
+
+if TYPE_CHECKING:
+    from typing_extensions import Self, TypeAlias, TypeGuard
 
 kLatestVersion: Final = 15
 """The current supported serialization format implemented here."""

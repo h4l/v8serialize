@@ -3,19 +3,18 @@ from __future__ import annotations
 from abc import ABCMeta
 from collections.abc import Iterable, Iterator, MutableSet
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, AbstractSet
-from typing_extensions import Self, overload
+from typing import TYPE_CHECKING, AbstractSet, overload
 
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize.jstypes import _repr
 from v8serialize.jstypes._equality import JSSameValueZero, same_value_zero
 
 if TYPE_CHECKING:
-    from typing_extensions import TypeVar
+    from typing_extensions import Self, TypeVar
 
     T = TypeVar("T", default=object)
 else:
-    from typing_extensions import TypeVar
+    from typing import TypeVar
 
     T = TypeVar("T")
 
