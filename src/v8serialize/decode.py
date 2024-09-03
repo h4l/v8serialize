@@ -3,6 +3,7 @@ from __future__ import annotations
 import codecs
 import operator
 import struct
+import sys
 from collections.abc import (
     ByteString,
     Iterable,
@@ -134,14 +135,20 @@ class ArrayReadResult(NamedTuple):
     """The array and object properties."""
 
 
-class JSErrorReadResult(NamedTuple, Generic[T]):
-    js_error: T
-    js_error_data: AnyJSError
+# 3.9 and 3.10 can't combine NamedTuple with Generic at runtime
+# https://bugs.python.org/issue43923
+# Could make this a dataclass, but tuple unpacking with types is useful.
+if TYPE_CHECKING or sys.version_info >= (3, 11):
 
+    class ReferencedObject(NamedTuple, Generic[T]):
+        serialized_id: SerializedId
+        object: T
 
-class ReferencedObject(NamedTuple, Generic[T]):
-    serialized_id: SerializedId
-    object: T
+else:
+
+    class ReferencedObject(NamedTuple):
+        serialized_id: SerializedId
+        object: object
 
 
 @dataclass(**slots_if310())
