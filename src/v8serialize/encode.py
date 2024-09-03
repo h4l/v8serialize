@@ -8,7 +8,7 @@ from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import lru_cache, partial
-from types import NoneType, TracebackType
+from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -26,6 +26,7 @@ from packaging.version import Version
 
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._pycompat.exceptions import add_note
+from v8serialize._pycompat.types import NoneType
 from v8serialize._values import (
     AnyArrayBuffer,
     AnyArrayBufferTransfer,
