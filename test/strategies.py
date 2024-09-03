@@ -326,7 +326,7 @@ def js_regexp_flags(
         return JSRegExpFlag(flags)
 
     values = st.integers(
-        min_value=JSRegExpFlag.NoFlag, max_value=~JSRegExpFlag.NoFlag
+        min_value=JSRegExpFlag.NoFlag, max_value=sum(JSRegExpFlag)
     ).map(normalise_unicode_flags)
 
     return st.builds(JSRegExpFlag, values)
