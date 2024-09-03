@@ -359,7 +359,7 @@ class JSErrorName(StrEnum):
 
         def __new__(cls, name: str, error_tag: SerializationErrorTag | None) -> Self:
             obj = str.__new__(cls, name)
-            obj._value_ = obj
+            obj._value_ = name
             obj.__error_tag = error_tag
             return obj
 
