@@ -904,8 +904,14 @@ def read_stream(rts_fn: ReadableTagStreamReadFunction) -> TagReader:
 
 
 class DecodeContext(Protocol):
-    @property
-    def stream(self) -> ReadableTagStream: ...
+    if TYPE_CHECKING:
+
+        @property
+        def stream(self) -> ReadableTagStream: ...
+
+    else:
+        # test/test_protocol_dataclass_interaction.py
+        stream = ...
 
     def decode_object(self, *, tag: SerializationTag | None = ...) -> object: ...
 

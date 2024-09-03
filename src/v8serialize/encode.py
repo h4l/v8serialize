@@ -705,8 +705,14 @@ HostObjectSerializer: TypeAlias = (
 class EncodeContext(Protocol):
     """Maintains the state needed to write Python objects in V8 format."""
 
-    @property
-    def stream(self) -> WritableTagStream: ...
+    if TYPE_CHECKING:
+
+        @property
+        def stream(self) -> WritableTagStream: ...
+
+    else:
+        # test/test_protocol_dataclass_interaction.py
+        stream = ...
 
     def encode_object(self, value: object) -> None:
         """Serialize a single Python value to the stream.

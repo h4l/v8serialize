@@ -55,9 +55,8 @@ else:
 
     @runtime_checkable
     class ElementsView(Protocol[_Dummy]):
-
-        @property
-        def order(self) -> Order: ...
+        # test/test_protocol_dataclass_interaction.py
+        order = ...
 
     Mapping.register(ElementsView)
 
@@ -105,15 +104,11 @@ else:
 
     @runtime_checkable
     class SparseSequence(Protocol[_Dummy, _Dummy2]):
-        @property
-        def hole_value(self) -> _HoleT_co: ...
-
-        @property
-        def elements_used(self) -> int: ...
-
-        def element_indexes(self, *, order: Order = ...) -> Iterator[int]: ...
-
-        def elements(self, *, order: Order = ...) -> ElementsView[_T_co]: ...
+        # test/test_protocol_dataclass_interaction.py
+        hole_value = ...
+        elements_used = ...
+        element_indexes = ...
+        elements = ...
 
     Sequence.register(SparseSequence)
 
@@ -141,7 +136,7 @@ else:
 
     @runtime_checkable
     class SparseMutableSequence(SparseSequence[_Dummy, _Dummy2], Protocol):
-
-        def resize(self, length: int) -> None: ...
+        # test/test_protocol_dataclass_interaction.py
+        resize = ...
 
     MutableSequence.register(SparseMutableSequence)
