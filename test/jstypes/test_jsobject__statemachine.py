@@ -10,6 +10,7 @@ from hypothesis.stateful import (
     rule,
 )
 
+from v8serialize._pycompat.builtins import callable_staticmethod
 from v8serialize.errors import NormalizedKeyError
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
 from v8serialize.jstypes.jsarrayproperties import (
@@ -64,7 +65,7 @@ class JSObjectComparisonMachine(RuleBasedStateMachine):
         array's length but empty, or above the array's range."""
         return array_indexes.filter(lambda i: i not in self.reference_array.keys())
 
-    @staticmethod
+    @callable_staticmethod
     def get_nonexistant_array_indexes(
         self: JSObjectComparisonMachine,
     ) -> st.SearchStrategy[int]:
@@ -80,7 +81,7 @@ class JSObjectComparisonMachine(RuleBasedStateMachine):
             return st.nothing()
         return st.sampled_from(list(self.reference_array.keys()))
 
-    @staticmethod
+    @callable_staticmethod
     def get_existant_array_indexes(
         self: JSObjectComparisonMachine,
     ) -> st.SearchStrategy[int]:
@@ -96,7 +97,7 @@ class JSObjectComparisonMachine(RuleBasedStateMachine):
             return st.nothing()
         return st.sampled_from(list(self.reference_properties.keys()))
 
-    @staticmethod
+    @callable_staticmethod
     def get_existant_property_names(
         self: JSObjectComparisonMachine,
     ) -> st.SearchStrategy[str]:
@@ -112,7 +113,7 @@ class JSObjectComparisonMachine(RuleBasedStateMachine):
             lambda n: n not in self.reference_properties.keys()
         )
 
-    @staticmethod
+    @callable_staticmethod
     def get_nonexistant_property_names(
         self: JSObjectComparisonMachine,
     ) -> st.SearchStrategy[str]:
@@ -121,11 +122,11 @@ class JSObjectComparisonMachine(RuleBasedStateMachine):
     #########################
     # Precondition Predicates
 
-    @staticmethod
+    @callable_staticmethod
     def array_not_empty(self: JSObjectComparisonMachine) -> bool:
         return len(self.reference_array) > 0
 
-    @staticmethod
+    @callable_staticmethod
     def properties_not_empty(self: JSObjectComparisonMachine) -> bool:
         return len(self.reference_properties) > 0
 
