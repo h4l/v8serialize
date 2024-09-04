@@ -357,7 +357,7 @@ class JSArrayBufferView(Generic[JSArrayBufferT, AnyBufferT]):
         try:
             # Access the buffer to find its byte length. The view will only be
             # able to report byte_offset and byte_length if the buffer is accessible
-            with memoryview(backing_buffer) as buf:
+            with get_buffer(backing_buffer) as buf:
                 msg = None
                 if (  # Rather pedantic, but JavaScript enforces this.
                     byte_length is None
@@ -422,7 +422,7 @@ the itemsize when the view does not have an explicit byte_length"""
 
     def __get_buffer_as_memoryview(self) -> tuple[bool, memoryview]:
         try:
-            mv = memoryview(self.backing_buffer)
+            mv = get_buffer(self.backing_buffer)
         except NotImplementedError:
             mv = memoryview(b"")
         if mv.itemsize != 1 or mv.ndim != 1:
