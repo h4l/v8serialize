@@ -4,7 +4,7 @@ import functools
 import operator
 from collections.abc import Mapping
 from dataclasses import dataclass
-from enum import Enum, IntEnum, IntFlag
+from enum import Enum, IntFlag
 from functools import lru_cache, reduce
 from types import MappingProxyType
 from typing import (
@@ -20,7 +20,7 @@ from typing import (
 from packaging.version import Version
 
 from v8serialize._pycompat.dataclasses import slots_if310
-from v8serialize._pycompat.enum import IterableFlag, IterableIntFlag, StrEnum
+from v8serialize._pycompat.enum import IntEnum, IterableFlag, IterableIntFlag, StrEnum
 from v8serialize._pycompat.re import RegexFlag
 from v8serialize._versions import parse_lenient_version
 from v8serialize.errors import JSRegExpV8CodecError

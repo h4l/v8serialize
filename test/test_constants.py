@@ -11,9 +11,27 @@ from v8serialize.constants import (
     JSRegExpFlag,
     SerializationErrorTag,
     SerializationFeature,
+    SerializationTag,
     SymbolicVersion,
 )
 from v8serialize.errors import JSRegExpV8CodecError
+
+
+def test_SerializationTag() -> None:
+    assert int(SerializationTag.kBeginJSObject) in SerializationTag
+    assert -1 not in SerializationTag
+    assert 0xFFFF not in SerializationTag
+    assert SerializationTag(int(SerializationTag.kRegExp)) is SerializationTag.kRegExp
+
+
+def test_SerializationErrorTag() -> None:
+    assert int(SerializationErrorTag.Message) in SerializationErrorTag
+    assert -1 not in SerializationErrorTag
+    assert 0xFFFF not in SerializationErrorTag
+    assert (
+        SerializationErrorTag(int(SerializationErrorTag.Cause))
+        is SerializationErrorTag.Cause
+    )
 
 
 def test_RegExpFlag() -> None:

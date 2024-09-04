@@ -43,3 +43,25 @@ else:
 
     class IterableIntFlag(IntFlag):
         pass
+
+
+# In py3.12 you can do things like `42 in SomeIntEnum`, returning True/False.
+# In previous versions you get a TypeError.
+if sys.version_info < (3, 12):
+    from enum import EnumMeta
+    from enum import IntEnum as _IntEnum
+
+    class ContainsValueEnumMeta(EnumMeta):
+        def __contains__(cls, value: object) -> bool:
+            if value in cls._value2member_map_:
+                return True
+            try:
+                return super().__contains__(value)
+            except TypeError:
+                return False
+
+    class IntEnum(_IntEnum, metaclass=ContainsValueEnumMeta):
+        pass
+
+else:
+    from enum import IntEnum as IntEnum  # noqa: F401  # re-export
