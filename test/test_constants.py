@@ -8,6 +8,7 @@ from packaging.version import Version
 
 from v8serialize._pycompat.re import RegexFlag
 from v8serialize.constants import (
+    JSErrorName,
     JSRegExpFlag,
     SerializationErrorTag,
     SerializationFeature,
@@ -25,6 +26,7 @@ def test_SerializationTag() -> None:
 
 
 def test_SerializationErrorTag() -> None:
+    assert SerializationErrorTag.Message in SerializationErrorTag
     assert int(SerializationErrorTag.Message) in SerializationErrorTag
     assert -1 not in SerializationErrorTag
     assert 0xFFFF not in SerializationErrorTag
@@ -149,6 +151,14 @@ def test_SerializationFeature__supported_by(
             SerializationFeature.supported_by(v8_version=v8_version)
     else:
         assert SerializationFeature.supported_by(v8_version=v8_version) == features
+
+
+def test_JSErrorName() -> None:
+    assert str(JSErrorName.Error) == "Error"
+    assert str(JSErrorName.Error) in JSErrorName
+    assert (
+        JSErrorName.SyntaxError.error_tag == SerializationErrorTag.SyntaxErrorPrototype
+    )
 
 
 def test_SymbolicVersion() -> None:
