@@ -36,6 +36,7 @@ from v8serialize.jstypes.jsbuffers import (
     JSSharedArrayBuffer,
     JSTypedArray,
     create_view,
+    get_buffer,
 )
 from v8serialize.jstypes.jserror import JSErrorData
 from v8serialize.jstypes.jsmap import JSMap
@@ -467,7 +468,7 @@ def test_codec_rt_object__encodes_python_binary_types_as_array_buffers(
     result = decode_ctx.decode_object()
 
     assert isinstance(result, JSArrayBuffer)
-    assert bytes(result.data) == bytes(result)
+    assert bytes(get_buffer(result.data)) == bytes(value)
     assert decode_ctx.stream.eof
 
 
@@ -476,6 +477,7 @@ def test_codec_rt_object__encodes_python_binary_types_as_array_buffers(
         view_formats=st.sampled_from(
             sorted(
                 set(ArrayBufferViewStructFormat)
+                # The NodeJS format doesn't support Float16Array
                 - {ArrayBufferViewStructFormat.Float16Array},
                 key=lambda s: s.view_tag,
             )

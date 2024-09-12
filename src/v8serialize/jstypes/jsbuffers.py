@@ -4,11 +4,21 @@ import functools
 import struct
 from abc import ABC, abstractmethod
 from collections.abc import ByteString, Sized
-from contextlib import AbstractContextManager
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass, field
 from enum import Enum
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    ContextManager,
+    Generator,
+    Generic,
+    Literal,
+    cast,
+    overload,
+)
 
 from v8serialize._enums import frozen
 from v8serialize._pycompat.dataclasses import slots_if310
@@ -418,19 +428,22 @@ the itemsize when the view does not have an explicit byte_length"""
         return self.__get_buffer_as_memoryview()[0]
 
     @abstractmethod
-    def get_buffer(self) -> AnyBufferT: ...
+    def get_buffer(
+        self, *, readonly: Literal[True] | None = None
+    ) -> ContextManager[AnyBufferT]: ...
 
-    def __get_buffer_as_memoryview(self) -> tuple[bool, memoryview]:
+    def __get_buffer_as_memoryview(
+        self, *, readonly: Literal[True] | None = None
+    ) -> tuple[bool, memoryview]:
         try:
             mv = get_buffer(self.backing_buffer)
         except NotImplementedError:
             mv = memoryview(b"")
         if mv.itemsize != 1 or mv.ndim != 1:
             mv = mv.cast("c")  # 1-dimensional bytes
-        if self.readonly:
+        if self.readonly or readonly:
             mv = mv.toreadonly()
 
-        struct_format = self.data_format.format
         itemsize = self.data_format.byte_length
         item_length = self.item_length
 
@@ -445,7 +458,6 @@ the itemsize when the view does not have an explicit byte_length"""
                 in_range = False
             mv = mv[byte_offset : byte_offset + byte_length]
             assert len(mv) == byte_length
-            mv = mv.cast(struct_format)
         else:
             if byte_offset > mv.nbytes:
                 byte_length = 0
@@ -456,22 +468,23 @@ the itemsize when the view does not have an explicit byte_length"""
             full_items, partial_items = divmod(available_bytes, itemsize)
             current_byte_length = full_items * itemsize
             mv = mv[byte_offset : byte_offset + current_byte_length]
-            mv = mv.cast(struct_format)
-            assert len(mv) == full_items
 
         return in_range, mv
 
-    def get_buffer_as_memoryview(self) -> memoryview:
-        return self.__get_buffer_as_memoryview()[1]
+    def get_buffer_as_memoryview(
+        self, *, readonly: Literal[True] | None = None
+    ) -> memoryview:
+        return self.__get_buffer_as_memoryview(readonly=readonly)[1]
 
     def __eq__(self, value: object) -> bool:
         if self is value:
             return True
         if isinstance(value, JSArrayBufferView):
+            value = cast("JSArrayBufferView[AnyArrayBufferData, AnyBufferT]", value)
             try:
                 with (
-                    self.get_buffer_as_memoryview() as self_data,
-                    value.get_buffer_as_memoryview() as value_data,
+                    self.get_buffer(readonly=True) as self_data,
+                    value.get_buffer(readonly=True) as value_data,
                 ):
                     return self_data == value_data
             except NotImplementedError:
@@ -480,7 +493,7 @@ the itemsize when the view does not have an explicit byte_length"""
 
     def __hash__(self) -> int:
         try:
-            with self.get_buffer_as_memoryview() as data:
+            with self.get_buffer_as_memoryview(readonly=True) as data:
                 # data may not be hashable, depending on backing buffer
                 return hash(data)
         except NotImplementedError:
@@ -531,8 +544,12 @@ class JSTypedArray(
 
     # FIXME: memoryview is generic in typeshed, but mypy errors if I give it the
     #  ElementT annotation (should match cls.element_type)
-    def get_buffer(self) -> memoryview:
-        return self.get_buffer_as_memoryview()
+    def get_buffer(
+        self, *, readonly: Literal[True] | None = None
+    ) -> ContextManager[memoryview]:
+        return self.get_buffer_as_memoryview(readonly=readonly).cast(
+            self.data_format.format
+        )
 
 
 class JSInt8Array(JSTypedArray[JSArrayBufferT, Literal[ArrayBufferViewTag.kInt8Array]]):
@@ -627,6 +644,56 @@ class JSBigUint64Array(
     element_type = int
     view_tag = ArrayBufferViewTag.kBigUint64Array
     data_format = DataFormat.resolve(data_type=DataType.UnsignedInt, byte_length=8)
+
+
+class BackportJSFloat16Array(JSFloat16Array):
+    """An alternate implementation of `JSFloat16Array` that supports Python < 3.12.
+
+    Python versions before 3.12 don't support 16-bit floats as a memoryview format.
+    This implementation copies 16-bit floats to/from a 32-bit float array when
+    get_buffer() accesses the array.
+    """
+
+    @contextmanager
+    def get_buffer(
+        self, *, readonly: Literal[True] | None = None
+    ) -> Generator[memoryview]:
+        with self.get_buffer_as_memoryview(readonly=readonly) as buffer:
+            assert buffer.ndim == 1
+            assert buffer.itemsize == 1
+            assert buffer.format == "B"
+            length, remainder = divmod(len(buffer), 2)
+            assert remainder == 0
+            data = bytearray(length * 4)
+            view = memoryview(data).cast("f")
+            assert len(view) * 2 == len(buffer)
+
+            half_float = struct.Struct("e")
+            for i, v in enumerate(half_float.iter_unpack(buffer)):
+                view[i] = v[0]
+
+            yield view.toreadonly() if buffer.readonly else view
+
+            # skip write back if the view was released
+            try:
+                view.obj  # will raise if view.release() was called
+            except ValueError:
+                return
+
+            if buffer.readonly:
+                return
+
+            for i, fv in enumerate(view):
+                half_float.pack_into(buffer, i * 2, fv)
+
+
+# Use BackportJSFloat16Array in place of JSFloat16Array in Python versions that
+# can't use half floats in memoryview.
+MemoryviewJSFloat16Array: type[JSFloat16Array] = JSFloat16Array
+try:
+    memoryview(b"").cast("e")
+except ValueError:
+    JSFloat16Array = BackportJSFloat16Array  # type: ignore[misc, assignment]
 
 
 @dataclass(frozen=True)
@@ -766,8 +833,8 @@ class JSDataView(JSArrayBufferView[JSArrayBufferT, DataViewBuffer]):
     view_tag = ArrayBufferViewTag.kDataView
     data_format = DataFormat.resolve(data_type=DataType.Bytes, byte_length=1)
 
-    def get_buffer(self) -> DataViewBuffer:
-        return DataViewBuffer(self.get_buffer_as_memoryview())
+    def get_buffer(self, *, readonly: Literal[True] | None = None) -> DataViewBuffer:
+        return DataViewBuffer(self.get_buffer_as_memoryview(readonly=readonly))
 
 
 @dataclass(unsafe_hash=True, order=True, **slots_if310())

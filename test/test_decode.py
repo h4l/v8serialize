@@ -74,7 +74,8 @@ def test_load_v13_arraybufferview() -> None:
     assert v13_array_buffer_view[1] == 13  # v13
     result = loads(v13_array_buffer_view)
     assert isinstance(result, JSUint8Array)
-    assert result.get_buffer().tolist() == [1, 2, 3]
+    with result.get_buffer() as buffer:
+        assert buffer.tolist() == [1, 2, 3]
 
 
 def test_VerifyObjectCount_not_supported() -> None:

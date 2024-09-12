@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import math
 import re
+import struct
+import sys
 from array import array
 from dataclasses import FrozenInstanceError
 from typing import TYPE_CHECKING
@@ -13,6 +15,7 @@ from v8serialize._pycompat.re import RegexFlag
 from v8serialize.constants import ArrayBufferViewTag
 from v8serialize.jstypes.jsbuffers import (
     ArrayBufferViewStructFormat,
+    BackportJSFloat16Array,
     BaseJSArrayBuffer,
     BoundsJSArrayBufferError,
     ByteLengthJSArrayBufferError,
@@ -22,6 +25,7 @@ from v8serialize.jstypes.jsbuffers import (
     JSArrayBufferTransfer,
     JSArrayBufferView,
     JSDataView,
+    JSFloat64Array,
     JSInt8Array,
     JSInt32Array,
     JSSharedArrayBuffer,
@@ -317,8 +321,8 @@ def test_JSArrayBufferView__eq__follows_data() -> None:
         item_length=2,
     )
     with (
-        view1.get_buffer_as_memoryview() as data1,
-        view2.get_buffer_as_memoryview() as data2,
+        view1.get_buffer() as data1,
+        view2.get_buffer() as data2,
     ):
         assert data1.tolist() == data2.tolist()
         assert data1.tobytes() != data2.tobytes()
@@ -379,3 +383,58 @@ def match_wildcard(
     if full_match:
         regex = f"^{regex}$"
     return re.search(regex, subject, flags=flags)
+
+
+def test_BackportJSFloat16Array__get_buffer() -> None:
+    data = bytearray(8)
+    for i in range(4):
+        struct.pack_into("e", data, i * 2, i)
+
+    f16 = BackportJSFloat16Array(data)
+    with f16.get_buffer() as buf:
+        assert buf.tolist() == list(range(4))
+
+        for i in range(4):
+            buf[i] = i * 2 + 10
+
+    with f16.get_buffer() as buf:
+        assert buf.tolist() == [10, 12, 14, 16]
+
+    # writes don't occur if the context block throws
+    with pytest.raises(RuntimeError, match="oops"):
+        with f16.get_buffer() as buf:
+            buf[0] = 0
+            raise RuntimeError("oops")
+
+    with f16.get_buffer() as buf:
+        assert buf[0] == 10
+
+    # writes don't occur if the context block releases the view itself
+    with f16.get_buffer() as buf:
+        buf[0] = 0
+        buf.release()
+
+    with f16.get_buffer() as buf:
+        assert buf[0] == 10
+
+    # view __eq__ other float views
+    f64 = JSFloat64Array(b"".join(struct.pack("d", i) for i in [10, 12, 14, 16]))
+    assert f16 == f64
+
+    # view is readonly when buffer is readonly
+    with BackportJSFloat16Array(bytes(data)).get_buffer() as buf:
+        assert buf.readonly
+
+    # view is hashable when buffer is readonly
+    hash(BackportJSFloat16Array(bytes(data)))
+
+
+@pytest.mark.skipif(
+    sys.version_info <= (3, 12),
+    reason="Python 3.12+ supports half-floats in memoryview",
+)
+def test_BackportJSFloat16Array__not_used_in_3_12_plus() -> None:
+    from v8serialize.jstypes.jsbuffers import BackportJSFloat16Array, JSFloat16Array
+
+    assert JSFloat16Array is not BackportJSFloat16Array
+    assert issubclass(BackportJSFloat16Array, JSFloat16Array)
