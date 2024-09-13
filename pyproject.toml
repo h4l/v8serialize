@@ -51,3 +51,7 @@ strict = true
 
 [tool.coverage.report]
 exclude_also = ["if TYPE_CHECKING:"]
+
+[tool.pytest.ini_options]
+addopts = ["--strict-markers", "-m", "not integration"]
+markers = ["integration: Integration tests"]

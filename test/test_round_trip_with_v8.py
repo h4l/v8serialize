@@ -30,6 +30,8 @@ if TYPE_CHECKING:
     # not exported publicly :/
     from _pytest.mark import ParameterSet
 
+pytestmark = pytest.mark.integration
+
 MIN_ECHOSERVER_VERSION: Final = Version("0.2.0")
 
 
