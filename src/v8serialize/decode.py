@@ -1248,7 +1248,6 @@ class TagMapper(TagMapperObject):
         ctx.stream.objects.replace_reference(serialized_id, obj.value)
         return obj.value
 
-    # FIXME: americanise (americanize?) spelling
     def deserialize_js_regexp(
         self, tag: Literal[SerializationTag.kRegExp], ctx: DecodeContext
     ) -> JSRegExp:
