@@ -8,6 +8,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
+packaging = ">=14.5" # this version introduces the VERSION_PATTERN constant
 
 [tool.poetry.group.dev.dependencies]
 exceptiongroup = { version = "^1", python = "<3.11" }
