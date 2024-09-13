@@ -5,6 +5,8 @@ DNT_DENO_VERSION = "1.46.1"
 // Set via .envrc
 variable "ECHOSERVER_VERSION" {}
 
+variable "CI" { default = "" }
+
 group "default" {
   targets = ["echoserver-deno", "echoserver-node"]
 }
@@ -19,6 +21,7 @@ target "_base" {
     "org.opencontainers.image.title" = "v8serialize-echoserver"
     "org.opencontainers.image.version" = ECHOSERVER_VERSION
   }
+  platforms = CI == "true" ? ["linux/amd64", "linux/arm64"] : ["local"]
 }
 
 target "echoserver-deno" {
