@@ -38,6 +38,7 @@ extend-select = "B950"
 extend-ignore = "E203,E501,E701"
 per-file-ignores = [
   # Allow unused imports as re-export in __init__
+  "src/v8serialize/__init__.py:F401",
   "src/v8serialize/jstypes/__init__.py:F401",
 ]
 force-future-annotations = true
