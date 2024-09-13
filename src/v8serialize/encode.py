@@ -146,13 +146,6 @@ class TagConstraintRemover(AbstractContextManager[None, None]):
         self.stream.allowed_tags = None
 
 
-# FIXME: not used
-@dataclass(frozen=True, **slots_if310())
-class SerializedObjectReference:
-    serialized_tag: SerializationTag
-    serialized_id: SerializedId
-
-
 @dataclass(**slots_if310())
 class WritableTagStream:
     """Write individual tagged data items in the V8 serialization format.

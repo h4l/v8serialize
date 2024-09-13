@@ -3,27 +3,12 @@ from __future__ import annotations
 from functools import singledispatchmethod as _singledispatchmethod
 from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar, overload
 
-from v8serialize.constants import SerializationTag
-
 if TYPE_CHECKING:
     from functools import _SingleDispatchCallable
     from typing_extensions import Concatenate, ParamSpec
 
 T = TypeVar("T")
 F = TypeVar("F", bound=Callable[..., Any])
-
-
-# TODO: remove this if we don't start using it
-def tag(tag: SerializationTag) -> Callable[[Callable[P, T]], Callable[P, T]]:
-    """Mark a function with a SerializationTag.
-
-    Currently for metadata/documentation purposes only.
-    """
-
-    def tag_decorator(func: Callable[P, T]) -> Callable[P, T]:
-        return func
-
-    return tag_decorator
 
 
 # typeshed's singledispatchmethod type annotations don't keep the function's
