@@ -1,10 +1,11 @@
 .*
-!.envrc
-!.vscode-python.env
-!.env.local.example
 !.devcontainer
 !.editorconfig
+!.env.local.example
+!.envrc
 !.git*
 !.prettierrc
+!.vscode-python.env
+
 __pycache__
 /htmlcov
