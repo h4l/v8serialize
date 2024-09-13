@@ -1,6 +1,7 @@
 ARG PYTHON_VER
 
 FROM python:${PYTHON_VER:?} AS python-base
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
 
 FROM python-base AS poetry
@@ -49,3 +50,31 @@ FROM lint-setup AS lint-mypy
 RUN --mount=source=.,target=/workspace,rw \
     --mount=type=cache,target=.mypy_cache \
     poetry run mypy .
+
+
+FROM poetry AS smoketest-pkg-build
+RUN --mount=source=testing/smoketest,target=.,rw \
+  mkdir /dist && poetry build -o /dist
+
+
+FROM scratch AS smoketest-pkg
+COPY --from=smoketest-pkg-build /dist/* .
+
+
+FROM poetry AS v8serialize-pkg-build
+RUN --mount=source=.,target=/workspace,rw \
+  mkdir /dist && poetry build -o /dist
+
+
+FROM scratch AS v8serialize-pkg
+COPY --from=v8serialize-pkg-build /dist/* .
+
+
+FROM python-base AS test-package
+RUN python -m venv /env
+ENV PATH=/env/bin:$PATH
+RUN --mount=from=smoketest-pkg,target=/pkg/smoketest \
+    --mount=from=v8serialize-pkg,target=/pkg/v8serialize \
+  pip install /pkg/smoketest/*.whl /pkg/v8serialize/*.whl
+RUN pip list
+RUN python -m smoketest

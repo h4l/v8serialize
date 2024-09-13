@@ -4,16 +4,31 @@ group "default" {
 
 // TODO: integration
 
+py_versions = ["3.9", "3.10", "3.11", "3.12", "3.13-rc"]
+
 target "test" {
     name = "test_py${replace(py, ".", "")}"
     matrix = {
-        py = ["3.9", "3.10", "3.11", "3.12", "3.13-rc"],
+        py = py_versions,
     }
     args = {
         PYTHON_VER = py == "latest" ? "slim" : "${py}-slim"
     }
     target = "test"
     no-cache-filter = ["test"]
+    output = ["type=cacheonly"]
+}
+
+target "test_package" {
+  name = "test_package_py${replace(py, ".", "")}"
+    matrix = {
+        py = py_versions,
+    }
+    args = {
+        PYTHON_VER = py == "latest" ? "slim" : "${py}-slim"
+    }
+    target = "test-package"
+    no-cache-filter = ["test-package"]
     output = ["type=cacheonly"]
 }
 

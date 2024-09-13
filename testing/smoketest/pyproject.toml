@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "smoketest"
+version = "0.1.0"
+description = "A package that depends on v8serialize with the oldest supported dependencies."
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+v8serialize = "*"
+packaging = "<=14.5" # require the oldest version supported by v8serialize
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
