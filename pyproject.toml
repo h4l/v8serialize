@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "v8serialize"
-version = "0.1.0"
+version = "0.1.0-alpha.0"
 description = "The V8 serialialization format."
 authors = ["Hal Blackburn <hwtb2@cam.ac.uk>"]
 license = "MIT"

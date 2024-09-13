@@ -8,5 +8,5 @@
 !.prettierrc
 !.vscode-python.env
 
-__pycache__
+**/__pycache__
 /htmlcov
