@@ -19,7 +19,7 @@ from typing import (
 
 from packaging.version import Version
 
-from v8serialize._pycompat.dataclasses import slots_if310
+from v8serialize._pycompat.dataclasses import FrozenAfterInitDataclass, slots_if310
 from v8serialize._pycompat.enum import IntEnum, IterableFlag, IterableIntFlag, StrEnum
 from v8serialize._pycompat.re import RegexFlag
 from v8serialize._versions import parse_lenient_version
@@ -565,8 +565,8 @@ else:
 TagSet = AbstractSet[TagT_co]
 
 
-@dataclass(frozen=True, **slots_if310())
-class TagConstraint(Generic[TagT_co]):
+@dataclass(unsafe_hash=True, **slots_if310())
+class TagConstraint(FrozenAfterInitDataclass, Generic[TagT_co]):
     name: str
     allowed_tags: TagSet[TagT_co]
 
