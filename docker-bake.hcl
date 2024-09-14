@@ -20,7 +20,7 @@ target "test" {
 }
 
 target "test_package" {
-  name = "test_package_py${replace(py, ".", "")}"
+    name = "test_package_py${replace(py, ".", "")}"
     matrix = {
         py = py_versions,
     }
