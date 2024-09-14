@@ -28,6 +28,7 @@ httpx = "^0.27.0"
 flake8-future-annotations = "^1.1.0"
 typing-extensions = "^4.12.2"
 pyupgrade = "^3.17.0"
+pytest-xdist = "^3.6.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -55,5 +56,12 @@ strict = true
 exclude_also = ["if TYPE_CHECKING:"]
 
 [tool.pytest.ini_options]
-addopts = ["--strict-markers", "-m", "not integration", "--doctest-modules"]
+addopts = [
+  "-n",
+  "auto",
+  "--strict-markers",
+  "-m",
+  "not integration",
+  "--doctest-modules",
+]
 markers = ["integration: Integration tests"]
