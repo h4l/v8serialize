@@ -1,0 +1,49 @@
+project:
+  type: website
+
+website:
+  title: "v8serialize"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - about.qmd
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+
+filters:
+  - interlinks
+
+interlinks:
+  sources:
+    python:
+      url: https://docs.python.org/3/
+
+
+# tell quarto to read the sidebar file
+metadata-files:
+  - _sidebar.yml
+
+quartodoc:
+  style: pkgdown
+  dir: reference
+  sidebar: "_sidebar.yml"
+  package: v8serialize
+  parser: numpy
+  render_interlinks: true
+  sections:
+    - title: Some functions
+      desc: Functions to inspect docstrings.
+      contents:
+        - loads
+        - dumps
+        - SerializationFeature
+        - jstypes.JSMap
+        # - module_level_function
+    - title: Other things
+      contents:
+        - AnyTagMapper
