@@ -20,10 +20,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       packages: write
+      id-token: write # needed for signing the images with GitHub OIDC Token
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.6.0
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -49,9 +53,7 @@ jobs:
         id: bake
         uses: docker/bake-action@v5
         with:
-          workdir:
-          targets: ci
-          files: testing/v8serialize-echo
+          workdir: testing/v8serialize-echo
           provenance: true
           sbom: true
           push: true
@@ -64,10 +66,16 @@ jobs:
           BAKE_META: ${{ steps.bake.outputs.metadata }}
         run: |
           readarray -t image_refs < <(
-            jq <<<"${BAKE_META:?}" '
+            jq <<<"${BAKE_META:?}" -r '
               .[]
               | select(.["image.name"]? and .["containerimage.digest"]?)
-              | "\(.["image.name"])@\(.["containerimage.digest"])"
+              | (.["containerimage.digest"]) as $containerimage_digest
+              | (.["image.name"] | split(",")) as $image_names
+              | $image_names[] | "\(.)@\($containerimage_digest)"
             '
           )
-          cosign sign --yes ${image_refs:?}
+
+          echo "Images to sign:"
+          printf ' - %s\n' "${image_refs[@]}"
+
+          cosign sign --yes ${image_refs[@]:?}
