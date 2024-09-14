@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """This is a simplified demo of the protocols defined in v8serialize.typing."""
+
+from __future__ import annotations
 
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
