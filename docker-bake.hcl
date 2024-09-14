@@ -1,5 +1,5 @@
 group "default" {
-    targets = ["test", "lint"]
+    targets = ["test", "test_package", "lint"]
 }
 
 // TODO: integration

@@ -1,0 +1,39 @@
+name: "Main"
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  prepare_checks:
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.generate.outputs.targets }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: List targets
+        id: generate
+        uses: docker/bake-action/subaction/list-targets@v4
+        with:
+          target: default
+          files: docker-bake.hcl
+  run_check:
+    runs-on: ubuntu-latest
+    needs:
+      - prepare_checks
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.prepare_checks.outputs.targets) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check
+        uses: docker/bake-action@v5
+        with:
+          targets: ${{ matrix.target }}
+          files: docker-bake.hcl
