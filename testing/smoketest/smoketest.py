@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from v8serialize import SerializationFeature, dumps, loads
 
 
