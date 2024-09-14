@@ -21,6 +21,20 @@ services:
     labels:
       com.github.h4l.v8serialize.echoserver: "true"
 
+  integration_test:
+    profiles: [integration]
+    image: ${V8SERIALIZE_DEV_IMAGE:-v8serialize-dev:py312}
+    networks: [v8serialize]
+    environment:
+      V8SERIALIZE_ECHOSERVERS: "${V8SERIALIZE_ECHOSERVERS:-__required_but_not_set__}"
+    depends_on:
+      - echoserver-node-22
+      - echoserver-node-18
+      - echoserver-deno
+    command: pytest -m integration -vv
+    volumes:
+      - .:${WORKSPACE_MOUNT_PATH:-/workspace}
+    working_dir: /workspace
 
 networks:
   v8serialize:

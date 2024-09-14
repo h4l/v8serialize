@@ -44,3 +44,15 @@ target "lint" {
     no-cache-filter = ["lint-setup"]
     output = ["type=cacheonly"]
 }
+
+target "dev" {
+    name = "dev_py${replace(py, ".", "")}"
+    matrix = {
+        py = py_versions,
+    }
+    inherits = ["test_py${replace(py, ".", "")}"]
+    no-cache-filter = []
+    output = []
+    target = "poetry"
+    tags = ["v8serialize-dev:py${replace(py, ".", "")}"]
+}

@@ -1,0 +1,10 @@
+services:
+  integration_test:
+    volumes:
+      - devcontainer_volume:${WORKSPACE_MOUNT_PATH:?}
+    working_dir: $PWD
+
+volumes:
+  devcontainer_volume:
+    external: true
+    name: ${V8SERIALIZE_DEVCONTAINER_VOLUME:?}

@@ -5,6 +5,9 @@ on:
       - main
   pull_request:
 
+env:
+  ECHOSERVER_VERSION: 0.2.0
+
 jobs:
   prepare_checks:
     runs-on: ubuntu-latest
@@ -20,6 +23,7 @@ jobs:
         with:
           target: default
           files: docker-bake.hcl
+
   run_check:
     runs-on: ubuntu-latest
     needs:
@@ -37,3 +41,61 @@ jobs:
         with:
           targets: ${{ matrix.target }}
           files: docker-bake.hcl
+
+  prepare_integration_checks:
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.generate.outputs.targets }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: List targets
+        id: generate
+        uses: docker/bake-action/subaction/list-targets@v4
+        with:
+          target: dev
+          files: docker-bake.hcl
+
+  run_integration_check:
+    runs-on: ubuntu-latest
+    needs:
+      - prepare_integration_checks
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          ${{ fromJson(needs.prepare_integration_checks.outputs.targets) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build dev environment image
+        id: dev_image
+        uses: docker/bake-action@v5
+        with:
+          targets: ${{ matrix.target }}
+          files: docker-bake.hcl
+          push: false
+          load: true
+
+      - name: Run integration test
+        env:
+          BAKE_META: ${{ steps.dev_image.outputs.metadata }}
+          DEV_IMAGE_TARGET: ${{ matrix.target }}
+        run: |
+          set -x
+          # Find the image name built by the preceding step for the Python
+          # version being tested.
+          V8SERIALIZE_DEV_IMAGE=$(jq <<<"${BAKE_META:?}" -re \
+            '.[$ENV.DEV_IMAGE_TARGET]["image.name"] | split(",") | first'
+          )
+
+          # Start the V8 echoservers that the integration test communicates with
+          docker compose up -d
+
+          # Discover the running echoservers
+          V8SERIALIZE_ECHOSERVERS=$(./scripts/list-echoservers.sh)
+          export V8SERIALIZE_DEV_IMAGE V8SERIALIZE_ECHOSERVERS
+
+          docker compose run integration_test
