@@ -69,7 +69,7 @@ def test_normalise_property_key__returns_int_for_integers_in_array_index_range(
 
 
 @given(valid_index=int_integer_indexes)
-def test_normalise_property_key__returns_int_for_canonical_integer_strings_in_array_index_range(  # noqa: B950
+def test_normalise_property_key__returns_int_for_canonical_integer_strings_in_array_index_range(  # noqa: E501
     valid_index: int,
 ) -> None:
     assert normalise_property_key(str(valid_index)) == valid_index

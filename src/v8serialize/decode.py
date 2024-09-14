@@ -1067,8 +1067,8 @@ class TagMapper(TagMapperObject):
 
         # primitives — just read the stream directly, no handling needed
         r(SerializationTag.kDouble, read_stream(ReadableTagStream.read_double))
-        r(SerializationTag.kOneByteString, read_stream(ReadableTagStream.read_string_onebyte))  # noqa: B950
-        r(SerializationTag.kTwoByteString, read_stream(ReadableTagStream.read_string_twobyte))  # noqa: B950
+        r(SerializationTag.kOneByteString, read_stream(ReadableTagStream.read_string_onebyte))  # noqa: E501
+        r(SerializationTag.kTwoByteString, read_stream(ReadableTagStream.read_string_twobyte))  # noqa: E501
         r(SerializationTag.kUtf8String, read_stream(ReadableTagStream.read_string_utf8))
         r(SerializationTag.kBigInt, read_stream(ReadableTagStream.read_bigint))
         r(SerializationTag.kInt32, read_stream(ReadableTagStream.read_int32))
@@ -1088,7 +1088,7 @@ class TagMapper(TagMapperObject):
         r(JS_PRIMITIVE_OBJECT_TAGS, TagMapper.deserialize_js_primitive_object)
         r(SerializationTag.kError, TagMapper.deserialize_js_error)
         r(SerializationTag.kDate, TagMapper.deserialize_js_date)
-        r(SerializationTag.kSharedObject, TagMapper.deserialize_v8_shared_object_reference)  # noqa: B950
+        r(SerializationTag.kSharedObject, TagMapper.deserialize_v8_shared_object_reference)  # noqa: E501
         r(SerializationTag.kWasmModuleTransfer, TagMapper.deserialize_unsupported_wasm)
         r(SerializationTag.kWasmMemoryTransfer, TagMapper.deserialize_unsupported_wasm)
         r(SerializationTag.kHostObject, TagMapper.deserialize_host_object)

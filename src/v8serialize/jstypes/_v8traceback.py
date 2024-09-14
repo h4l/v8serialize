@@ -47,7 +47,7 @@ def format_exception_for_v8(
     sub-exceptions of exception groups in the string of the root exception. It
     does not include cause exceptions, because causes can be represented
     natively as `cause`.
-    """  # noqa: B950
+    """  # noqa: E501
     yield from format_v8_stack(tbe, group_path=group_path)
 
     for related in walk_related(tbe):

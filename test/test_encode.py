@@ -113,7 +113,7 @@ def test_feature_float16__can_write_float16array_when_enabled() -> None:
     assert result == f16
 
 
-def test_feature_resizable_array_buffers__resizable_arrays_are_written_as_regular_when_disabled() -> (  # noqa: B950
+def test_feature_resizable_array_buffers__resizable_arrays_are_written_as_regular_when_disabled() -> (  # noqa: E501
     None
 ):
     buf = JSArrayBuffer(b"foo", max_byte_length=32)
@@ -132,7 +132,7 @@ def test_feature_resizable_array_buffers__resizable_arrays_are_written_as_regula
     assert result.max_byte_length == 3
 
 
-def test_feature_resizable_array_buffers__resizable_arrays_are_written_as_resizable_when_enabled() -> (  # noqa: B950
+def test_feature_resizable_array_buffers__resizable_arrays_are_written_as_resizable_when_enabled() -> (  # noqa: E501
     None
 ):
     buf = JSArrayBuffer(b"foo", max_byte_length=32)
@@ -191,7 +191,7 @@ def test_feature_cyclic_error_cause__cyclic_errors_are_allowed_when_enabled() ->
     assert result.cause is result
 
 
-def test_Encoder__uses_features_and_v8_version_to_configure_serialization_features() -> (  # noqa: B950
+def test_Encoder__uses_features_and_v8_version_to_configure_serialization_features() -> (  # noqa: E501
     None
 ):
     encoder = Encoder()

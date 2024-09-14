@@ -54,7 +54,7 @@ def test_jshole_assignment() -> None:
     assert "x" not in obj
 
 
-def test_write_methods_accept_float_keys_for_compatibility_with_v8_serialized_data() -> (  # noqa: B950
+def test_write_methods_accept_float_keys_for_compatibility_with_v8_serialized_data() -> (  # noqa: E501
     None
 ):
     obj = JSObject()

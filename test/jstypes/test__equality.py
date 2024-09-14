@@ -14,7 +14,7 @@ from v8serialize.jstypes.jsundefined import JSUndefined
 values_and_objects = mk_values_and_objects(allow_nan=True, only_hashable=False)
 
 
-# Examples from: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness#comparing_equality_methods  # noqa: B950
+# Examples from: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness#comparing_equality_methods  # noqa: E501
 @pytest.mark.parametrize(
     "x, y, equal",
     [
