@@ -58,7 +58,7 @@ def test_int8array() -> None:
     buffer = JSArrayBuffer(bytearray(16))
     view = JSInt8Array(buffer)
 
-    assert view.element_type == int
+    assert view.element_type is int
     assert view.view_tag is ArrayBufferViewTag.kInt8Array
 
     with view.get_buffer() as buf:

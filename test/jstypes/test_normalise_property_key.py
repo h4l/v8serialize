@@ -132,5 +132,5 @@ def test_normalise_property_key__handles_negative_zero() -> None:
     #   converted to a string first. Number::toString returns -0 as "0":
     #   > If x is either +0𝔽 or -0𝔽, return "0".
     # - Hence with -0 we call CanonicalNumericIndexString("0") which is 0.
-    assert type(normalise_property_key(-0.0)) == int
+    assert type(normalise_property_key(-0.0)) is int
     assert normalise_property_key(-0.0) == 0
