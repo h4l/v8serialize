@@ -62,7 +62,19 @@ else:
 
     Mapping.register(ElementsView)
 
-if TYPE_CHECKING:
+if not TYPE_CHECKING:
+
+    @runtime_checkable
+    class SparseSequence(Protocol[_Dummy, _Dummy2]):
+        # test/test_protocol_dataclass_interaction.py
+        hole_value = ...
+        elements_used = ...
+        element_indexes = ...
+        elements = ...
+
+    Sequence.register(SparseSequence)
+
+else:
 
     class SparseSequence(Sequence["_T_co | _HoleT_co"], Generic[_T_co, _HoleT_co]):
         """A Sequence that can have holes — indexes with no value present.
@@ -102,18 +114,6 @@ if TYPE_CHECKING:
             This is analogous to the `items()` method of `Mapping`s.
             """
 
-else:
-
-    @runtime_checkable
-    class SparseSequence(Protocol[_Dummy, _Dummy2]):
-        # test/test_protocol_dataclass_interaction.py
-        hole_value = ...
-        elements_used = ...
-        element_indexes = ...
-        elements = ...
-
-    Sequence.register(SparseSequence)
-
 
 class Order(Enum):
     UNORDERED = auto()
@@ -121,12 +121,25 @@ class Order(Enum):
     DESCENDING = auto()
 
 
-if TYPE_CHECKING:
+if not TYPE_CHECKING:
+
+    @runtime_checkable
+    class SparseMutableSequence(SparseSequence[_Dummy, _Dummy2], Protocol):
+        # test/test_protocol_dataclass_interaction.py
+        resize = ...
+
+    MutableSequence.register(SparseMutableSequence)
+
+else:
 
     class SparseMutableSequence(
         MutableSequence["_T_co | _HoleT_co"], SparseSequence[_T_co, _HoleT_co]
     ):
-        """A writable extension of SparseSequence."""
+        """
+        A writable extension of [`SparseSequence`].
+
+        [`SparseSequence`]: `v8serialize.SparseSequence`
+        """
 
         def resize(self, length: int) -> None:
             """
@@ -135,12 +148,3 @@ if TYPE_CHECKING:
             Elements are dropped if the length is reduced, or gaps are created
             at the end if the length is increased.
             """
-
-else:
-
-    @runtime_checkable
-    class SparseMutableSequence(SparseSequence[_Dummy, _Dummy2], Protocol):
-        # test/test_protocol_dataclass_interaction.py
-        resize = ...
-
-    MutableSequence.register(SparseMutableSequence)

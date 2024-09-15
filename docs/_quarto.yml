@@ -22,6 +22,8 @@ interlinks:
   sources:
     python:
       url: https://docs.python.org/3/
+    packaging:
+      url: https://packaging.pypa.io/en/stable/
 
 
 # tell quarto to read the sidebar file
@@ -31,19 +33,318 @@ metadata-files:
 quartodoc:
   style: pkgdown
   dir: reference
+  title: Reference
   sidebar: "_sidebar.yml"
   package: v8serialize
   parser: numpy
   render_interlinks: true
   sections:
-    - title: Some functions
-      desc: Functions to inspect docstrings.
+    - title: V8 Serialization format
+      desc: Core `v8serialize` functionality.
+      options:
+        include_empty: true
       contents:
-        - loads
-        - dumps
-        - SerializationFeature
-        - jstypes.JSMap
-        # - module_level_function
+        - path: 'encoding_decoding'
+          kind: page
+          summary:
+            name: Encoding & Decoding
+            desc: |
+              `loads()` and `dumps()` read and write V8-serialized data.
+
+              Create `Encoder` and `Decoder` instances to store a particular
+              configuration and re-use it.
+          contents:
+            - dumps
+            - loads
+            - Encoder
+            - Decoder
+
+        - path: 'customised_encoding'
+          kind: page
+          summary:
+            name: Customized Encoding
+            desc: |
+              The `v8serialize.encode` module encodes Python objects as
+              JavaScript objects in the V8 serialization format. The encoding
+              can be customised at a high level, by changing how a Python type
+              is mapped to JavaScript, or at a lower level by manually writing
+              V8 serialization tagged data.
+          contents:
+            - encode.default_object_mappers
+            - encode.serialize_object_references
+            - encode.ObjectMapper
+            - encode.DefaultEncodeContext
+            - encode.WritableTagStream
+            - encode.TagConstraintRemover
+            - encode.HostObjectSerializer
+        - path: 'customized_decoding'
+          kind: page
+          summary:
+            name: Customized Decoding
+            desc: |
+              XXXX Core encoding and decoding API.
+          contents:
+            - decode.ArrayReadResult
+            - decode.ReferencedObject
+            - decode.ReadableTagStream
+            - decode.TagReaderRegistry
+            - decode.read_stream
+            - decode.DefaultDecodeContext
+            - decode.TagMapper
+            - decode.default_tag_mappers
+
+        - path: 'exceptions'
+          kind: page
+          summary:
+            name: Exceptions
+            desc: |
+              Exceptions raised by `v8serialize`.
+          contents:
+            - V8CodecError
+            - DecodeV8CodecError
+            - EncodeV8CodecError
+            - UnmappedValueEncodeV8CodecError
+            - FeatureNotEnabledEncodeV8CodecError
+            - UnmappedTagDecodeV8CodecError
+            - IllegalCyclicReferenceV8CodecError
+
+        - path: 'types_protocols'
+          kind: page
+          summary:
+            name: Types & Protocols
+            desc: |
+              Type annotations & Protocols used throughout `v8serialize`.
+
+              :::{.callout-note}
+              Our documentation generator that made this page doesn't yet
+              display type annotations, so for the moment you'll need to look at
+              the [`v8serialize` source code](), or use your editor's tooling to
+              display types.
+              :::
+
+              [`v8serialize` source code]: https://github.com/h4l/v8serialize/tree/main/src/v8serialize
+          contents:
+            - constants.AnySerializationTag
+            - constants.UnreleasedVersion
+            - encode.HostObjectSerializerFn
+            - encode.HostObjectSerializerObj
+            - encode.HostObjectSerializer
+            - encode.EncodeContext
+            - encode.SerializeNextFn
+            - encode.SerializeObjectFn
+            - encode.ObjectMapperObject
+            - encode.AnyObjectMapper
+            - decode.HostObjectDeserializerFn
+            - decode.HostObjectDeserializerObj
+            - decode.HostObjectDeserializer
+            - decode.TagReader
+            - decode.ReadableTagStreamReadFunction
+            - decode.DecodeContext
+            - decode.DeserializeNextFn
+            - decode.DeserializeTagFn
+            - decode.TagMapperObject
+            - decode.AnyTagMapper
+            - decode.JSMapType
+            - decode.JSSetType
+            - decode.JSObjectType
+            - decode.JSArrayType
+
+
+    - title: JavaScript types
+      options:
+        include_empty: true
+      contents:
+        - kind: page
+          path: 'javascript_buffers'
+          summary:
+            name: ArrayBuffer, TypedArray, DataView
+            desc: |
+              Python equivalents of JavaScript's binary data buffer types.
+          contents:
+            - jstypes.JSArrayBuffer
+            - jstypes.create_view
+            - name: jstypes.JSTypedArray
+              include_inherited: true
+            - name: jstypes.JSDataView
+              include_inherited: true
+            - jstypes.DataViewBuffer
+            - jstypes.DataFormat
+            - jstypes.DataType
+            - jstypes.ArrayBufferViewStructFormat
+            - jstypes.JSArrayBufferError
+            - jstypes.BoundsJSArrayBufferError
+            - jstypes.ByteLengthJSArrayBufferError
+            - jstypes.ItemSizeJSArrayBufferError
+            - name: jstypes.JSInt8Array
+              include_empty: false
+            - name: jstypes.JSUint8Array
+              include_empty: false
+            - name: jstypes.JSUint8ClampedArray
+              include_empty: false
+            - name: jstypes.JSInt16Array
+              include_empty: false
+            - name: jstypes.JSUint16Array
+              include_empty: false
+            - name: jstypes.JSInt32Array
+              include_empty: false
+            - name: jstypes.JSUint32Array
+              include_empty: false
+            - name: jstypes.JSBigInt64Array
+              include_empty: false
+            - name: jstypes.JSBigUint64Array
+              include_empty: false
+            - name: jstypes.JSFloat16Array
+              include_empty: false
+            - name: jstypes.JSFloat32Array
+              include_empty: false
+            - name: jstypes.JSFloat64Array
+              include_empty: false
+            - jstypes.JSSharedArrayBuffer
+            - jstypes.JSArrayBufferTransfer
+        - kind: page
+          path: 'javascript_date'
+          summary:
+            name: Date
+            desc: |
+              Python equivalent of [JavaScript's Date] is [](`datetime.datetime`).
+
+              [JavaScript's Date]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date
+          contents: []
+        - kind: page
+          path: 'javascript_error'
+          summary:
+            name: Error
+            desc: |
+              Python equivalents of JavaScript Error types.
+
+              `v8serialize` provides `JSError` and `JSErrorData` to represent
+              the JavaScript Error type and the Error subclasses that can be
+              serialized.
+          contents:
+            - jstypes.JSErrorData
+            - jstypes.JSError
+        - kind: page
+          path: 'javascript_map_set'
+          summary:
+            name: Map & Set
+            desc: |
+              Python equivalents of JavaScript's Map & Set types.
+          contents:
+            - jstypes.JSMap
+            - jstypes.JSSet
+        - kind: page
+          path: 'javascript_object'
+          summary:
+            name: Object & Array
+            desc: |
+              Python equivalents of JavaScript's Object & Array types.
+          contents:
+            - jstypes.JSObject
+            - jstypes.JSArray
+            - jstypes.JSHole
+        - kind: page
+          path: 'javascript_primitives'
+          summary:
+            name: primitive types
+            desc: |
+              Python equivalents of string, number, null, etc.
+
+              `v8serialize` uses builtin Python types for JavaScript primitives
+              that have natural equivalents:
+
+              | JavaScript type                   | Python type                                                    |
+              |-----------------------------------|----------------------------------------------------------------|
+              | `true`/`false`                    | `True`/`False`                                                 |
+              | `string`                          | `str`                                                          |
+              | `number`                          | `int` and or `float`                                           |
+              | `bigint`                          | `int`                                                          |
+              | `null`                            | `None`                                                         |
+              | `undefined`                       | [`JSUndefined`](`v8serialize.jstypes.JSUndefined`)             |
+              | [Wrapped/boxed primitive Objects] | [`JSPrimitiveObject`](`v8serialize.jstypes.JSPrimitiveObject`) |
+
+              [Wrapped/boxed primitive Objects]: https://developer.mozilla.org/en-US/docs/Glossary/Primitive
+          contents:
+            - jstypes.JSUndefined
+            - jstypes.JSPrimitiveObject
+        - kind: page
+          path: 'javascript_regexp'
+          summary:
+            name: RegExp
+            desc: |
+              Python equivalents of JavaScript RegExp type.
+          contents:
+            - jstypes.JSRegExp
+        - kind: page
+          path: 'javascript_utils'
+          summary:
+            name: utilities
+            desc: Functions associated with `v8codec.jstypes`.
+          contents:
+            - jstypes.js_repr_settings
+            - jstypes.JSRepr
+            - jstypes.JSReprSettingsNotRestored
+            - jstypes.same_value_zero
+            - jstypes.JSSameValueZero
+
+    - title: Constants & Enums
+      desc: V8 serialization format and JavaScript constants.
+      contents:
+        - kind: page
+          path: api_constants
+          summary:
+            name: API Constants
+            desc: Enums and constant values for `loads()`/`dumps()`
+          contents:
+            - name: SerializationFeature
+              children: separate
+            - SymbolicVersion
+        - kind: page
+          path: javascript_constants
+          summary:
+            name: JavaScript Constants
+            desc: Enums and constant values for JavaScript types.
+          contents:
+            - name: JSErrorName
+              include_empty: true
+            - name: JSRegExpFlag
+              include_empty: true
+            - constants.FLOAT64_SAFE_INT_RANGE
+            - constants.MAX_ARRAY_LENGTH
+        - kind: page
+          path: v8_constants
+          summary:
+            name: V8 Serialization Format Constants
+            desc: |
+              Enums and constant values for the V8 serialization format.
+
+              ::: {.callout-note}
+              These are low-level details of the serialization format, and only
+              needed when customising serialization/deserialization.
+              :::
+          contents:
+            - constants.kLatestVersion
+            - name: constants.SerializationTag
+              include_empty: true
+            - name: constants.ArrayBufferViewTag
+              include_empty: true
+            - name: constants.ArrayBufferViewFlags
+              include_empty: true
+            - name: constants.SerializationErrorTag
+              include_empty: true
+            - constants.TagConstraint
+            - constants.JS_OBJECT_KEY_TAGS
+            - constants.JS_CONSTANT_TAGS
+            - constants.JS_ARRAY_BUFFER_TAGS
+            - constants.JS_PRIMITIVE_OBJECT_TAGS
+            - constants.JS_STRING_TAGS
+
+    - title: Type Annotations and Protocols
+      contents:
+        - Buffer
+        - ReadableBinary
+        - SparseMutableSequence
+        - SparseSequence
+
     - title: Other things
       contents:
         - AnyTagMapper

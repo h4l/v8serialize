@@ -11,9 +11,8 @@ from v8serialize.jstypes import _repr
 from v8serialize.jstypes._equality import JSSameValueZero, same_value_zero
 
 if TYPE_CHECKING:
-    from typing_extensions import TypeGuard, TypeVar
-
     from _typeshed import SupportsKeysAndGetItem
+    from typing_extensions import TypeGuard, TypeVar
 
     KT = TypeVar("KT", default=object)
     VT = TypeVar("VT", default=object)
@@ -27,25 +26,70 @@ U = TypeVar("U")
 
 @dataclass(init=False, **slots_if310())
 class JSMap(MutableMapping[KT, VT], metaclass=ABCMeta):
-    """A Mapping that uses object identity for key equality.
+    """A Python equivalent of [JavaScript's Map][Map].
 
-    This replicates the behaviour of JavaScript's Map type, which considers keys
-    equal by the [same-value-zero] rules (very close to `Object.is()` / `===`).
+    `JSMap` is a [Mapping] that uses object identity rather than `==` for key
+    equality, and allows keys which are not [hashable].
 
+    `JSMap` replicates the behaviour of [JavaScript's Map][Map] type, which
+    considers keys equal by the [same-value-zero] rules (very close to
+    `Object.is()` / `===`).
+
+    [Mapping]: https://docs.python.org/3/glossary.html#term-mapping
+    [Map]: https://developer.mozilla.org/en-US/docs/Web/\
+JavaScript/Reference/Global_Objects/Map
     [same-value-zero]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/\
 Equality_comparisons_and_sameness#same-value-zero_equality
+    [hashable]: https://docs.python.org/3/glossary.html#term-hashable
+    [`jstypes.same_value_zero`]: `v8serialize.jstypes.same_value_zero`
 
-    `JSMap` is able to use non-hashable objects as keys.
+    Parameters
+    ----------
+    init
+        Another Mapping to copy items from, or a series of `(key, value)` pairs.
+    kwargs
+        Keyword arguments become items, and override items from `init` if
+        names occur in both.
+
+    Notes
+    -----
+    `JSMap` must be initialized using an iterable of item pairs instead of a
+    `dict` if any keys are non-hashable or are equal using `==`.
+
+    See Also
+    --------
+    [`jstypes.same_value_zero`] : A key function that provides same-value-zero equality.
+
+
+    Examples
+    --------
+    JSMap is like a Python dict, but as in JavaScript, any object can be a JSMap
+    key — keys don't need to be hashable.
+
+    >>> from v8serialize.jstypes import JSObject
+    >>> bob, alice = JSObject(name="Bob"), JSObject(name="Alice")
+    >>> m = JSMap([(bob, 1), (alice, 2)])
+    >>> m
+    JSMap([(JSObject(name='Bob'), 1), (JSObject(name='Alice'), 2)])
+    >>> m[alice]
+    2
 
     Equality between JSMap instances works as if you compared a list of both
     map's items. When comparing JSMap to normal Python `dict`, equality works as
-    if the JSMap was a normal dict — order does nto matter and the number of
+    if the JSMap was a normal dict — order does not matter and the number of
     items must be equal. Same-value-zero is only used for internally matching
     keys, not for external equality.
 
-    >>> a, b = bytearray(), bytearray()  # non-hashable
+    Equality examples:
+
+    >>> a, b = bytearray(), bytearray()  # non-hashable but supports ==
     >>> assert a == b
     >>> assert a is not b
+
+    Because a and b are equal, lists containing them in different orders are
+    equal:
+    >>> [a, b] == [b, a]
+    True
 
     Equality between two JSMaps behaves like the list of items (JSMaps remember
     insertion order):

@@ -54,14 +54,30 @@ class JSErrorData(_JSErrorData, AnyJSError, ABC):
     Serialization format. It doesn't extend Python's Exception type. Use this to
     represent JavaScript Error values that don't need to be treated like Python
     Exceptions.
+
+    [`JSErrorName`]: `v8serialize.JSErrorName`
+
+    Parameters
+    ----------
+    message
+        A description of the error.
+    name
+        The name of the error type. Can be anything, but values not in
+        [`JSErrorName`] are equivalent to using `"Error"`.
+    stack
+        The stack trace detailing where the error happened.
+    cause:
+        Any object or value that caused this error.
     """
 
     @classmethod
     def from_exception(cls, exc: BaseException) -> Self:
+        """Create `JSErrorData` that reproduces the details of a Python Exception."""
         return cls.from_traceback_exception(TracebackException.from_exception(exc))
 
     @classmethod
     def from_traceback_exception(cls, tbe: TracebackException) -> Self:
+        """Create `JSErrorData` containing details from a `TracebackException`."""
         message = _get_message(tbe)
         stack = "".join(format_exception_for_v8(tbe)).rstrip()
 
@@ -84,6 +100,14 @@ class JSErrorData(_JSErrorData, AnyJSError, ABC):
 
     @classmethod
     def builder(cls, initial_js_error: AnyJSError, /) -> tuple[Self, Self]:
+        """
+        Create a `JSErrorData` by copying another, satisfying [`JSErrorBuilder`].
+
+        This is a [`JSErrorBuilder`] function to configure [`TagMapper`] to
+        build `JSErrorData`s.
+
+        [`JSErrorBuilder`]: `v8serialize.decode.JSErrorBuilder`
+        """
         js_error = cls(
             name=initial_js_error.name,
             message=initial_js_error.message,
@@ -106,7 +130,7 @@ def _get_message(tbe: TracebackException) -> str | None:
 @JSErrorData.register
 @dataclass(init=False)
 class JSError(AnyJSError, V8CodecError):
-    """A JavaScript Error deserialized from V8 data.
+    """A Python Exception that represents a JavaScript Error.
 
     This is intended to be used to handle JavaScript errors on the Python side.
     To send Python errors to JavaScript, use JSErrorData.from_exception() to
@@ -115,7 +139,7 @@ class JSError(AnyJSError, V8CodecError):
     """
 
     name: str | JSErrorName
-    """The JavaScript error name.
+    """The JavaScript Error's name.
 
     Can be any string, but unrecognised names become "Error" when serialized, so
     deserialized values will always be one of the JSErrorName constants.
@@ -146,6 +170,7 @@ class JSError(AnyJSError, V8CodecError):
 
     @property  # type: ignore[override]
     def message(self) -> str:
+        """The JavaScript Error's message."""
         return self.__message
 
     @message.setter
@@ -154,6 +179,7 @@ class JSError(AnyJSError, V8CodecError):
 
     @classmethod
     def from_js_error(cls, js_error: AnyJSError) -> Self:
+        """Create a `JSError` by copying fields from another JSError-like object."""
         return cls(
             name=js_error.name,
             message=js_error.message,
@@ -163,6 +189,19 @@ class JSError(AnyJSError, V8CodecError):
 
     @classmethod
     def builder(cls, initial_js_error: AnyJSError, /) -> tuple[Self, Self]:
+        """
+        Create a `JSError` by copying another, satisfying [`JSErrorBuilder`].
+
+        This is a [`JSErrorBuilder`] function to configure [`TagMapper`] to
+        build `JSError`s.
+
+        [`TagMapper`] has `js_error_builder` option that this function can be
+        passed to to have it create `JSError` objects when deserializing
+        JavaScript Errors.
+
+        [`JSErrorBuilder`]: `v8serialize.decode.JSErrorBuilder`
+        [`TagMapper`]: `v8serialize.decode.TagMapper`
+        """
         js_error = cls.from_js_error(initial_js_error)
         return js_error, js_error
 

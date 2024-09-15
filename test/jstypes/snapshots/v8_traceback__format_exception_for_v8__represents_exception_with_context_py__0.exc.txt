@@ -1,16 +1,16 @@
 Traceback (most recent call last):
-  File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 35, in raise_context
+  File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 38, in raise_context
     self.failing_operation()
-  File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 75, in failing_operation
+  File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 78, in failing_operation
     raise ValueError("Unable to do the thing")
 ValueError: Unable to do the thing
 
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 91, in call_and_capture_tbe
+  File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 94, in call_and_capture_tbe
     fn()
-  File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 37, in raise_context
+  File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 40, in raise_context
     e / 0  # type: ignore[operator]
     ~~^~~
 TypeError: unsupported operand type(s) for /: 'ValueError' and 'int'

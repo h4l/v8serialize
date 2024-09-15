@@ -43,9 +43,14 @@ class RecursiveReprMixin(Repr):
 class JSRepr(RecursiveReprMixin, Repr):
     """Generate repr strings for JS types.
 
-    This implements the repr strings used by JSObject and JSArray, which can be
-    indented and handle cyclic references by substituting `...` after several
-    recursive calls.
+    This implements the repr strings used by JSObject, JSArray and others, which
+    can be indented and handle cyclic references by substituting `...` after
+    several recursive calls.
+
+    :::{.callout-warning}
+    Indented reprs are not available before Python 3.12 because `JSRepr` uses
+    [](`reprlib`), which added indented reprs in 3.12.
+    :::
     """
 
     fillvalue: str
@@ -352,9 +357,13 @@ def js_repr_settings(
     """Override the active repr settings for JS types.
 
     This returns a context manager that will restore the previous settings at
-    the end of the context block.
+    the end of the context block. The context object is an instance of [`JSRepr`].
 
-    If someone changes the js_repr_settings within your block and your block
+    [`JSRepr`]: `v8serialize.jstypes.JSRepr`
+
+    Notes
+    -----
+    If someone changes the `js_repr_settings` within your block and your block
     closes before theirs, your block will emit a `JSReprSettingsNotRestored`
     warning and leave the repr settings unchanged. Pass `force_restore=True` to
     restore your initial state anyway and not warn.

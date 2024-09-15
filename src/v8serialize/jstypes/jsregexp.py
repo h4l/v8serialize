@@ -13,11 +13,19 @@ from v8serialize.constants import JSRegExpFlag
 
 @dataclass(frozen=True, order=True, **slots_if310())
 class JSRegExp:
-    """A JavaScript RegExp.
+    """The data represented by a [JavaScript RegExp].
 
     Note that while Python and JavaScript Regular Expressions are similar, they
     each have features and syntax not supported by the other. Simple expressions
-    will work the same in both language, but this is not the case in general.
+    will work the same in both languages, but this is not the case in general.
+
+    **`JSRegExp` does not support matching text with the RegExp**, but
+    [`as_python_pattern()`] can work for patterns that use compatible syntax and
+    flags.
+
+    [`as_python_pattern()`]: `v8serialize.jstypes.JSRegExp.as_python_pattern`
+    [JavaScript RegExp]: https://developer.mozilla.org/en-US/docs/Web/\
+JavaScript/Reference/Global_Objects/RegExp
     """
 
     source: str

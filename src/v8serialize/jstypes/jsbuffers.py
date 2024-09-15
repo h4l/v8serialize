@@ -62,9 +62,42 @@ class JSArrayBuffer(
     AbstractContextManager["JSArrayBuffer[BufferT]"],
     ABC,
 ):
+    """
+    Python equivalent of [JavaScript's ArrayBuffer][ArrayBuffer].
+
+    * This is a [context manager] which returns itself and calls `close()` on exit.
+    * This is a [Buffer] which exposes its `data` as a memoryview.
+
+    [ArrayBuffer]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/\
+Reference/Global_Objects/ArrayBuffer
+    [context manager]: (`typecontextmanager`)
+    [Buffer]: (`collections.abc.Buffer`)
+
+    Parameters
+    ----------
+    data
+        Binary data to populate the buffer with. Default: null bytes of
+        `byte_length`.
+    byte_length
+        The number of bytes the buffer will be created with. Default: length of
+        `data` or 0.
+    max_byte_length
+        The maximum length the buffer can be resized to. The buffer will not be
+        resizable if this isn't set. Default: the initial length of the buffer.
+    resizable
+        Make the buffer resizable, starting at its maximum length. Default:
+        `True` if a `max_byte_length` is set.
+    copy_data
+        Whether to copy the `data` parameter, or wrap it as is. Default: `True`.
+    readonly
+        Whether to allow the buffer data to be modified. Default: `False`
+    """
+
     _data: BufferT
     max_byte_length: int
+    """The maximum size that `resize()` can expand this buffer to."""
     resizable: bool
+    """Whether this buffer can be resized with `resize()`."""
 
     @overload
     def __init__(
@@ -156,6 +189,7 @@ class JSArrayBuffer(
         object.__setattr__(self, "resizable", resizable)
 
     def resize(self, byte_length: int) -> None:
+        """Resize the buffer, within the `max_byte_length` limit."""
         if not self.resizable:
             raise ByteLengthJSArrayBufferError(
                 "This JSArrayBuffer is not resizable",
@@ -179,6 +213,7 @@ class JSArrayBuffer(
 
     @property
     def data(self) -> memoryview:
+        """The buffer's binary data."""
         return self.__buffer__(BufferFlags.SIMPLE)
 
     def __enter__(self) -> JSArrayBuffer[BufferT]:
@@ -194,6 +229,7 @@ class JSArrayBuffer(
         return None
 
     def close(self) -> None:
+        """Release the buffer's data if it's a [`memoryview`](`typememoryview`)."""
         if isinstance(self.data, memoryview):
             self.data.release()
 
@@ -204,6 +240,23 @@ class JSArrayBuffer(
 @BaseJSArrayBuffer.register
 @dataclass(frozen=True, **slots_if310())
 class JSSharedArrayBuffer(AnySharedArrayBuffer, ABC):
+    """
+    Python equivalent of [JavaScript's SharedArrayBuffer].
+
+    This type exists for completeness, and to allow these values to be
+    round-tripped back to V8 if they ever do occur.
+
+    Much like [`JSArrayBufferTransfer`], this type should not occur in practice.
+    It currently does nothing other than hold an integer `buffer_id`. V8 does
+    not seem to allow SharedArrayBuffer objects to be serialized by Node.JS's
+    [`v8.serialize()`] API.
+
+    [JavaScript's SharedArrayBuffer]: https://developer.mozilla.org/en-US/docs\
+/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer
+    [`JSArrayBufferTransfer`]: `v8serialize.jstypes.JSArrayBufferTransfer`
+    [`v8.serialize()`]: https://nodejs.org/api/v8.html#serialization-api
+    """
+
     buffer_id: SharedArrayBufferId
 
     def __buffer__(self, flags: int) -> memoryview:
@@ -213,6 +266,19 @@ class JSSharedArrayBuffer(AnySharedArrayBuffer, ABC):
 @BaseJSArrayBuffer.register
 @dataclass(frozen=True, **slots_if310())
 class JSArrayBufferTransfer(AnyArrayBufferTransfer, ABC):
+    """A non-standard V8 type representing an ArrayBuffer being [transferred].
+
+    This type exists for completeness, but should not occur in data serialized
+    by JavaScript runtimes using APIs like Node.JS's [`v8.serialize()`].
+    Transferring ArrayBuffers is an internal activity in V8 and it's not
+    possible to access this type from JavaScript code running in V8, so it can't
+    be serialized from JavaScript code.
+
+    [transferred]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/\
+Reference/Global_Objects/ArrayBuffer#transferring_arraybuffers
+    [`v8.serialize()`]: https://nodejs.org/api/v8.html#serialization-api
+    """
+
     transfer_id: TransferId
 
     def __buffer__(self, flags: int) -> memoryview:
@@ -238,6 +304,7 @@ class ByteOrder(Enum):
 
 @frozen
 class DataType(Enum):
+    """An enum of the data types used in JavaScript buffers."""
 
     UnsignedInt = int, "BHILQ"
     SignedInt = int, "bhilq"
@@ -245,7 +312,9 @@ class DataType(Enum):
     Bytes = bytes, "c"
 
     python_type: type[int | float | bytes]
+    """The Python type that represents this data type."""
     struct_formats: str
+    """The struct module format characters for this `DataType`."""
 
     def __new__(
         cls, python_type: type[int | float | bytes], struct_formats: str
@@ -256,16 +325,47 @@ class DataType(Enum):
         obj.struct_formats = struct_formats
         return obj
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}.{self._name_}"
+
 
 @dataclass(frozen=True, **slots_if310())
 class DataFormat:
+    """A [struct format] for a specific data type and precision.
+
+    [struct format]: `struct`
+    """
+
     byte_length: int
     data_type: DataType
     format: str
 
     @classmethod
     def resolve(cls, *, data_type: DataType, byte_length: int) -> Self:
-        """Find the struct format on this platform with a given size and data type."""
+        """
+        Find the struct format on this platform with a given size and data type.
+
+        Parameters
+        ----------
+        data_type
+            The data type to resolve.
+        byte_length
+            The required precision in bytes ($bits/8$, e.g. 32 bits is 4 bytes).
+
+        Returns
+        -------
+        A `DataFormat` matching the parameters.
+
+        Raises
+        ------
+        ValueError
+            If the platform does not support a data type with the requested parameters.
+
+        Examples
+        --------
+        >>> DataFormat.resolve(data_type=DataType.UnsignedInt, byte_length=4)
+        DataFormat(byte_length=4, data_type=DataType.UnsignedInt, format='I')
+        """  # noqa: E501
         format: str | None = None
         for format in data_type.struct_formats:
             if struct.calcsize(format) == byte_length:
@@ -315,7 +415,11 @@ class JSArrayBufferView(Generic[JSArrayBufferT, AnyBufferT]):
     """
 
     view_tag: ClassVar[ArrayBufferViewTag]
+    """The [`ArrayBufferViewTag`](`v8serialize.constants.ArrayBufferViewTag`) this view is for."""  # noqa: E501
     data_format: ClassVar[DataFormat]
+    """
+    The [`DataFormat`](`v8serialize.jstypes.DataFormat`) for this view's data type.
+    """
 
     def __post_init__(self) -> None:
         if self.item_offset < 0:
@@ -334,6 +438,14 @@ class JSArrayBufferView(Generic[JSArrayBufferT, AnyBufferT]):
         byte_length: int | None = None,
         readonly: Literal[True] | None = None,
     ) -> Self:
+        """
+        Create a view, validating byte offsets as JavaScript does.
+
+        See Also
+        --------
+        [`create_view()`](`v8serialize.jstypes.create_view`)
+        : Create a view without specifying the view class.
+        """
         itemsize = cls.data_format.byte_length
 
         if byte_offset % itemsize != 0:
@@ -406,14 +518,17 @@ the itemsize when the view does not have an explicit byte_length"""
 
     @property
     def byte_length(self) -> int:
+        """The number of bytes accessible through this view."""
         return self.__get_buffer_as_memoryview()[1].nbytes
 
     @property
     def is_length_tracking(self) -> bool:
+        """Whether this view changes length to match a resizable `.backing_buffer`."""
         return self.item_length is None and self.is_backing_buffer_resizable
 
     @property
     def is_backing_buffer_resizable(self) -> bool:
+        """Whether `.backing_buffer` can change its byte length."""
         bb = self.backing_buffer
         return isinstance(bb, bytearray) or (
             isinstance(bb, JSArrayBuffer) and bb.resizable
@@ -421,6 +536,7 @@ the itemsize when the view does not have an explicit byte_length"""
 
     @property
     def is_in_range(self) -> bool:
+        """Whether this view's entire range exists in the `.backing_buffer`."""
         return self.__get_buffer_as_memoryview()[0]
 
     @abstractmethod
@@ -470,6 +586,20 @@ the itemsize when the view does not have an explicit byte_length"""
     def get_buffer_as_memoryview(
         self, *, readonly: Literal[True] | None = None
     ) -> memoryview:
+        """
+        Access the view's region of `.backing_buffer` as a `memoryview`.
+
+        The returned `memoryview`:
+
+        * Will be **empty** if the view is not in range.
+        * Is always 1-dimensional and contains uint8 items (format `"B"`).
+
+        Parameters
+        ----------
+        readonly
+            If True, the returned `memoryview` will be read-only (even if this
+            view itself is not read-only).
+        """
         return self.__get_buffer_as_memoryview(readonly=readonly)[1]
 
     def __eq__(self, value: object) -> bool:
@@ -536,13 +666,44 @@ class JSTypedArray(
     AnyArrayBufferView,
     Generic[JSArrayBufferT, ViewTagT],
 ):
+    """
+    Python equivalent of [JavaScript's TypedArray].
+
+    :::{.callout-note}
+    As in JavaScript, this is an abstract type which cannot be instantiated.
+    :::
+
+    [JavaScript's TypedArray]: https://developer.mozilla.org/en-US/docs/Web/\
+JavaScript/Reference/Global_Objects/TypedArray
+
+    See Also
+    --------
+    [`create_view()`](`v8serialize.jstypes.create_view`)
+    : Create a (subtype) instance of `JSTypedArray`.
+
+    `JS*Array` types
+    : This module contains many subtypes for specific data formats, e.g. \
+[`JSUint8Array`](`v8serialize.jstypes.JSUint8Array`).
+    """
+
     element_type: ClassVar[type[int | float]]
+    """The Python type of this view's individual indexes."""
 
     # FIXME: memoryview is generic in typeshed, but mypy errors if I give it the
     #  ElementT annotation (should match cls.element_type)
     def get_buffer(
         self, *, readonly: Literal[True] | None = None
     ) -> ContextManager[memoryview]:
+        r"""
+        Get a context manager that provides this view's region as a `memoryview`.
+
+        Examples
+        --------
+        >>> with JSUint8Array.from_bytes(b'\xFF\x80').get_buffer() as mv:
+        ...     assert isinstance(mv, memoryview)
+        ...     print(mv[0], mv[1])
+        255 128
+        """
         return self.get_buffer_as_memoryview(readonly=readonly).cast(
             self.data_format.format
         )
@@ -694,7 +855,41 @@ except ValueError:
 
 @dataclass(frozen=True)
 class DataViewBuffer(AbstractContextManager["DataViewBuffer"]):
+    """
+    Provides methods to read/write data types in a [`JSDataView`].
+
+    This is return type of [`JSDataView.get_buffer()`]. It provides all the
+    methods to read/write binary data as variable-width int/float data types
+    that [JavaScript's DataView] provides.
+
+    * This is a [context manager] which returns itself and releases `.buffer` on exit.
+    * This is a [Buffer] which exposes its `.buffer` as a memoryview.
+
+    :::{.callout-note}
+    The `get_*`/`set_*` methods read & write values as big-endian unless the
+    `little_endian=True` argument is used. Most computers are have little-endian
+    native byte order, and the V8 serialization format itself is defined as
+    using the system's native byte order, and `v8serialize` assumes it's running
+    on a little-endian system.
+    :::
+
+    [`JSDataView`]: `v8serialize.jstypes.JSDataView`
+    [`JSDataView.get_buffer()`]: `v8serialize.jstypes.JSDataView.get_buffer`
+    [JavaScript's DataView]: https://developer.mozilla.org/en-US/docs/Web/\
+JavaScript/Reference/Global_Objects/DataView
+
+    See Also
+    --------
+    [Python's `struct` module](`struct`)
+    : This is the builtin way to read/write binary data with Python.
+
+    [NumPy Structured Arrays](https://numpy.org/doc/stable/user/basics.rec.html)
+    : NumPy provides Structured Arrays which can read/write structured binary \
+data in bulk.
+    """
+
     buffer: memoryview
+    """The `memoryview` this view is operating on."""
 
     def __buffer__(self, flags: int | BufferFlags) -> memoryview:
         return get_buffer(self.buffer, flags)
@@ -826,10 +1021,35 @@ class DataViewBuffer(AbstractContextManager["DataViewBuffer"]):
 
 
 class JSDataView(JSArrayBufferView[JSArrayBufferT, DataViewBuffer]):
+    r"""
+    Python equivalent of [JavaScript's DataView].
+
+    [JavaScript's DataView]: https://developer.mozilla.org/en-US/docs/Web/\
+JavaScript/Reference/Global_Objects/DataView
+
+    Examples
+    --------
+    >>> dv = JSDataView(bytearray(3))
+    >>> with dv.get_buffer() as buf:
+    ...     buf.set_uint8(0, 1)
+    ...     buf.set_uint8(1, 2)
+    ...     print("256 + 2 =", buf.get_uint16(0))  # big-endian by default
+    ...     print("256 * 2 + 1 =", buf.get_uint16(0, little_endian=True))
+    256 + 2 = 258
+    256 * 2 + 1 = 513
+    >>> dv.backing_buffer
+    bytearray(b'\x01\x02\x00')
+    """
+
     view_tag = ArrayBufferViewTag.kDataView
     data_format = DataFormat.resolve(data_type=DataType.Bytes, byte_length=1)
 
     def get_buffer(self, *, readonly: Literal[True] | None = None) -> DataViewBuffer:
+        """
+        Access the view's region of `.backing_buffer` as a [`DataViewBuffer`].
+
+        [`DataViewBuffer`]: `v8serialize.jstypes.DataViewBuffer`
+        """
         return DataViewBuffer(self.get_buffer_as_memoryview(readonly=readonly))
 
 
@@ -841,6 +1061,28 @@ class ViewFormat:
 
 @frozen
 class ArrayBufferViewStructFormat(ViewFormat, Enum):
+    """
+    An enum of the TypedArray and DataView types.
+
+    This is used to name view types, and resolve the view type for an
+    [`ArrayBufferViewTag`](`v8serialize.constants.ArrayBufferViewTag`) value.
+
+    Examples
+    --------
+    >>> from v8serialize.constants import ArrayBufferViewTag
+
+    Resolve a view type from a `ArrayBufferViewTag`:
+
+    >>> ArrayBufferViewStructFormat(ArrayBufferViewTag.kUint32Array).view_type
+    <class 'v8serialize.jstypes.jsbuffers.JSUint32Array'>
+
+    Resolve a view type from data type and precision:
+
+    >>> uint64 = DataFormat.resolve(data_type=DataType.UnsignedInt, byte_length=8)
+    >>> ArrayBufferViewStructFormat(uint64).view_type
+    <class 'v8serialize.jstypes.jsbuffers.JSBigUint64Array'>
+    """
+
     Int8Array = ArrayBufferViewTag.kInt8Array, JSInt8Array
     Uint8Array = ArrayBufferViewTag.kUint8Array, JSUint8Array
     # Python doesn't distinguish between wrapping and clamped views, because
@@ -883,6 +1125,26 @@ def create_view(
     byte_length: int | None = None,
     readonly: Literal[True] | None = None,
 ) -> JSTypedArray | JSDataView:
+    r"""
+    Create a view over a data buffer, enforcing byte boundaries as JavaScript does.
+
+    This creates an instance of the appropriate view type for the `format`.
+
+    Returns
+    -------
+    DataView | TypedArray:
+        An instance of `DataView` or `TypedArray` wrapping `buffer`.
+
+    Examples
+    --------
+    >>> from v8serialize.constants import ArrayBufferViewTag
+    >>> create_view(b'', format=ArrayBufferViewTag.kUint32Array)
+    JSUint32Array(b'')
+
+    >>> uint64 = DataFormat.resolve(data_type=DataType.UnsignedInt, byte_length=8)
+    >>> create_view(b'', format=uint64)
+    JSBigUint64Array(b'')
+    """
     if isinstance(format, (ArrayBufferViewTag, DataFormat)):
         format = ArrayBufferViewStructFormat(format)
     return format.view_type.from_bytes(
@@ -895,11 +1157,15 @@ def create_view(
 
 @dataclass(init=False)
 class JSArrayBufferError(V8CodecError):
+    """The parent type of exceptions raised by the JavaScript buffer types."""
+
     pass
 
 
 @dataclass(init=False)
 class ByteLengthJSArrayBufferError(V8CodecError, ValueError):
+    """Raised when a byte length is out of bounds."""
+
     byte_length: int
     max_byte_length: int | None
 
@@ -913,6 +1179,8 @@ class ByteLengthJSArrayBufferError(V8CodecError, ValueError):
 
 @dataclass(init=False)
 class ItemSizeJSArrayBufferError(JSArrayBufferError, ValueError):
+    """Raised when a byte offset or length is not divisible by itemsize."""
+
     itemsize: int
     byte_offset: int
     byte_length: int | None
@@ -928,6 +1196,8 @@ class ItemSizeJSArrayBufferError(JSArrayBufferError, ValueError):
 
 @dataclass(init=False)
 class BoundsJSArrayBufferError(JSArrayBufferError, ValueError):
+    """Raised when a byte offset is out of bounds."""
+
     byte_offset: int
     byte_length: int | None
     buffer_byte_length: int

@@ -40,19 +40,38 @@ FLOAT64_SAFE_INT_RANGE: Final = range(-(2**53 - 1), 2**53)
 """The range of integers which a JavaScript number (64-bit float) can represent
 without loss.
 
-Same as Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER JavaScript constants.
+Same as [`Number.MIN_SAFE_INTEGER`], [`Number.MAX_SAFE_INTEGER`] JavaScript
+constants.
+
+[`Number.MIN_SAFE_INTEGER`]: https://developer.mozilla.org/en-US/docs/Web/\
+JavaScript/Reference/Global_Objects/Number/MIN_SAFE_INTEGER
+[`Number.MAX_SAFE_INTEGER`]: https://developer.mozilla.org/en-US/docs/Web/\
+JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER
 """
 
 MAX_ARRAY_LENGTH: Final = 2**32 - 1
+"""
+1 larger than the maximum integer index of a JavaScript array.
+
+Note that JavaScript Arrays will still accept properties for integers beyond
+this limit, but they will be stored as string name properties, not integer array
+indexes.
+"""
 MAX_ARRAY_LENGTH_REPR: Final = "2**32 - 1"
 
 
 class SerializationTag(IntEnum):
     """1-byte tags used to identify the type of the next value.
 
-    This list is a direct translation of the SerializationTag enum in the v8 src:
-    https://chromium.googlesource.com/v8/v8/+/f2f3b3f7a22d67d7f5afa66bc39ee2e299cdf63e/src/objects/value-serializer.cc#117
+    Notes
+    -----
+    These tags are defined in the [SerializationTag enum in the v8 src](\
+https://chromium.googlesource.com/v8/v8/+/f2f3b3f7a22d67d7f5afa66bc39ee2e299cdf63e/\
+src/objects/value-serializer.cc#117).
     """
+
+    # This list is a direct translation of the SerializationTag enum in the v8 src:
+    # https://chromium.googlesource.com/v8/v8/+/f2f3b3f7a22d67d7f5afa66bc39ee2e299cdf63e/src/objects/value-serializer.cc#117
 
     # version:uint32_t (if at beginning of data, sets version > 0)
     kVersion = 0xFF
@@ -181,12 +200,16 @@ class SerializationTag(IntEnum):
 
 
 ################################################################################
-# This is necessary because MyPy treats a Literal of all enum values differently
-# to a the enum type itself, but Literal[SerializationTag] is not allowed.
 
 # fmt: off
 AnySerializationTag = Literal[SerializationTag.kVersion, SerializationTag.kPadding, SerializationTag.kVerifyObjectCount, SerializationTag.kTheHole, SerializationTag.kUndefined, SerializationTag.kNull, SerializationTag.kTrue, SerializationTag.kFalse, SerializationTag.kInt32, SerializationTag.kUint32, SerializationTag.kDouble, SerializationTag.kBigInt, SerializationTag.kUtf8String, SerializationTag.kOneByteString, SerializationTag.kTwoByteString, SerializationTag.kObjectReference, SerializationTag.kBeginJSObject, SerializationTag.kEndJSObject, SerializationTag.kBeginSparseJSArray, SerializationTag.kEndSparseJSArray, SerializationTag.kBeginDenseJSArray, SerializationTag.kEndDenseJSArray, SerializationTag.kDate, SerializationTag.kTrueObject, SerializationTag.kFalseObject, SerializationTag.kNumberObject, SerializationTag.kBigIntObject, SerializationTag.kStringObject, SerializationTag.kRegExp, SerializationTag.kBeginJSMap, SerializationTag.kEndJSMap, SerializationTag.kBeginJSSet, SerializationTag.kEndJSSet, SerializationTag.kArrayBuffer, SerializationTag.kResizableArrayBuffer, SerializationTag.kArrayBufferTransfer, SerializationTag.kArrayBufferView, SerializationTag.kSharedArrayBuffer, SerializationTag.kSharedObject, SerializationTag.kWasmModuleTransfer, SerializationTag.kHostObject, SerializationTag.kWasmMemoryTransfer, SerializationTag.kError, SerializationTag.kLegacyReservedMessagePort, SerializationTag.kLegacyReservedBlob, SerializationTag.kLegacyReservedBlobIndex, SerializationTag.kLegacyReservedFile, SerializationTag.kLegacyReservedFileIndex, SerializationTag.kLegacyReservedDOMFileSystem, SerializationTag.kLegacyReservedFileList, SerializationTag.kLegacyReservedFileListIndex, SerializationTag.kLegacyReservedImageData, SerializationTag.kLegacyReservedImageBitmap, SerializationTag.kLegacyReservedImageBitmapTransfer, SerializationTag.kLegacyReservedOffscreenCanvas, SerializationTag.kLegacyReservedCryptoKey, SerializationTag.kLegacyReservedRTCCertificate]  # noqa: E501
 # fmt: on
+"""
+`Literal` of every `SerializationTag` value.
+
+This is necessary because MyPy treats a Literal of all enum values differently
+to a the enum type itself, but `Literal[SerializationTag]` is not allowed.
+"""
 
 # Generate with:
 # python -c 'from v8serialize.constants import SerializationTag; print("Literal[{}]".format(", ".join(f"SerializationTag.{t.name}" for t in SerializationTag)))'  # noqa: E501
@@ -216,10 +239,17 @@ class ArrayBufferViewFlags(IntFlag):
 
 
 class JSRegExpFlag(IterableIntFlag):
-    """The bit flags for V8's representation of JavaScript RegExp flags.
+    """
+    The bit flags for V8's representation of JavaScript RegExp flags.
 
-    Defined at: https://github.com/v8/v8/blob/\
-0654522388d6a3782b9831b5de49b0c0abe0f643/src/regexp/regexp-flags.h#L20
+    This is a an [IntFlag enum](`enum.IntFlag`).
+
+    Notes
+    -----
+    Defined at [`src/regexp/regexp-flags.h`] in the V8 source code.
+
+    [`src/regexp/regexp-flags.h`]: https://github.com/v8/v8/blob/\
+0654522388d6a3782b9831b5de49b0c0abe0f643/src/regexp/regexp-flags.h#L20)
     """
 
     HasIndices = "d", 7, RegexFlag.NOFLAG
@@ -263,6 +293,7 @@ class JSRegExpFlag(IterableIntFlag):
 
     @staticmethod
     def from_python_flags(python_flags: RegexFlag) -> JSRegExpFlag:
+        """Get the JavaScript flags equivalent to Python `re` module flags."""
         if python_flags & RegexFlag.VERBOSE:
             raise JSRegExpV8CodecError(
                 "No equivalent JavaScript RegExp flags exist for RegexFlag.VERBOSE"
@@ -276,6 +307,7 @@ class JSRegExpFlag(IterableIntFlag):
 
     @property
     def canonical(self) -> JSRegExpFlag:
+        """The flag's value without any meaningless bits set."""
         return self & 0b111111111
 
     @overload
@@ -291,8 +323,9 @@ class JSRegExpFlag(IterableIntFlag):
         Some flags don't have a direct equivalent, such as Linear. These result
         in there being no Python equivalent, so the result is None.
 
-        Some flag don't affect Python because they adjust the JavaScript matching
-        API which isn't used in Python. For example, HasIndices. These are ignored.
+        Some flag don't affect Python because they adjust the JavaScript
+        matching API which isn't used in Python. For example, `HasIndices`.
+        These are ignored.
         """
         flags = RegexFlag.NOFLAG
         for f in self:
@@ -348,6 +381,8 @@ class SerializationErrorTag(IntEnum):
 
 
 class JSErrorName(StrEnum):
+    """An enum of the possible `.name` values of JavaScript Errors."""
+
     EvalError = "EvalError", SerializationErrorTag.EvalErrorPrototype
     RangeError = "RangeError", SerializationErrorTag.RangeErrorPrototype
     ReferenceError = "ReferenceError", SerializationErrorTag.ReferenceErrorPrototype
@@ -368,10 +403,23 @@ class JSErrorName(StrEnum):
 
     @property
     def error_tag(self) -> SerializationErrorTag | None:
+        """The SerializationErrorTag that corresponds to this `JSErrorName`."""
         return self.__error_tag
 
     @staticmethod
     def for_error_name(error_name: str) -> JSErrorName:
+        """
+        Get the name that will be deserialized when a given name is serialized.
+
+        V8 will ignore unknown error names and substitute `"Error"`. Only the
+        members of the `JSErrorName`
+
+        Returns
+        -------
+        :
+            The `JSErrorName` enum member equal to `error_name`, or
+            `JSErrorName.Error` if none match.
+        """
         return (
             JSErrorName(error_name) if error_name in JSErrorName else JSErrorName.Error
         )
@@ -379,6 +427,7 @@ class JSErrorName(StrEnum):
     @staticmethod
     @lru_cache  # noqa: B019  # OK because static
     def for_error_tag(error_tag: SerializationErrorTag) -> JSErrorName:
+        """Get the `JSErrorName` that corresponds to a `SerializationErrorTag` value."""
         for x in JSErrorName:
             if x.error_tag is error_tag:
                 return x
@@ -422,69 +471,91 @@ class SerializationFeature(IterableFlag):
 
     This flag names the format changes that have occurred, to allow enabling and
     disabling support for them when encoding data.
+
+    Examples
+    --------
+    >>> SerializationFeature.MaxCompatibility.first_v8_version
+    <Version('10.0.29')>
+    >>> version = SerializationFeature.CircularErrorCause.first_v8_version
+    >>> version
+    <Version('12.1.109')>
+    >>> list(SerializationFeature.supported_by(v8_version=version))
+    [<SerializationFeature.RegExpUnicodeSets: 1>, \
+<SerializationFeature.ResizableArrayBuffers: 2>, \
+<SerializationFeature.CircularErrorCause: 4>]
     """
 
     MaxCompatibility = 0, "10.0.29"
-    """First version with format version v15.
-
-    https://github.com/v8/v8/commit/fc23bc1de29f415f5e3bc080055b67fb3ea19c53
+    """
+    The [first version supporting V8 Serialization format version v15](\
+https://github.com/v8/v8/commit/fc23bc1de29f415f5e3bc080055b67fb3ea19c53).
     """
 
     RegExpUnicodeSets = 1, "10.7.123"
-    """Enable writing RegExp with the UnicodeSets flag.
+    """
+    Enable writing RegExp with the UnicodeSets flag.
 
     This wasn't a format change in the serializer itself, but versions of V8
-    without support for this flag will not be able to handle RegExp using it.
+    without support for this flag will not be able to deserialize containing
+    a RegExp using the flag.
 
-    The commit adding the `v` flag was made on 2022-09-03:
-    https://github.com/v8/v8/commit/5d4567279e30e1e74588c022861b1d8dfc354a4e
+    The commit adding the `v` flag was [made on 2022-09-03](\
+https://github.com/v8/v8/commit/5d4567279e30e1e74588c022861b1d8dfc354a4e)
 
-    Note that it seems the flag wasn't correctly validated by the serializer, so
-    initially V8 could deserialize RegExps that incorrectly used `u` and `v`
-    flags at the same time:
-    https://github.com/v8/v8/commit/492a4920f011fa2ceeadfe99022d8d573e7d74a6
-    We consistently enforce this in JSRegExp.
+    Note that it seems the flag wasn't correctly validated by the
+    serializer, so [initially V8 could deserialize RegExps that incorrectly
+    used `u` and `v` flags at the same time](\
+https://github.com/v8/v8/commit/492a4920f011fa2ceeadfe99022d8d573e7d74a6).
+    `v8serialize` consistently enforces the mutual-exclusion of `u` and `v`
+    flags in [`JSRegExp`](jstypes.JSRegExp.qmd).
     """
 
     ResizableArrayBuffers = 2, "11.0.193"
-    """Enable writing Resizable ArrayBuffers.
+    """
+    Enable writing Resizable ArrayBuffers.
 
-    This was introduced in v15 Dec 2022:
-    https://github.com/v8/v8/commit/3f17de8d3aa447cbedd8047efb90086b936f8d63
+    This was introduced [in v15 Dec 2022](\
+https://github.com/v8/v8/commit/3f17de8d3aa447cbedd8047efb90086b936f8d63)
 
-    V8 Versions supporting v15 before this cannot deserialize values containing
-    resizable ArrayBuffers.
+    V8 Versions supporting v15 before this cannot deserialize data
+    containing resizable ArrayBuffers.
     """
 
     CircularErrorCause = 4, "12.1.109"
     """
+    Allow Errors to self-reference in their `cause`.
+
     Support for serializing errors with cause objects referencing the error
-    was added to v15 in Nov 2023:
-    https://github.com/v8/v8/commit/5ff265b202a593d7f45348c2a3f0d4dd5fdff74e
+    was added [to v15 in Nov 2023](\
+https://github.com/v8/v8/commit/5ff265b202a593d7f45348c2a3f0d4dd5fdff74e)
 
     Versions before this are not able to de-serialize errors linking to
-    themselves in their cause. Also, versions before this change serialize error
-    stack after the cause, whereas versions after this serialize the stack
-    before the cause and are not able to handle the previous stack encoding.
+    themselves in their cause. Also, versions before this change serialize
+    error stack after the cause, whereas versions after this serialize the
+    stack before the cause and are not able to handle the previous stack
+    encoding.
 
-    We are able to support reading both formats ourselves, despite V8 not being
-    able to read errors written before this change (despite the format remaining
-    at 15). The new error layout can be read by V8 versions before the change.
+    `v8serialize` is able to support reading both formats ourselves, despite
+    V8 not being able to read errors written before this change (despite the
+    format remaining at 15). The new error layout can be read by V8 versions
+    before the change.
 
-    However we must avoid writing errors with self-referencing cause values
-    unless this feature is enabled.
+    `v8serialize` must avoid writing errors with self-referencing cause
+    values unless this feature is enabled, and the encoder raises a
+    [`IllegalCyclicReferenceV8CodecError`](IllegalCyclicReferenceV8CodecError.qmd)
+    if this happens.
     """
 
     Float16Array = 8, SymbolicVersion.Unreleased
     """
     Support for encoding typed array views holding Float16 elements.
 
-    Added to v15 2024-03-03:
-    https://github.com/v8/v8/commit/8fcd3f809ba5c71f7a29bc6623c1f93a9eac72fe
+    Added [to v15 2024-03-03](\
+https://github.com/v8/v8/commit/8fcd3f809ba5c71f7a29bc6623c1f93a9eac72fe).
 
-    Versions with v15 support before this will not be able to decode data
-    containing such arrays. This added the ArrayBufferViewTag.kFloat16Array
-    constant.
+    Versions with v15 before this feature was introduced will not be able to
+    decode data containing such arrays. This added the
+    `ArrayBufferViewTag.kFloat16Array` constant.
     """
 
     __first_v8_version: Version | UnreleasedVersion
@@ -520,6 +591,7 @@ class SerializationFeature(IterableFlag):
 
     @property
     def first_v8_version(self) -> Version | UnreleasedVersion:
+        """The V8 release that introduced this feature."""
         return self.__first_v8_version
 
     @classmethod
@@ -537,6 +609,11 @@ class SerializationFeature(IterableFlag):
 
         [v8-compat-comment]: https://github.com/v8/v8/blob/\
 42d57fc8309677f13bfb4a443723a4c7306ec1b7/src/objects/value-serializer.cc#L51
+
+        Arguments
+        ---------
+        v8_version:
+            A V8 release number.
         """
         if isinstance(v8_version, str):
             v8_version = parse_lenient_version(v8_version)
@@ -570,8 +647,12 @@ TagSet = AbstractSet[TagT_co]
 
 @dataclass(unsafe_hash=True, **slots_if310())
 class TagConstraint(FrozenAfterInitDataclass, Generic[TagT_co]):
+    """A named set of `SerializationTag`s."""
+
     name: str
+    """A description of the tags allowed by this constraint."""
     allowed_tags: TagSet[TagT_co]
+    """The set of tags allowed by this constraint."""
 
     def __contains__(self, tag: object) -> TypeGuard[TagT_co]:
         """Return True if `tag` is allowed by the constraint."""

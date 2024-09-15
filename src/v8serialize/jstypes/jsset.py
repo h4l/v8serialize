@@ -24,17 +24,39 @@ U = TypeVar("U")
 @dataclass(**slots_if310())
 class JSSet(MutableSet[T], metaclass=ABCMeta):
     """
-    A Set that uses object identity for member equality.
+    A Python equivalent of [JavaScript's Set][Set].
 
-    This replicates the behaviour of JavaScript's Set type, which considers
-    members equal by the [same-value-zero] rules (very close to `Object.is()` /
-    `===`).
+    `JSSet` is a [Python set] that uses object identity rather than `==` for
+    member equality, and allows members which are not [hashable].
 
+    `JSSet` replicates the behaviour of [JavaScript's Set][Set] type, which
+    considers members equal by the [same-value-zero] rules (very close to
+    `Object.is()` / `===`).
+
+    [Python set]: https://docs.python.org/3/library/stdtypes.html#types-set
+    [Set]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/\
+Global_Objects/Set
     [same-value-zero]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/\
 Equality_comparisons_and_sameness#same-value-zero_equality
+    [hashable]: https://docs.python.org/3/glossary.html#term-hashable
+    [`jstypes.same_value_zero`]: `v8serialize.jstypes.same_value_zero`
 
-    `JSSet` is able to hold non-hashable objects as members.
+    Parameters
+    ----------
+    iterable
+        Items to initialize the `JSSet` with. Can be empty or not specified.
 
+    Notes
+    -----
+    `JSSet` must be initialized using an iterable or regular list instead of a
+    `set` if any keys are non-hashable or are equal using `==`.
+
+    See Also
+    --------
+    [`jstypes.same_value_zero`] : A key function that provides same-value-zero equality.
+
+    Examples
+    --------
     Equality between JSSet instances works as if you compared a list of both
     set's elements. When comparing JSSet to a normal Python `set`, equality
     works as if the JSSet was a regular set — order does not matter and the

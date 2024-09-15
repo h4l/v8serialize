@@ -1,4 +1,4 @@
-"""Deserialize JS values in the V8 Serialization format into Python values."""
+"""Deserialize JavaScript values from the V8 Serialization format into Python values."""
 
 from __future__ import annotations
 
@@ -91,9 +91,8 @@ from v8serialize.jstypes.jsregexp import JSRegExp
 from v8serialize.jstypes.jsset import JSSet
 
 if TYPE_CHECKING:
-    from typing_extensions import Never, TypeAlias
-
     from _typeshed import SupportsRead
+    from typing_extensions import Never, TypeAlias
 
 T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
@@ -1018,7 +1017,13 @@ JSArrayType = Callable[[], JSArray[object]]
 
 @dataclass(init=False, **slots_if310())
 class TagMapper(TagMapperObject):
-    """Defines the conversion of V8 serialization tagged data to Python values."""
+    """
+    Controls how V8 serialization data is converted to Python values when deserializing.
+
+    You can customise the way JavaScript values are represented in Python by
+    creating a TagMapper instance with non-default options, and passing it to
+    the `tag_mappers` option of `v8serialize.loads()` or `v8serialize.Decoder()`
+    """
 
     tag_readers: TagReaderRegistry
     default_tag_mapper: TagMapper | None
@@ -1289,23 +1294,79 @@ class TagMapper(TagMapperObject):
         return ctx.stream.read_js_date(tz=self.default_timezone).object
 
 
-default_tag_mappers: Final[Sequence[AnyTagMapper]] = [TagMapper()]
+default_tag_mappers: Final[Sequence[AnyTagMapper]] = (TagMapper(),)
+"""
+The default TagMapper chain used to map `SerializationTag`s to Python objects.
+
+This is an instance of [`TagMapper`](TagMapper.qmd) with no options changed from
+the defaults.
+
+JavaScript types are deserialized as the `v8serialize.jstypes.JS*` types, unless
+a built-in Python type can represent the value precisely, such as strings and
+numbers.
+"""
 
 
 @dataclass(init=False)
 class Decoder:
-    tag_mappers: Sequence[AnyTagMapper]
+    """
+    A re-usable configuration for deserializing V8 serialization format data.
 
-    def __init__(self, tag_mappers: Iterable[AnyTagMapper] | None = None) -> None:
+    Parameters
+    ----------
+    tag_mappers
+        A chain of tag mappers, which are responsible for creating Python
+        values to represent the JavaScript values found when decoding data.
+
+    """
+
+    tag_mappers: Sequence[AnyTagMapper]
+    """The chain of Tag Mappers that define how to create Python values."""
+
+    def __init__(
+        self, tag_mappers: Iterable[AnyTagMapper] | None = default_tag_mappers
+    ) -> None:
         self.tag_mappers = (
             default_tag_mappers if tag_mappers is None else tuple(tag_mappers)
         )
 
     def decode(self, fp: SupportsRead[bytes]) -> object:
+        """
+        Deserialize V8 serialization format data from a file.
+
+        This Decoder's `tag_mappers` are used to create Python types from the
+        serialized data.
+
+        Parameters
+        ----------
+        fp
+            The file-like object to read and deserialize.
+
+        Returns
+        -------
+        :
+            The first value in the `fp`.
+        """
         # TODO: could mmap when fp is a file
         return self.decodes(fp.read())
 
     def decodes(self, data: ReadableBinary | Buffer) -> object:
+        """
+        Deserialize V8 serialization format data from a bytes-like object.
+
+        This Decoder's `tag_mappers` are used to create Python types from the
+        serialized data.
+
+        Parameters
+        ----------
+        data
+            The bytes-like object to deserialize.
+
+        Returns
+        -------
+        :
+            The first value in `data`.
+        """
         ctx = DefaultDecodeContext(
             stream=ReadableTagStream(
                 data if is_readable_binary(data) else get_buffer(data)
@@ -1317,9 +1378,26 @@ class Decoder:
 
 
 def loads(
-    data: ReadableBinary | Buffer, *, tag_mappers: Iterable[AnyTagMapper] | None = None
+    data: ReadableBinary | Buffer,
+    *,
+    tag_mappers: Iterable[AnyTagMapper] | None = default_tag_mappers,
 ) -> object:
     """Deserialize a JavaScript value encoded in V8 serialization format.
+
+    The serialized JavaScript types are mapped to appropriate Python equivalents
+    using the `tag_mappers`.
+
+    Data serialized by V8 serialization format version 13 or newer can be
+    decoded. ([13 was introduced in 2017, V8 version 5.8.294][fmt13], used by
+    Node.JS 16.)
+
+    [fmt13]: https://github.com/v8/v8/commit/6543519977b2012b58a4ffef28b8527db404fbdb
+
+    :::{.callout-note}
+    `loads()` does not need any configuration of V8 version or serialization
+    features, because it automatically supports decoding data encoded with or
+    without optional features enabled.
+    :::
 
     Parameters
     ----------
@@ -1327,21 +1405,29 @@ def loads(
         The bytes to deserialize as a bytes-like object such as `bytes`,
         `bytearray`, `memoryview`.
     tag_mappers
-        An ordered series of tag mappers, which are responsible for creating
-        Python values to represent the JavaScript values found in the `data`.
+        A chain of tag mappers, which are responsible for creating Python values
+        to represent the JavaScript values found in the `data`.
 
     Returns
     -------
     :
         The first value in the `data`, as deserialized by the `tag_mappers`.
-        Using the default `tag_mappers`, this will be a type from
-        `v8serialize.jstypes`, such as `JSObject` to represent a JavaScript
-        Object.
+        Using the [`default_tag_mappers`](default_tag_mappers.qmd), this will be
+        a type from `v8serialize.jstypes`, such as `JSObject` to represent a
+        JavaScript Object.
+
+    Raises
+    ------
+    DecodeV8CodecError
+        When `data` is not well-formed V8 serialization format data.
+    UnmappedTagDecodeV8CodecError
+        When the `tag_mappers` don't support a JavaScript type occurring in the
+        `data`.
 
     Examples
     --------
     >>> from v8serialize import dumps, loads
     >>> loads(dumps({'Hello': 'World'}))
-    JSMap({'Hello': 'World'})
+    JSMap([('Hello', 'World')])
     """
     return Decoder(tag_mappers=tag_mappers).decodes(data)

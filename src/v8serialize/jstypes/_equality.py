@@ -8,23 +8,74 @@ from v8serialize.jstypes.jsundefined import JSUndefinedEnum
 _nankey: Final = (float("nan"),)  # equal thanks to tuple identity
 
 JSSameValueZero = NewType("JSSameValueZero", object)
+"""
+The type of the opaque values returned by [`same_value_zero`].
+
+[`same_value_zero`]: `v8serialize.jstypes.same_value_zero`
+"""
 
 
 def same_value_zero(value: object) -> JSSameValueZero:
     """
-    Get a surrogate value that follows JavaScript same-value-zero equality rules.
+    Get a surrogate value that follows [JavaScript same-value-zero equality rules][samevaluezero].
 
-    Python values can be compared with `==` and used with `hash()` with equality
-    following the same-value-zero rules by comparing/hashing the result of
-    calling this function on the values, rather than using them directly. Like
-    a key function when sorting.
+    Python values can be compared according to same-value-zero by using `==`,
+    `hash()` on the result of calling this function on the values, rather than
+    on the values them directly. Like a key function when sorting.
 
     `same_value_zero(x) == same_value_zero(y)` is `True` if `x` and `y` are
     equal under [JavaScript's same-value-zero rule][samevaluezero].
 
     [samevaluezero]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/\
 Equality_comparisons_and_sameness#same-value-zero_equality
-    """
+
+    Parameters
+    ----------
+    value
+        Any Python object
+
+    Returns
+    -------
+    :
+        An opaque value that follows the same-value-zero rules when compared
+        with `==` or passed to `hash()`.
+
+
+    Examples
+    --------
+    >>> NaN = float('nan')
+    >>> NaN == NaN
+    False
+    >>> same_value_zero(NaN) == same_value_zero(NaN)
+    True
+
+    >>> True == 1
+    True
+    >>> same_value_zero(True) == same_value_zero(1)
+    False
+
+    >>> l1, l2 = [0], [0]
+    >>> l1 is l2
+    False
+    >>> l1 == l2
+    True
+    >>> same_value_zero(l1) == same_value_zero(l2)
+    False
+    >>> same_value_zero(l1) == same_value_zero(l1)
+    True
+
+    Strings and numbers are equal by value.
+
+    >>> s1, s2 = str([ord('a')]), str([ord('a')])
+    >>> s1 is s2
+    False
+    >>> s1 == s2
+    True
+    >>> same_value_zero(s1) == same_value_zero(s2)
+    True
+    >>> same_value_zero(1.0) == same_value_zero(1)
+    True
+    """  # noqa: E501
     # These values are equal by value.
     if isinstance(value, bool):
         # bools are equal to 0 and 1 by default

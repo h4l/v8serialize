@@ -27,7 +27,7 @@ else:
         from abc import ABC, abstractmethod
 
         class Buffer(ABC):
-            """Runtime placeholder for collections.abc."""
+            """An alias of [`collections.abc.Buffer`](`collections.abc.Buffer`)."""
 
             @abstractmethod
             def __buffer__(self, flags: int) -> memoryview: ...
@@ -39,7 +39,20 @@ else:
 ReadableBinary: TypeAlias = Union[
     "bytes | bytearray | memoryview | array[int] | BufferSequence"
 ]
-"""Binary data such as bytes, bytearray, array and memoryview."""
+"""
+Binary data such as `bytes`, `bytearray`, `array.array` and `memoryview`.
+
+Can also be any `Sequence[int]` that supports `collections.abc.Buffer`.
+
+Test 123 :role:`Buffer <collections.abc.Buffer>`.
+Test 123 [Buffer]
+
+[Buffer]: https://python.org/foo
+
+Also:
+
+[`Buffer`](#collections.abc.Buffer)
+"""
 
 
 def is_readable_binary(buffer: Buffer) -> TypeGuard[ReadableBinary]:

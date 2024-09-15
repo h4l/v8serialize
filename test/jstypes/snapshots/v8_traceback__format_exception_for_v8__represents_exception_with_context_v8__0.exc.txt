@@ -1,9 +1,9 @@
 TypeError: unsupported operand type(s) for /: 'ValueError' and 'int'
-    at raise_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:37:12)
-    at call_and_capture_tbe (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:91:8)
+    at raise_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:40:12)
+    at call_and_capture_tbe (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:94:8)
 
 The above exception occurred while handling another exception:
 
 ValueError: Unable to do the thing
-    at failing_operation (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:75:12)
-    at raise_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:35:12)
+    at failing_operation (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:78:12)
+    at raise_context (/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py:38:12)

@@ -1,4 +1,4 @@
-"""Serialize Python values into JS values in the V8 Serialization format."""
+"""Map Python values into JavaScript values in the V8 Serialization format."""
 
 from __future__ import annotations
 
@@ -77,6 +77,7 @@ from v8serialize.jstypes.jsundefined import JSUndefinedEnum, JSUndefinedType
 
 if TYPE_CHECKING:
     from functools import _lru_cache_wrapper
+
     from typing_extensions import Never, TypeAlias
 
 T = TypeVar("T")
@@ -713,6 +714,11 @@ class HostObjectSerializerObj(Protocol[T_con]):
 HostObjectSerializer: TypeAlias = (
     "HostObjectSerializerObj[T_con] | HostObjectSerializerFn[T_con]"
 )
+"""
+The type of a function or object that writes custom [HostObjects][HostObject].
+
+ [HostObject]: `v8serialize.constants.SerializationTag.kHostObject`
+ """
 
 
 class EncodeContext(Protocol):
@@ -1087,15 +1093,45 @@ default_object_mappers: tuple[AnyObjectMapper, ...] = (
     serialize_object_references,
     ObjectMapper(),
 )
+"""
+The default ObjectMapper chain used to map Python objects to JavaScript values.
+
+The defaults represent common Python types as their JavaScript equivalents, and
+serializes the `v8serialize.jstypes.JS*` types as their corresponding JavaScript
+type.
+
+This chain contains
+[`serialize_object_references`](serialize_object_references.qmd) and an instance
+of [`ObjectMapper`](ObjectMapper.qmd).
+"""
 
 
 @dataclass(init=False)
 class Encoder:
-    """Encode Python values in the V8 serialization format.
+    """
+    A re-usable configuration for serializing objects into V8 serialization format.
 
-    Encoder is a high-level interface that wraps an ObjectMapper and
-    WritableTagStream to decide how to represent Python types, and write out the
-    V8 tag data respectively.
+    If `features` and `v8_version` are left unchanged, no serialization features
+    beyond the baseline are enabled, so serialized data can be read by any V8
+    runtime from [`SerializationFeature.MaxCompatibility.first_v8_version`](\
+SerializationFeature.qmd#maxcompatibility).
+
+    Parameters
+    ----------
+    object_mappers
+        The chain of Object Mappers that control how the `value` is converted to
+        JavaScript types.
+    features
+        Additional features of the V8 serialization format to enable.
+    v8_version
+        The minimum version of V8 that needs to be able to read the serialized
+        data.
+
+    Notes
+    -----
+    Encoder is a high-level interface that wraps an ObjectMapper — to decide how
+    to represent Python types — and WritableTagStream — to write out the
+    V8 serialization format tag data.
     """
 
     object_mappers: Sequence[AnyObjectMapper]
@@ -1103,7 +1139,7 @@ class Encoder:
 
     def __init__(
         self,
-        object_mappers: Iterable[AnyObjectMapper] | None = None,
+        object_mappers: Iterable[AnyObjectMapper] | None = default_object_mappers,
         features: SerializationFeature | None = None,
         v8_version: Version | UnreleasedVersion | str | None = None,
     ) -> None:
@@ -1123,9 +1159,18 @@ class Encoder:
         return max(f.first_v8_version for f in self.features)
 
     def encode(self, value: object) -> bytearray:
-        """Serialize a value in the V8 serialization format.
+        """
+        Serialize a value in the V8 serialization format.
 
-        Returns a `bytearray` containing the encoded bytes.
+        Parameters
+        ----------
+        value
+            The Python object to serialize.
+
+        Returns
+        -------
+        :
+            A `bytearray` containing the encoded bytes.
         """
         ctx = DefaultEncodeContext(
             stream=WritableTagStream(features=self.features),
@@ -1139,11 +1184,63 @@ class Encoder:
 def dumps(
     value: object,
     *,
-    object_mappers: Iterable[AnyObjectMapper] | None = None,
+    object_mappers: Iterable[AnyObjectMapper] | None = default_object_mappers,
     features: SerializationFeature | None = None,
     v8_version: Version | SymbolicVersion | str | None = None,
 ) -> bytes:
-    """Encode a Python value in the V8 serialization format."""
+    """
+    Serialize a Python value into a JavaScript value in the V8 serialization format.
+
+    `v8_version` and `features` together control the [`SerializationFeature`]s
+    that are enabled. Setting `v8_version` enables all features supported by the
+    version. Setting `features` selectively enables the specified features. The
+    union of these feature sets is enabled when encoding.
+
+    If `features` and `v8_version` are left unchanged, no serialization features
+    beyond the baseline are enabled, so serialized data can be read by any V8
+    runtime from [`SerializationFeature.MaxCompatibility.first_v8_version`](\
+SerializationFeature.qmd#maxcompatibility).
+
+    Parameters
+    ----------
+    value
+        The Python value to serialize.
+    object_mappers
+        The chain of Object Mappers that control how the `value` is converted to
+        JavaScript types.
+    features
+        Additional features of the V8 serialization format to enable.
+    v8_version
+        The minimum version of V8 that needs to be able to read the serialized
+        data.
+
+    Returns
+    -------
+    :
+        The serialized data.
+
+    Raises
+    ------
+    UnmappedValueEncodeV8CodecError
+        When a `value` (or a sub-value within it) is not supported by the
+        `object_mappers`.
+    FeatureNotEnabledEncodeV8CodecError
+        When encoding `value` requires a [`SerializationFeature`] to be enabled
+        that isn't enabled.
+    EncodeV8CodecError
+        Is the parent of all data-specific errors thrown when encoding.
+
+
+    Examples
+    --------
+    >>> from base64 import b64encode
+    >>> from v8serialize import loads
+    >>> from v8serialize.jstypes import JSObject, JSSet
+    >>>
+    >>> data = dumps(JSObject(id=42, title='Stuff', tags=JSSet(['foo', 'bar'])))
+    >>> loads(data)
+    JSObject(id=42, title='Stuff', tags=JSSet(['foo', 'bar']))
+    """
     encoder = Encoder(
         object_mappers=object_mappers, features=features, v8_version=v8_version
     )

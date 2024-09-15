@@ -35,28 +35,69 @@ MIN_DENSE_ARRAY_USED_RATIO = 1 / 4
 @dataclass(init=False, **slots_if310())
 class JSObject(MutableMapping["str | int", "T"], ABC):
     """
-    A Python representation of JavaScript plain objects.
+    A Python equivalent of [JavaScript plain objects][JavaScript Object].
 
-    JSObject is limited to the behaviour that can be transferred with V8
-    serialization (which is essentially the behaviour of [`structuredClone()`]).
-    The behaviour is similar to JSON objects — object prototypes, methods,
-    get/set properties and symbol properties cannot be transferred. Unlike JSON,
-    objects can contain cycles and all the other JavaScript types supported by
-    the V8 Serialization format, such as JavaScript's `Date` and `RegExp`
-    (`JSRegExp` and `JSDate`).
+    `JSObject` is a [Python Mapping], whose keys can be strings or numbers.
+    JavaScript Objects treat integer keys and integer strings as equivalent, and
+    `JSObject` does too. In fact, [JavaScript Arrays][JavaScript Array] and
+    Objects are almost entirely the same, and [`JSArray`] is also the same as
+    `JSObject`, except for its constructor arguments. The [`JSArray`]
+    description provides details of integer indexing behaviour which also
+    applies to `JSObject`.
 
-    JSObject implements JavaScript's integer index behaviour. Values can be
-    looked up via int or string keys, and strings that are the string
-    representation of an integer are treated as if they were integers.
+    `JSObject` implements just the JavaScript Object behaviour that can be
+    transferred with V8 serialization (which is essentially the behaviour of
+    [`structuredClone()`]). This is similar to JSON objects — object prototypes,
+    methods, get/set properties and symbol properties cannot be transferred.
+    Unlike JSON, objects can contain cycles and all the other JavaScript types
+    supported by the V8 Serialization format, such as JavaScript's `RegExp` and
+    `Date` ([`JSRegExp`] and [](`datetime.datetime`)).
+
+    JSObject is also an ABC can other types can register as virtual subtypes of
+    in order to serialize themselves as JavaScript Objects (by default, Python
+    Mappings are serialized as JavaScript Maps).
+
+    Parameters
+    ----------
+    properties
+        The items to populate the object with, either as a mapping to copy, or
+        an iterable of `(key, value)` pairs.
+    kwarg_properties
+        Additional key-values to populate the object with. These override any
+        items from `properties` with the same key.
+
+    Notes
+    -----
+    The behaviour `JSObject` implements aims to match that described by the
+    [ECMA-262] spec, so that details are not lost in translation when
+    serializing between Python and JavaScript.
 
     [`structuredClone()`]: \
 https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
-
-    The behaviour implemented aims to match that describe by the [ECMA-262] spec.
     [ECMA-262]: https://tc39.es/ecma262/#sec-object-type
+    [Python Mapping]: https://docs.python.org/3/glossary.html#term-mapping
+    [JavaScript Object]: https://developer.mozilla.org/en-US/docs/Web/\
+JavaScript/Reference/Global_Objects/Object
+    [JavaScript Array]: https://developer.mozilla.org/en-US/docs/Web/\
+JavaScript/Reference/Global_Objects/Array
+    [`JSArray`]: `v8serialize.jstypes.JSArray`
+    [`JSRegExp`]: `v8serialize.jstypes.JSRegExp`
 
-    JSObject is also an ABC can other types can register as virtual subtypes of
-    in order to serialize themselves as JavaScript Objects.
+    Examples
+    --------
+    >>> o = JSObject(name='Bob', likes_hats=False)
+    >>> o['name']
+    'Bob'
+    >>> o['518'] = 'Teapot'
+    >>> o['404'] = 'Not Found'
+
+    Properties are kept in order of creation, but array indexes (e.g. strings
+    that are non-negative integers) always come first, in numeric order.
+
+    >>> o
+    JSObject({404: 'Not Found', 518: 'Teapot'}, name='Bob', likes_hats=False)
+    >>> dict(o)
+    {404: 'Not Found', 518: 'Teapot', 'name': 'Bob', 'likes_hats': False}
     """
 
     array: ArrayProperties[T]
