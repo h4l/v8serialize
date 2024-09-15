@@ -172,7 +172,7 @@ class V8SerializationEchoServerClient:
                 content=serialized_value,
                 headers={"content-type": "application/x-v8-serialized"},
             )
-            resp.raise_for_status
+            resp.raise_for_status()
         except httpx.HTTPError as e:
             raise RuntimeError(
                 f"Failed to get serialization echo response from server: {e}"
@@ -316,7 +316,7 @@ def httpclient() -> Generator[httpx.Client]:
 def echoserver(httpclient: httpx.Client, echoserver_url: httpx.URL) -> EchoServer:
     try:
         resp = httpclient.get(echoserver_url)
-        resp.raise_for_status
+        resp.raise_for_status()
     except httpx.HTTPError as e:
         raise RuntimeError(f"V8 echo server is not contactable: {e}") from e
 
