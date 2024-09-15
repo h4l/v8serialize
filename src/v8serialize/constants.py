@@ -285,7 +285,8 @@ class JSRegExpFlag(IterableIntFlag):
     def as_python_flags(self, *, throw: Literal[True] = True) -> RegexFlag: ...
 
     def as_python_flags(self, *, throw: bool = True) -> RegexFlag | None:
-        """The Python re module flags that correspond to this value's active flags.
+        """
+        Get the Python `re` module flags that correspond to this value's active flags.
 
         Some flags don't have a direct equivalent, such as Linear. These result
         in there being no Python equivalent, so the result is None.
@@ -573,12 +574,12 @@ class TagConstraint(FrozenAfterInitDataclass, Generic[TagT_co]):
     allowed_tags: TagSet[TagT_co]
 
     def __contains__(self, tag: object) -> TypeGuard[TagT_co]:
-        """True if `tag` is allowed by the constraint."""
+        """Return True if `tag` is allowed by the constraint."""
         return tag in self.allowed_tags
 
     @property
     def allowed_tag_names(self) -> str:
-        """The"""
+        """A human-readable list of `SerializationTag`s allowed by this constraint."""
         return ", ".join(sorted(t.name for t in self.allowed_tags))
 
     def __str__(self) -> str:

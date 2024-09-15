@@ -9,9 +9,9 @@ from typing import Generator, cast
 def format_exception_for_v8(
     tbe: TracebackException, group_path: Sequence[int] = ()
 ) -> Generator[str]:
-    """Render a Python exception in the style of a V8 Error stack trace.
+    r"""Render a Python exception in the style of a V8 Error stack trace.
 
-    Returns an iterable of strings ending with `"\\n"`. (Join the lines to get a
+    Returns an iterable of strings ending with `"\n"`. (Join the lines to get a
     complete stack trace.)
 
     This aims to follow the layout described in https://v8.dev/docs/stack-trace-api

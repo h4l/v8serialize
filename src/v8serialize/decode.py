@@ -175,8 +175,15 @@ class ReadableTagStream:
         raise DecodeV8CodecError(message, data=self.data, position=self.pos) from cause
 
     def peak_tag(self) -> SerializationTag | None:
-        """Get the current position as a SerializationTag if it is one, or None
-        (without advancing position)."""
+        """
+        Get the current position as a SerializationTag without advancing position.
+
+        Returns
+        -------
+        :
+            The SerializationTag if the current byte corresponds to one,
+            otherwise None.
+        """
         if self.eof:
             return None
         value = self.data[self.pos]
@@ -887,7 +894,6 @@ class ReadableTagStreamReadFunction(Protocol):
 
 def read_stream(rts_fn: ReadableTagStreamReadFunction) -> TagReader:
     """Create a TagReader that calls a primitive read_xxx function on the stream."""
-
     read_fn = operator.methodcaller(rts_fn.__name__)
 
     def read_stream__tag_reader(
@@ -1315,7 +1321,6 @@ def loads(
 
     Parameters
     ----------
-
     data
         The bytes to deserialize as a bytes-like object such as `bytes`,
         `bytearray`, `memoryview`.
@@ -1333,7 +1338,6 @@ def loads(
 
     Examples
     --------
-
     >>> from v8serialize import dumps, loads
     >>> loads(dumps({'Hello': 'World'}))
     JSMap({'Hello': 'World'})

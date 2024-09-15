@@ -47,8 +47,14 @@ class _JSErrorData:
 
 
 class JSErrorData(_JSErrorData, AnyJSError, ABC):
-    """A minimal representation of JavaScript Error data that isn't a Python
-    Exception."""
+    """
+    A minimal representation of a JavaScript `Error`.
+
+    This type holds just the JavaScript `Error` fields that are stored in the V8
+    Serialization format. It doesn't extend Python's Exception type. Use this to
+    represent JavaScript Error values that don't need to be treated like Python
+    Exceptions.
+    """
 
     @classmethod
     def from_exception(cls, exc: BaseException) -> Self:

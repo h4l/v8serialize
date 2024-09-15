@@ -38,9 +38,11 @@ if not TYPE_CHECKING:
 if TYPE_CHECKING:
 
     class ElementsView(Mapping[int, _VT_co]):
-        """
-        A read-only live view of the index elements in a SparseSequence with
-        existant values.
+        """A live view of the indexes holding values in a SparseSequence.
+
+        The ElementsView provides access to a SparseSequence's values as a
+        Mapping, without any missing values. The iteration order may or may not
+        be defined, according to the `order` property.
         """
 
         @property
@@ -92,12 +94,12 @@ if TYPE_CHECKING:
             """
 
         def elements(self, *, order: Order = ...) -> ElementsView[_T_co]:
-            """
-            Get a read-only Mapping containing a live view of the index elements
-            with existant values.
+            """Get a live view of the index elements with existant values.
 
             `order` is `Order.ASCENDING` if not specified. `Order.UNORDERED` allows
             the implementation to use whichever order is most efficient.
+
+            This is analogous to the `items()` method of `Mapping`s.
             """
 
 else:
@@ -128,8 +130,10 @@ if TYPE_CHECKING:
 
         def resize(self, length: int) -> None:
             """
-            Change the length of the array. Elements are dropped if the length is
-            reduced, or gaps are created at the end if the length is increased.
+            Change the length of the array.
+
+            Elements are dropped if the length is reduced, or gaps are created
+            at the end if the length is increased.
             """
 
 else:

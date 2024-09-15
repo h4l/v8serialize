@@ -1,4 +1,4 @@
-"""This is a simplified demo of the protocols defined in v8serialize.typing."""
+"""A simplified demo of the protocols defined in v8serialize.typing."""
 
 from __future__ import annotations
 

@@ -12,6 +12,8 @@ if TYPE_CHECKING:
 
 @dataclass(init=False)
 class V8CodecError(Exception):
+    """The base class that all v8serialize errors are subclasses of."""
+
     if not TYPE_CHECKING:
         message: str  # needed to have dataclass include message in the repr, etc
 
@@ -49,9 +51,13 @@ class DecodeV8CodecError(V8CodecError, ValueError):
 
 @dataclass(init=False)
 class UnmappedTagDecodeV8CodecError(DecodeV8CodecError):
-    """Raised when attempting to deserialize a tag that no TagMapper is able to
+    """
+    No TagMapper is able to handle a `SerializationTag`.
+
+    Raised when attempting to deserialize a tag that no TagMapper is able to
     handle (by reading the tag's data from the stream and representing the data
-    as a Python object)."""
+    as a Python object).
+    """
 
     if not TYPE_CHECKING:
         tag: SerializationTag
@@ -73,8 +79,13 @@ class UnmappedTagDecodeV8CodecError(DecodeV8CodecError):
 
 @dataclass(init=False, **slots_if310())
 class NormalizedKeyError(KeyError):
-    """A key was not found, but the searched-for key was a normalized version of
-    the provided key."""
+    """A JSObject does not contain a property for the requested key.
+
+    JSObjects store and look up integer keys differently from non-integer keys,
+    so the actual key used in the lookup may not be the same as the same as the
+    original, raw key. The `normalized_key` and `raw_key` properties hold both
+    versions of the key.
+    """
 
     normalized_key: object
     raw_key: object

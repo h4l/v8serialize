@@ -10,7 +10,8 @@ LENIENT_VERSION_PATTERN = re.compile(
 
 
 def parse_lenient_version(version: str) -> Version:
-    """A less strict form of packaging.version.parse()
+    """
+    Parse a version number less strictly than `packaging.version.parse()`.
 
     Versions can have arbitrary suffixes after a `-`, like `12.9.202.2-rusty`.
     These suffixes become the local part of a Python Version.

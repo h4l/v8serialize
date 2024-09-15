@@ -10,8 +10,11 @@ if sys.version_info < (3, 11):
 
 
 class ErrorScenario:
-    """Functions that raise errors with various attached context/exception
-    groups to test traceback formatting behaviour.
+    """
+    Functions that raise errors with various attached context/exception groups.
+
+    Used to generate well-known exceptions to test traceback formatting
+    behaviour.
     """
 
     def raise_simple(self) -> Never:

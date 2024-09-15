@@ -40,7 +40,9 @@ usable_array_indexes = st.integers(min_value=0, max_value=200)
 
 class JSObjectComparisonMachine(RuleBasedStateMachine):
     """
-    Verify the behaviour of JSObject by driving it through various
+    A Hypothesis stateful test for JSObject.
+
+    This Verifies the behaviour of JSObject by driving it through various
     state-mutating actions and verifying the actual state matches a reference
     model.
     """
@@ -61,8 +63,11 @@ class JSObjectComparisonMachine(RuleBasedStateMachine):
     @property
     def nonexistant_array_indexes(self) -> st.SearchStrategy[int]:
         """
-        Get a strategy that generates array index values that are in the
-        array's length but empty, or above the array's range."""
+        Get a strategy that generates array indexes without values.
+
+        The generated index values that are in the array's length but empty, or
+        above the array's range.
+        """
         return array_indexes.filter(lambda i: i not in self.reference_array.keys())
 
     @callable_staticmethod
@@ -74,8 +79,9 @@ class JSObjectComparisonMachine(RuleBasedStateMachine):
     @property
     def existant_array_indexes(self) -> st.SearchStrategy[int]:
         """
-        Get a strategy that returns array index values that have existing values
-        in the JSObject array.
+        Get a strategy that returns array indexes with values.
+
+        The generated index values have values present in the JSObject array.
         """
         if len(self.reference_array) == 0:
             return st.nothing()
@@ -90,8 +96,10 @@ class JSObjectComparisonMachine(RuleBasedStateMachine):
     @property
     def existant_property_names(self) -> st.SearchStrategy[str]:
         """
-        Get a strategy that returns property name values that have existing
-        values in the JSObject properties.
+        Get a strategy that returns property names with values.
+
+        The generated property names have values present in the JSObject
+        properties.
         """
         if len(self.reference_properties) == 0:
             return st.nothing()
@@ -106,8 +114,10 @@ class JSObjectComparisonMachine(RuleBasedStateMachine):
     @property
     def nonexistant_property_names(self) -> st.SearchStrategy[str]:
         """
-        Get a strategy that returns property name values that are not currently
-        set.
+        Get a strategy that returns property names without values.
+
+        The generated property names do not currently have values set in the
+        JSObject properties.
         """
         return property_names.filter(
             lambda n: n not in self.reference_properties.keys()

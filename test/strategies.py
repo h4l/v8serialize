@@ -62,8 +62,11 @@ def js_objects(
     min_size: int = 0,
     max_size: int | None = None,
 ) -> st.SearchStrategy[JSObject[T]]:
-    """Generates `JSObject` instances with keys drawn from `keys` argument
-    and values drawn from `values` argument.
+    """
+    Generate `JSObject` instances.
+
+    Generated objects have keys drawn from `keys` argument and values drawn from
+    `values` argument.
 
     Behaves like the default `hypothesis.strategies.lists`.
     """
@@ -539,12 +542,15 @@ def any_object(
 def values_and_objects(
     *, allow_nan: bool = True, only_hashable: bool = False
 ) -> st.SearchStrategy[object]:
-    """A smaller set of possible values and objects than `any_object`, non-recursive.
+    """
+    Generate a smaller set of possible values and objects than `any_object`.
+
+    This is a non-recursive strategy — generated objects should be mostly atomic
+    values or containers of atomic values, not deeply-nested hierarchies.
 
     For tests that need both values (with or without NaN) and objects (either
     hashable or not), but don't need a wide variety.
     """
-
     hashable_objects = [
         js_regexps(allow_linear=True),
         js_primitive_objects(allow_nan=allow_nan),

@@ -43,9 +43,7 @@ ReadableBinary: TypeAlias = Union[
 
 
 def is_readable_binary(buffer: Buffer) -> TypeGuard[ReadableBinary]:
-    """
-    True if a binary value can be read directly without wrapping in a `memoryview`.
-    """
+    """Return True if a binary value can be read without wrapping in a `memoryview`."""
     return isinstance(buffer, (bytes, bytearray, memoryview, array, Sequence))
 
 

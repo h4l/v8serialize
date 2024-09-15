@@ -23,7 +23,8 @@ U = TypeVar("U")
 
 @dataclass(**slots_if310())
 class JSSet(MutableSet[T], metaclass=ABCMeta):
-    """A Set that uses object identity for member equality
+    """
+    A Set that uses object identity for member equality.
 
     This replicates the behaviour of JavaScript's Set type, which considers
     members equal by the [same-value-zero] rules (very close to `Object.is()` /

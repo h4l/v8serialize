@@ -90,8 +90,11 @@ class EncodeV8CodecError(V8CodecError, ValueError):
 
 @dataclass(init=False)
 class UnmappedValueEncodeV8CodecError(EncodeV8CodecError, ValueError):
-    """Raised when attempting to serialize an object that the ObjectMapper does
-    not know how to represent as V8 serialization tags.
+    """
+    No ObjectMapper is able to represent a Python value in the V8 Serialization format.
+
+    Raised when attempting to serialize an object that the none of the
+    configured ObjectMappers know how to represent as V8 serialization tags.
     """
 
     value: object
@@ -112,6 +115,8 @@ class UnmappedValueEncodeV8CodecError(EncodeV8CodecError, ValueError):
 @dataclass(init=False)
 class FeatureNotEnabledEncodeV8CodecError(EncodeV8CodecError):
     """
+    The SerializationFeature required to write a value is not enabled.
+
     Raised when a WritableTagStream is commanded to write data that requires a
     `SerializationFeature` that is not enabled.
     """
@@ -129,8 +134,11 @@ def _encode_zigzag(number: int) -> int:
 
 @dataclass(**slots_if310())
 class TagConstraintRemover(AbstractContextManager[None, None]):
-    """Context manager that removes the current tag constraint on a
-    WritableTagStream.
+    """
+    Context manager that resets the tag constraint on a WritableTagStream.
+
+    Upon exiting, the stream's allowed_tags is reset back to None allowing any
+    tag to be written.
     """
 
     stream: WritableTagStream
@@ -181,12 +189,22 @@ class WritableTagStream:
         self.__tag_constraint_remover = TagConstraintRemover(self)
 
     def constrain_tags(self, allowed_tags: TagConstraint) -> TagConstraintRemover:
-        """Set `allowed_tags` to prevent tags being written which are not valid
-        in a given context.
+        """
+        Prevent writing tags to the stream which are not allowed in a given context.
 
-        Returns a context manager that removes the constraint it exits. Note
-        that constraints do not stack — an existing set of allowed_tags is
-        replaced.
+        This sets the `allowed_tags` property to prevent tags being written
+        which are not valid in a given context.
+
+        Returns
+        -------
+        :
+            A context manager that removes the constraint it exits.
+
+        Notes
+        -----
+        Constraints do not stack — an existing set of allowed_tags is replaced.
+        This must only be used where atomic values are valid, not composite
+        values consisting of unknown nested tags.
         """
         self.allowed_tags = allowed_tags
         return self.__tag_constraint_remover
@@ -1041,11 +1059,22 @@ class ObjectMapper(ObjectMapperObject):
 def serialize_object_references(
     value: object, /, ctx: EncodeContext, next: SerializeNextFn
 ) -> None:
-    """A SerializeObjectFn that writes references to previously-seen objects.
+    """
+    Serialize references to previously-seen objects instead of duplicating them.
 
     Objects that have already been written to the stream are written as
-    references to the original instance, which avoids duplication of data and
-    preserves object identity after de-serializing.
+    references to the original instance. This:
+
+    * Avoids duplication of data.
+    * Preserves object identity after de-serializing.
+    * Allows cyclic object hierarchies to be serialized and deserialized without
+      causing infinite loops.
+
+    Notes
+    -----
+    This is an Object Mapper (`SerializeObjectFn`) that can be used as one of
+    the `object_mappers` with `dumps()` or `Encoder()`.
+
     """
     value = ctx.deduplicate(value)
     if value in ctx.stream.objects:

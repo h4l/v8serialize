@@ -36,8 +36,10 @@ T = TypeVar("T")
 
 @ArrayProperties.register
 class SimpleArrayProperties(list["T | JSHoleType"], ArrayProperties[T]):
-    """Very simple but inefficient implementation of ArrayProperties to compare
-    against real implementations.
+    """
+    Very simple but inefficient implementation of `ArrayProperties`.
+
+    Used to compare behaviour against real implementations.
     """
 
     hole_value: ClassVar[JSHoleType] = JSHole

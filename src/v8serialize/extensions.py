@@ -79,8 +79,20 @@ node_js_array_buffer_view_host_object_handler = NodeJsArrayBufferViewHostObjectH
 def serialize_js_array_buffer_views_as_nodejs_host_object(
     value: object, /, ctx: EncodeContext, next: SerializeNextFn
 ) -> None:
-    """A SerializeObjectFn that writes JSDataView and JSTypedArray using node.js's
-    custom HostObject format.
+    """
+    Serialize JSDataView and JSTypedArray using node.js's custom HostObject format.
+
+    Notes
+    -----
+    This is an Object Mapper (`SerializeObjectFn`) that can be used to encode
+    JSDataView and JSTypedArray in the same custom HostObject format that
+    Node.JS writes using the Node.JS `v8.serialize()` function.
+
+    Because Node.JS is capable of reading the normal encoding of
+    `JSArrayBuffer`, `JSDataView` and `JSTypedArray`, this doesn't need to be
+    used to send data to Node.JS (unlike on the deserializing side, where
+    `NodeJsArrayBufferViewHostObjectHandler` must be used to read Node.JS's
+    custom encoding).
     """
     if isinstance(value, (JSDataView, JSTypedArray)) and NodeBufferFormat.supports(
         value.view_tag

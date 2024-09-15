@@ -285,10 +285,12 @@ def test_codec_rt_js_object_raw_properties(
     value: list[tuple[int | str | float, object]], create_rw_ctx: CreateContexts
 ) -> None:
     """
+    Test encoding/decoding object properties not accessible from JavaScript.
+
     (In general, not just here) the user-facing JavaScript Object API converts
-    non-int keys to strings, but serialized data can contain actual float
-    values. Here we verify that we can encode and decode float keys, as well as
-    the normal ints and strings.
+    non-int keys to strings, but V8-serialized data can contain negative and
+    fractional float values. Here we verify that we can encode and decode float
+    keys, as well as the normal ints and strings.
     """
     encode_ctx, decode_ctx = create_rw_ctx()
     encode_ctx.stream.write_js_object(value, ctx=encode_ctx, identity=value)

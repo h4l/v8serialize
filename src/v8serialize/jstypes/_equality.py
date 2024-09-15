@@ -11,8 +11,13 @@ JSSameValueZero = NewType("JSSameValueZero", object)
 
 
 def same_value_zero(value: object) -> JSSameValueZero:
-    """Get a surrogate value that follows JavaScript same-value-zero rules when
-    compared with == and used with hash().
+    """
+    Get a surrogate value that follows JavaScript same-value-zero equality rules.
+
+    Python values can be compared with `==` and used with `hash()` with equality
+    following the same-value-zero rules by comparing/hashing the result of
+    calling this function on the values, rather than using them directly. Like
+    a key function when sorting.
 
     `same_value_zero(x) == same_value_zero(y)` is `True` if `x` and `y` are
     equal under [JavaScript's same-value-zero rule][samevaluezero].

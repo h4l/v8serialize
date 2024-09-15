@@ -34,9 +34,20 @@ MIN_DENSE_ARRAY_USED_RATIO = 1 / 4
 
 @dataclass(init=False, **slots_if310())
 class JSObject(MutableMapping["str | int", "T"], ABC):
-    """A Python model of JavaScript plain objects, limited to the behaviour that
-    can be transferred with V8 serialization (which is essentially the behaviour
-    of [`structuredClone()`]).
+    """
+    A Python representation of JavaScript plain objects.
+
+    JSObject is limited to the behaviour that can be transferred with V8
+    serialization (which is essentially the behaviour of [`structuredClone()`]).
+    The behaviour is similar to JSON objects — object prototypes, methods,
+    get/set properties and symbol properties cannot be transferred. Unlike JSON,
+    objects can contain cycles and all the other JavaScript types supported by
+    the V8 Serialization format, such as JavaScript's `Date` and `RegExp`
+    (`JSRegExp` and `JSDate`).
+
+    JSObject implements JavaScript's integer index behaviour. Values can be
+    looked up via int or string keys, and strings that are the string
+    representation of an integer are treated as if they were integers.
 
     [`structuredClone()`]: \
 https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
