@@ -1,3 +1,5 @@
+"""Support for platform-specific data in HostObject extension tags."""
+
 from __future__ import annotations
 
 import functools

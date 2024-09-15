@@ -1,3 +1,5 @@
+"""Python representations of the JavaScript types in the V8 Serialization format."""
+
 from __future__ import annotations
 
 from v8serialize.constants import JSRegExpFlag as JSRegExpFlag

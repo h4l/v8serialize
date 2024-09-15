@@ -1,3 +1,5 @@
+"""Deserialize JS values in the V8 Serialization format into Python values."""
+
 from __future__ import annotations
 
 import codecs

@@ -1,3 +1,5 @@
+"""The main public API of v8serialize."""
+
 from __future__ import annotations
 
 from v8serialize._errors import DecodeV8CodecError as DecodeV8CodecError

@@ -1,3 +1,5 @@
+"""Serialize Python values into JS values in the V8 Serialization format."""
+
 from __future__ import annotations
 
 import re

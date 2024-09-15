@@ -1,3 +1,5 @@
+"""Constant values related to the V8 serialization format."""
+
 from __future__ import annotations
 
 import functools
