@@ -309,8 +309,6 @@ def test_JSArrayBufferView__eq__length_tracking_resizable() -> None:
 def test_JSArrayBufferView__eq__follows_data() -> None:
     # Views are equal if their buffers contain the same data, regardless of the
     # backing buffer size. This follows the behaviour of memoryview().
-    JSUint8Array.data_format.format
-
     view1 = JSUint8Array(
         JSArrayBuffer(array(JSUint8Array.data_format.format, [1, 2, 3, 4])),
         item_length=2,
