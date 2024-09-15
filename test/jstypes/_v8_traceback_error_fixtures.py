@@ -35,14 +35,14 @@ class ErrorScenario:
             self.failing_operation()
         except Exception as e:
             e / 0  # type: ignore[operator]
-            raise AssertionError("unreachable")
+            raise AssertionError("unreachable") from e
 
     def raise_context_group(self) -> Never:
         try:
             self.raise_group()
         except Exception as e:
             e / 0  # type: ignore[operator]
-            raise AssertionError("unreachable")
+            raise AssertionError("unreachable") from e
 
     def raise_group_with_context(self) -> Never:
         try:
@@ -83,7 +83,7 @@ class ErrorScenario:
             self.failing_operation()
         except Exception as e:
             e.missing_attribute  # type: ignore[attr-defined]
-            raise AssertionError("unreachable")
+            raise AssertionError("unreachable") from e
 
 
 def call_and_capture_tbe(fn: Callable[[], Never]) -> TracebackException:

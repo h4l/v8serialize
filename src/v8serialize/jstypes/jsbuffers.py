@@ -488,10 +488,10 @@ the itemsize when the view does not have an explicit byte_length"""
             with self.get_buffer_as_memoryview(readonly=True) as data:
                 # data may not be hashable, depending on backing buffer
                 return hash(data)
-        except NotImplementedError:
+        except NotImplementedError as e:
             raise TypeError(
                 f"cannot hash {type(self).__name__} with inaccessible buffer"
-            )
+            ) from e
 
     def __repr__(self) -> str:
         arg_pieces = [

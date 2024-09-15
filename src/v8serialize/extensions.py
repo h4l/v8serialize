@@ -43,7 +43,7 @@ class NodeJsArrayBufferViewHostObjectHandler:
                 f"view code is not a known value: {raw_view_code}",
                 position=stream.pos,
                 data=stream.data,
-            )
+            ) from None
         data_start_pos = stream.pos
         data_end_pos = data_start_pos + byte_length
         if data_end_pos > len(stream.data):

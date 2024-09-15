@@ -82,7 +82,7 @@ class SerializedObjectLog:
         except KeyError:
             raise ObjectNotSerializedV8CodecError(
                 "Object has not been recorded in the log", obj=obj
-            )
+            ) from None
 
     def get_object(self, serialized_id: SerializedId) -> object:
         try:
@@ -91,7 +91,7 @@ class SerializedObjectLog:
             raise SerializedIdOutOfRangeV8CodecError(
                 "Serialized ID has not been recorded in the log",
                 serialized_id=serialized_id,
-            )
+            ) from None
 
     def record_reference(self, obj: object) -> SerializedId:
         serialized_id = SerializedId(len(self._object_by_serialized_id))

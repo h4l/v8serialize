@@ -201,8 +201,8 @@ class EchoServer:
     def v8_version(self) -> Version:
         try:
             return self.meta.versions["v8"]
-        except KeyError:
-            raise LookupError("echoserver meta has no 'v8' version")
+        except KeyError as e:
+            raise LookupError("echoserver meta has no 'v8' version") from e
 
     @property
     def supported_features(self) -> SerializationFeature:

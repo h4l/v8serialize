@@ -196,7 +196,7 @@ class OccupiedRegion(Generic[T]):
         try:
             i, v = next(items)
         except StopIteration:
-            raise ValueError("items cannot be empty")
+            raise ValueError("items cannot be empty") from None
         self.start = i
         self.items = [v for group in [[(i, v)], items] for (_, v) in group]
         self.length = len(self.items)
