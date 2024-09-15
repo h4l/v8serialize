@@ -4,14 +4,7 @@ import codecs
 import operator
 import struct
 import sys
-from collections.abc import (
-    ByteString,
-    Iterable,
-    Mapping,
-    MutableMapping,
-    MutableSet,
-    Sequence,
-)
+from collections.abc import Iterable, Mapping, MutableMapping, MutableSet, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, tzinfo
 from functools import partial
@@ -33,6 +26,12 @@ from typing import (
 )
 
 from v8serialize._pycompat.dataclasses import slots_if310
+from v8serialize._pycompat.typing import (
+    Buffer,
+    ReadableBinary,
+    get_buffer,
+    is_readable_binary,
+)
 from v8serialize._values import (
     AnyJSError,
     ArrayBufferConstructor,
@@ -153,7 +152,7 @@ else:
 
 @dataclass(**slots_if310())
 class ReadableTagStream:
-    data: ByteString
+    data: ReadableBinary
     pos: int = field(default=0)
     objects: SerializedObjectLog = field(default_factory=SerializedObjectLog)
     version: int = field(default=kLatestVersion)
@@ -247,7 +246,7 @@ class ReadableTagStream:
                 return
             self.pos += 1
 
-    def read_bytes(self, count: int) -> ByteString:
+    def read_bytes(self, count: int) -> ReadableBinary:
         self.ensure_capacity(count)
         self.pos += count
         return self.data[self.pos - count : self.pos]
@@ -307,7 +306,8 @@ class ReadableTagStream:
         length = self.read_varint()
         self.ensure_capacity(length)
         # Decoding latin1 can't fail/throw — just 1 byte/char.
-        # We use codecs.decode because not all ByteString types have a decode method.
+        # We use codecs.decode because not all ReadableBinary types have a
+        # decode method.
         value = codecs.decode(self.read_bytes(length), "latin1")
         return value
 
@@ -953,7 +953,7 @@ class DefaultDecodeContext(DecodeContext):
     def __init__(
         self,
         *,
-        data: ByteString,
+        data: ReadableBinary,
         stream: None = None,
         tag_mappers: Iterable[AnyTagMapper] | None = None,
     ) -> None: ...
@@ -961,7 +961,7 @@ class DefaultDecodeContext(DecodeContext):
     def __init__(
         self,
         *,
-        data: ByteString | None = None,
+        data: ReadableBinary | None = None,
         stream: ReadableTagStream | None = None,
         tag_mappers: Iterable[AnyTagMapper] | None = None,
     ) -> None:
@@ -1295,16 +1295,19 @@ class Decoder:
         # TODO: could mmap when fp is a file
         return self.decodes(fp.read())
 
-    def decodes(self, data: ByteString) -> object:
+    def decodes(self, data: ReadableBinary | Buffer) -> object:
         ctx = DefaultDecodeContext(
-            stream=ReadableTagStream(data), tag_mappers=self.tag_mappers
+            stream=ReadableTagStream(
+                data if is_readable_binary(data) else get_buffer(data)
+            ),
+            tag_mappers=self.tag_mappers,
         )
         ctx.stream.read_header()
         return ctx.decode_object()
 
 
 def loads(
-    data: ByteString, *, tag_mappers: Iterable[AnyTagMapper] | None = None
+    data: ReadableBinary | Buffer, *, tag_mappers: Iterable[AnyTagMapper] | None = None
 ) -> object:
     """Deserialize a JavaScript value encoded in V8 serialization format."""
     return Decoder(tag_mappers=tag_mappers).decodes(data)

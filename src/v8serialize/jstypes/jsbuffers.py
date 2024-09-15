@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import struct
 from abc import ABC, abstractmethod
-from collections.abc import ByteString, Sized
+from collections.abc import Sized
 from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass, field
 from enum import Enum
@@ -23,7 +23,7 @@ from typing import (
 from v8serialize._enums import frozen
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._pycompat.inspect import BufferFlags
-from v8serialize._pycompat.typing import get_buffer
+from v8serialize._pycompat.typing import ReadableBinary, get_buffer
 from v8serialize._values import (
     AnyArrayBuffer,
     AnyArrayBufferTransfer,
@@ -38,9 +38,9 @@ from v8serialize.errors import V8CodecError
 if TYPE_CHECKING:
     from typing_extensions import Buffer, Self, TypeAlias, TypeVar
 
-    AnyBuffer: TypeAlias = "ByteString | Buffer"
+    AnyBuffer: TypeAlias = "ReadableBinary | Buffer"
     AnyBufferT = TypeVar("AnyBufferT", bound=AnyBuffer, default=AnyBuffer)
-    BufferT = TypeVar("BufferT", bound=ByteString, default=ByteString)
+    BufferT = TypeVar("BufferT", bound=ReadableBinary, default=ReadableBinary)
 else:
     from typing import TypeVar
 

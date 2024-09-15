@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import ByteString
 from dataclasses import dataclass, fields
 from typing import TYPE_CHECKING, cast
 
 from v8serialize._pycompat.dataclasses import slots_if310
+from v8serialize._pycompat.typing import ReadableBinary
 
 if TYPE_CHECKING:
     from v8serialize.constants import SerializationTag
@@ -37,10 +37,10 @@ class V8CodecError(BaseException):  # FIXME: should inherit Exception
 @dataclass(init=False)
 class DecodeV8CodecError(V8CodecError, ValueError):
     position: int
-    data: ByteString
+    data: ReadableBinary
 
     def __init__(
-        self, message: str, *args: object, position: int, data: ByteString
+        self, message: str, *args: object, position: int, data: ReadableBinary
     ) -> None:
         super().__init__(message, *args)
         self.position = position
@@ -62,7 +62,7 @@ class UnmappedTagDecodeV8CodecError(DecodeV8CodecError):
         *args: object,
         tag: SerializationTag,
         position: int,
-        data: ByteString,
+        data: ReadableBinary,
     ) -> None:
         super().__init__(message, tag, *args, position=position, data=data)
 

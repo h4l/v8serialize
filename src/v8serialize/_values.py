@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import ByteString
 from typing import (
     TYPE_CHECKING,
     Literal,
@@ -11,12 +10,11 @@ from typing import (
     runtime_checkable,
 )
 
+from v8serialize._pycompat.typing import ReadableBinary
 from v8serialize.constants import ArrayBufferViewTag, JSErrorName
 
 if TYPE_CHECKING:
-    from typing_extensions import Buffer, TypeAlias
-
-    AnyBuffer: TypeAlias = "ByteString | Buffer"
+    from typing_extensions import TypeAlias
 
 T_co = TypeVar("T_co", covariant=True)
 
@@ -29,7 +27,7 @@ class AnyArrayBuffer(Protocol):
     if TYPE_CHECKING:
 
         @property
-        def data(self) -> AnyBuffer: ...
+        def data(self) -> ReadableBinary: ...
         @property
         def max_byte_length(self) -> int: ...
         @property
