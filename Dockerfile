@@ -31,14 +31,14 @@ FROM poetry AS lint-setup
 RUN touch .now
 
 
-FROM lint-setup AS lint-flake8
+FROM lint-setup AS lint-check
 RUN --mount=source=.,target=/workspace,rw \
-    flake8
+    ruff check src test
 
 
-FROM lint-setup AS lint-black
+FROM lint-setup AS lint-format
 RUN --mount=source=.,target=/workspace,rw \
-    poetry run black --check --diff .
+    poetry run ruff format --check --diff .
 
 
 FROM lint-setup AS lint-isort

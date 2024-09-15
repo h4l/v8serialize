@@ -44,7 +44,7 @@ lint: check-code-issues check-code-import-order check-code-format check-misc-fil
 .PHONY: lint
 
 check-code-issues:
-> flake8 src test
+> ruff check src test
 .PHONY: check-code-issues
 
 check-code-import-order:
@@ -52,7 +52,7 @@ check-code-import-order:
 .PHONY: check-code-import-order
 
 check-code-format:
-> black --check src test
+> ruff format --check src test
 .PHONY: check-code-format
 
 check-misc-file-formatting:
