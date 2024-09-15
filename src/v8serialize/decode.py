@@ -1061,8 +1061,10 @@ class TagMapper(TagMapperObject):
         _js_constants.setdefault(SerializationTag.kFalse, False)
         self.js_constants = _js_constants
 
-        self.tag_readers = TagReaderRegistry(tag_readers)
+        self.tag_readers = TagReaderRegistry()
         self.register_tag_readers(self.tag_readers)
+        if tag_readers:
+            self.tag_readers.register_all(tag_readers)
 
     def register_tag_readers(self, tag_readers: TagReaderRegistry) -> None:
         # TODO: revisit how we register these, should we use a decorator, like
