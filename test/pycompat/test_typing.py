@@ -29,10 +29,23 @@ def test_is_readable_binary(buffer: Buffer) -> None:
 
 
 @pytest.mark.parametrize(
-    "buffer", [b"a", bytearray(b"a"), memoryview(b"a"), array("B", b"a")]
+    "buffer",
+    [
+        b"a",
+        bytearray(b"a"),
+        memoryview(b"a"),
+        memoryview(b"a").cast("b", (1, 1)),
+        array("B", b"a"),
+        # get_buffer returns flat uint8 memoryview
+        array("I", [ord(b"a")] * 4),
+    ],
 )
 def test_get_buffer(buffer: Buffer) -> None:
-    assert get_buffer(buffer)[0] == b"a"[0]
+    mv = get_buffer(buffer)
+    assert mv.format == "B"
+    assert mv.ndim == 1
+    assert mv.itemsize == 1
+    assert mv[0] == b"a"[0]
 
 
 def read_something(data: ReadableBinary) -> int:

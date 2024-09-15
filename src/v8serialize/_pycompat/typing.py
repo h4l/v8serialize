@@ -53,7 +53,18 @@ def is_readable_binary(buffer: Buffer) -> TypeGuard[ReadableBinary]:
 def get_buffer(
     buffer: Buffer, flags: int | BufferFlags = BufferFlags.SIMPLE
 ) -> memoryview:
+    """Get a bytes-format memoryview of a value supporting the Buffer protocol.
+
+    Returns
+    -------
+    :
+        A memoryview with itemsize 1, 1 dimension and `B` (uint8) format.
+    """
     # Python buffer protocol API only available from Python 3.12
     if hasattr(buffer, "__buffer__"):
-        return buffer.__buffer__(flags)
-    return memoryview(buffer)
+        buf = buffer.__buffer__(flags)
+    else:
+        buf = memoryview(buffer)
+    if not (buf.format == "B" and buf.ndim == 1 and buf.itemsize == 1):
+        buf = buf.cast("B")
+    return buf
