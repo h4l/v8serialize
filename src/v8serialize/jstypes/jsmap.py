@@ -73,7 +73,7 @@ Equality_comparisons_and_sameness#same-value-zero_equality
     >>> jsm_dup, jsm_no_dup = JSMap([(x, 0), (y, 0)]), JSMap([(x, 0)])
     >>> m = dict([(y, 0), (z, 0)])
     >>> jsm_dup, jsm_no_dup, m
-    (JSMap({(0,): 0, (0,): 0}), JSMap({(0,): 0}), {(0,): 0})
+    (JSMap([((0,), 0), ((0,), 0)]), JSMap([((0,), 0)]), {(0,): 0})
 
     >>> jsm_no_dup == m
     True

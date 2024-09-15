@@ -122,7 +122,7 @@ def test_init_types() -> None:
 
 
 def test_repr() -> None:
-    assert repr(JSMap(c=5, a=1, b=2)) == "JSMap({'c': 5, 'a': 1, 'b': 2})"
+    assert repr(JSMap(c=5, a=1, b=2)) == "JSMap([('c', 5), ('a', 1), ('b', 2)])"
 
 
 def test__str() -> None:

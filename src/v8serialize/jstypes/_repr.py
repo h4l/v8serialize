@@ -262,18 +262,18 @@ class JSRepr(RecursiveReprMixin, Repr):
         if n == 0:
             return "JSMap()"
         if level <= 0:
-            return "JSMap({" + self.fillvalue + "})"
+            return "JSMap([" + self.fillvalue + "])"
         newlevel = level - 1
         repr1 = self.repr1
         pieces = []
         for key in islice(obj, self.maxdict):
             keyrepr = repr1(key, newlevel)
             valrepr = repr1(obj[key], newlevel)
-            pieces.append("%s: %s" % (keyrepr, valrepr))
+            pieces.append("(%s, %s)" % (keyrepr, valrepr))
         if n > self.maxdict:
             pieces.append(self.fillvalue)
         s = self._join(pieces, level)
-        return "JSMap({%s})" % (s,)
+        return "JSMap([%s])" % (s,)
 
     def repr_JSSet(self, obj: JSSet, level: int) -> str:
         if not obj:
