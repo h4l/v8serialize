@@ -4,8 +4,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, Generator, Generic, NewType, overload
 
+from v8serialize._errors import V8CodecError
 from v8serialize._pycompat.dataclasses import slots_if310
-from v8serialize.errors import V8CodecError
 
 if TYPE_CHECKING:
     from typing_extensions import TypeVar

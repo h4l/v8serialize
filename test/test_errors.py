@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from v8serialize.constants import SerializationTag
-from v8serialize.errors import (
+from v8serialize._errors import (
     NormalizedKeyError,
     UnmappedTagDecodeV8CodecError,
     V8CodecError,
 )
+from v8serialize.constants import SerializationTag
 
 
 @dataclass(init=False)

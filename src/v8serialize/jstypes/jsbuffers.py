@@ -21,6 +21,7 @@ from typing import (
 )
 
 from v8serialize._enums import frozen
+from v8serialize._errors import V8CodecError
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._pycompat.inspect import BufferFlags
 from v8serialize._pycompat.typing import ReadableBinary, get_buffer
@@ -33,7 +34,6 @@ from v8serialize._values import (
     TransferId,
 )
 from v8serialize.constants import ArrayBufferViewTag
-from v8serialize.errors import V8CodecError
 
 if TYPE_CHECKING:
     from typing_extensions import Buffer, Self, TypeAlias, TypeVar

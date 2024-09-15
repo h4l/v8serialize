@@ -19,11 +19,11 @@ from typing import (
 
 from packaging.version import Version
 
+from v8serialize._errors import JSRegExpV8CodecError
 from v8serialize._pycompat.dataclasses import FrozenAfterInitDataclass, slots_if310
 from v8serialize._pycompat.enum import IntEnum, IterableFlag, IterableIntFlag, StrEnum
 from v8serialize._pycompat.re import RegexFlag
 from v8serialize._versions import parse_lenient_version
-from v8serialize.errors import JSRegExpV8CodecError
 
 if TYPE_CHECKING:
     from typing_extensions import Self, TypeAlias, TypeGuard

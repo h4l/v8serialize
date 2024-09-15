@@ -10,8 +10,8 @@ from hypothesis.stateful import (
     rule,
 )
 
+from v8serialize._errors import NormalizedKeyError
 from v8serialize._pycompat.builtins import callable_staticmethod
-from v8serialize.errors import NormalizedKeyError
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
 from v8serialize.jstypes.jsarrayproperties import (
     MAX_ARRAY_LENGTH,

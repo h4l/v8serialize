@@ -25,6 +25,11 @@ from typing import (
     runtime_checkable,
 )
 
+from v8serialize._errors import (
+    DecodeV8CodecError,
+    UnmappedTagDecodeV8CodecError,
+    V8CodecError,
+)
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._pycompat.typing import (
     Buffer,
@@ -32,6 +37,7 @@ from v8serialize._pycompat.typing import (
     get_buffer,
     is_readable_binary,
 )
+from v8serialize._references import SerializedId, SerializedObjectLog
 from v8serialize._values import (
     AnyJSError,
     ArrayBufferConstructor,
@@ -65,11 +71,6 @@ from v8serialize.constants import (
     TagConstraint,
     kLatestVersion,
 )
-from v8serialize.errors import (
-    DecodeV8CodecError,
-    UnmappedTagDecodeV8CodecError,
-    V8CodecError,
-)
 from v8serialize.jstypes import JSHole, JSObject, JSUndefined
 from v8serialize.jstypes._v8 import V8SharedObjectReference, V8SharedValueId
 from v8serialize.jstypes.jsarray import JSArray
@@ -86,7 +87,6 @@ from v8serialize.jstypes.jsmap import JSMap
 from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject
 from v8serialize.jstypes.jsregexp import JSRegExp
 from v8serialize.jstypes.jsset import JSSet
-from v8serialize.references import SerializedId, SerializedObjectLog
 
 if TYPE_CHECKING:
     from typing_extensions import Never, TypeAlias

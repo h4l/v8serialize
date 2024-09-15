@@ -6,8 +6,8 @@ from test.strategies import js_regexp_flags
 import pytest
 from hypothesis import given
 
+from v8serialize._errors import JSRegExpV8CodecError
 from v8serialize.constants import JSRegExpFlag
-from v8serialize.errors import JSRegExpV8CodecError
 from v8serialize.jstypes.jsregexp import JSRegExp
 
 

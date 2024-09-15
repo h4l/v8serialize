@@ -5,11 +5,11 @@ from dataclasses import dataclass, field
 from traceback import TracebackException
 from typing import TYPE_CHECKING, Final
 
+from v8serialize._errors import V8CodecError
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._recursive_eq import recursive_eq
 from v8serialize._values import AnyJSError, JSErrorBuilder
 from v8serialize.constants import JSErrorName
-from v8serialize.errors import V8CodecError
 from v8serialize.jstypes import _repr
 from v8serialize.jstypes._v8traceback import (
     format_exception_for_v8 as format_exception_for_v8,  # re-export

@@ -4,7 +4,7 @@ from copy import copy
 
 import pytest
 
-from v8serialize.references import (
+from v8serialize._references import (
     ObjectNotSerializedV8CodecError,
     SerializedId,
     SerializedIdOutOfRangeV8CodecError,

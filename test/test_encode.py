@@ -7,6 +7,7 @@ import pytest
 from packaging.version import Version
 
 from v8serialize._pycompat.exceptions import has_notes
+from v8serialize._references import IllegalCyclicReferenceV8CodecError
 from v8serialize.constants import JSRegExpFlag, SerializationFeature
 from v8serialize.decode import loads
 from v8serialize.encode import (
@@ -27,7 +28,6 @@ from v8serialize.jstypes.jsmap import JSMap
 from v8serialize.jstypes.jsobject import JSObject
 from v8serialize.jstypes.jsset import JSSet
 from v8serialize.jstypes.jsundefined import JSUndefined
-from v8serialize.references import IllegalCyclicReferenceV8CodecError
 
 
 @pytest.mark.parametrize(

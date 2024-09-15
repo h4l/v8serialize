@@ -24,9 +24,12 @@ from typing import (
 
 from packaging.version import Version
 
+from v8serialize._decorators import singledispatchmethod
+from v8serialize._errors import V8CodecError
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._pycompat.exceptions import add_note
 from v8serialize._pycompat.types import NoneType
+from v8serialize._references import SerializedId, SerializedObjectLog
 from v8serialize._values import (
     AnyArrayBuffer,
     AnyArrayBufferTransfer,
@@ -54,8 +57,6 @@ from v8serialize.constants import (
     UnreleasedVersion,
     kLatestVersion,
 )
-from v8serialize.decorators import singledispatchmethod
-from v8serialize.errors import V8CodecError
 from v8serialize.jstypes import JSObject
 from v8serialize.jstypes._v8 import V8SharedObjectReference
 from v8serialize.jstypes.jsarray import JSArray
@@ -71,7 +72,6 @@ from v8serialize.jstypes.jserror import JSErrorData
 from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject
 from v8serialize.jstypes.jsregexp import JSRegExp
 from v8serialize.jstypes.jsundefined import JSUndefinedEnum, JSUndefinedType
-from v8serialize.references import SerializedId, SerializedObjectLog
 
 if TYPE_CHECKING:
     from functools import _lru_cache_wrapper

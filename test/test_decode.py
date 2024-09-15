@@ -6,6 +6,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+from v8serialize._errors import DecodeV8CodecError
 from v8serialize.constants import JSErrorName, SerializationTag, kLatestVersion
 from v8serialize.decode import DefaultDecodeContext, ReadableTagStream, TagMapper, loads
 from v8serialize.encode import (
@@ -14,7 +15,6 @@ from v8serialize.encode import (
     WritableTagStream,
     serialize_object_references,
 )
-from v8serialize.errors import DecodeV8CodecError
 from v8serialize.jstypes.jsarray import JSArray
 from v8serialize.jstypes.jsbuffers import JSArrayBuffer, JSUint8Array
 from v8serialize.jstypes.jserror import JSError, JSErrorData

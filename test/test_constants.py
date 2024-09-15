@@ -6,6 +6,7 @@ from functools import reduce
 import pytest
 from packaging.version import Version
 
+from v8serialize._errors import JSRegExpV8CodecError
 from v8serialize._pycompat.re import RegexFlag
 from v8serialize.constants import (
     JSErrorName,
@@ -15,7 +16,6 @@ from v8serialize.constants import (
     SerializationTag,
     SymbolicVersion,
 )
-from v8serialize.errors import JSRegExpV8CodecError
 
 
 def test_SerializationTag() -> None:

@@ -16,6 +16,7 @@ from hypothesis.stateful import (
 )
 
 from v8serialize._pycompat.builtins import callable_staticmethod
+from v8serialize._typing import ElementsView, Order
 from v8serialize.jstypes.jsarrayproperties import (
     MAX_ARRAY_LENGTH,
     MAX_ARRAY_LENGTH_REPR,
@@ -29,7 +30,6 @@ from v8serialize.jstypes.jsarrayproperties import (
     SparseArrayProperties,
     alternating_regions,
 )
-from v8serialize.typing import ElementsView, Order
 
 T = TypeVar("T")
 

@@ -27,7 +27,7 @@ from typing import (
 )
 
 from v8serialize._pycompat.dataclasses import slots_if310
-from v8serialize.typing import ElementsView, Order, SparseMutableSequence
+from v8serialize._typing import ElementsView, Order, SparseMutableSequence
 
 if TYPE_CHECKING:
     from typing_extensions import Self, TypeAlias, TypeGuard
