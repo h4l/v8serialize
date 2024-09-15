@@ -58,6 +58,7 @@ markers = ["integration: Integration tests"]
 [tool.ruff.lint]
 select = [
   "B",   # flake8-bugbear
+  "D",   # pydocstyle
   "E",
   "F",
   "FA",  # flake8-future-annotations
@@ -65,4 +66,13 @@ select = [
 ]
 ignore = [
   "PYI041", # prefer "float" over "int | float". They are not the same!
+  "D100",   # "Missing docstring in public module" — not everything is documented yet
+  "D101",   # "Missing docstring in public class" — not everything is documented yet
+  "D102",   # "Missing docstring in public method" — not everything is documented yet
+  "D103",   # "Missing docstring in public function" — not everything is documented yet
+  "D104",   # "Missing docstring in public package" — not everything is documented yet
+  "D105",   # "Missing docstring in magic method" — not everything is documented yet
 ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
