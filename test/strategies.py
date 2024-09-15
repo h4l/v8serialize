@@ -197,7 +197,7 @@ def js_array_buffers(
 @overload
 def js_array_buffers(
     *,
-    allow_shared: Literal[True] | bool,
+    allow_shared: bool,
     allow_resizable: bool = ...,
 ) -> st.SearchStrategy[JSArrayBuffer | JSArrayBufferTransfer | JSSharedArrayBuffer]: ...
 

@@ -15,7 +15,7 @@ T = TypeVar("T")
     sys.version_info[:2] != (3, 10), reason="Test applies only to py310"
 )
 def test_frozen_generic_dataclass() -> None:
-    @dataclass(frozen=True, slots=True)  # type: ignore[call-overload]  # for py39
+    @dataclass(frozen=True, **slots_if310())
     class BrokenOn310(Generic[T]):
         foo: T
 
@@ -29,7 +29,7 @@ def test_frozen_generic_dataclass() -> None:
     ):
         BrokenOn310[str](foo="")
 
-    @dataclass(slots=True)  # type: ignore[call-overload]  # for py39
+    @dataclass(**slots_if310())
     class OKOn310(FrozenAfterInitDataclass, Generic[T]):
         foo: T
 

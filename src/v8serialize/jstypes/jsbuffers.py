@@ -532,7 +532,7 @@ class JSTypedArray(
     AnyArrayBufferView,
     Generic[JSArrayBufferT, ViewTagT],
 ):
-    element_type: ClassVar[type[int] | type[float]]
+    element_type: ClassVar[type[int | float]]
 
     # FIXME: memoryview is generic in typeshed, but mypy errors if I give it the
     #  ElementT annotation (should match cls.element_type)
@@ -668,7 +668,7 @@ class BackportJSFloat16Array(JSFloat16Array):
 
             # skip write back if the view was released
             try:
-                view.obj  # will raise if view.release() was called
+                view.obj  # noqa: B018  # will raise if view.release() was called
             except ValueError:
                 return
 
@@ -832,7 +832,7 @@ class JSDataView(JSArrayBufferView[JSArrayBufferT, DataViewBuffer]):
 @dataclass(unsafe_hash=True, order=True, **slots_if310())
 class ViewFormat:
     view_tag: ArrayBufferViewTag
-    view_type: type[JSTypedArray] | type[JSDataView]
+    view_type: type[JSTypedArray | JSDataView]
 
 
 @frozen

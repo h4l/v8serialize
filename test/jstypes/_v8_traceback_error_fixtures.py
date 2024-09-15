@@ -82,7 +82,7 @@ class ErrorScenario:
         try:
             self.failing_operation()
         except Exception as e:
-            e.missing_attribute  # type: ignore[attr-defined]
+            e.missing_attribute.foo()  # type: ignore[attr-defined]
             raise AssertionError("unreachable") from e
 
 

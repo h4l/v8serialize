@@ -25,7 +25,7 @@
       |   File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 49, in raise_group_with_context
       |     self.failing_operation_with_context()
       |   File "/…/v8serialize/test/jstypes/_v8_traceback_error_fixtures.py", line 85, in failing_operation_with_context
-      |     e.missing_attribute  # type: ignore[attr-defined]
+      |     e.missing_attribute.foo()  # type: ignore[attr-defined]
       |     ^^^^^^^^^^^^^^^^^^^
       | AttributeError: 'ValueError' object has no attribute 'missing_attribute'
       +---------------- 2 ----------------
