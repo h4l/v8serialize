@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(init=False)
-class V8CodecError(BaseException):  # FIXME: should inherit Exception
+class V8CodecError(Exception):
     if not TYPE_CHECKING:
         message: str  # needed to have dataclass include message in the repr, etc
 
