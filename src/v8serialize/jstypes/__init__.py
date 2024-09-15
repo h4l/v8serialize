@@ -35,7 +35,6 @@ from v8serialize.jstypes.jsbuffers import JSUint8Array as JSUint8Array
 from v8serialize.jstypes.jsbuffers import JSUint8ClampedArray as JSUint8ClampedArray
 from v8serialize.jstypes.jsbuffers import JSUint16Array as JSUint16Array
 from v8serialize.jstypes.jsbuffers import JSUint32Array as JSUint32Array
-from v8serialize.jstypes.jsbuffers import get_buffer as get_buffer
 from v8serialize.jstypes.jserror import JSError as JSError
 from v8serialize.jstypes.jserror import JSErrorData as JSErrorData
 from v8serialize.jstypes.jsmap import JSMap as JSMap

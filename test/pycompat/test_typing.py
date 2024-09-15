@@ -4,7 +4,12 @@ from array import array
 
 import pytest
 
-from v8serialize._pycompat.typing import Buffer, ReadableBinary, is_readable_binary
+from v8serialize._pycompat.typing import (
+    Buffer,
+    ReadableBinary,
+    get_buffer,
+    is_readable_binary,
+)
 
 
 @pytest.mark.parametrize(
@@ -21,6 +26,13 @@ def test_is_readable_binary(buffer: Buffer) -> None:
     # regular types can be assigned to a ReadableBinary var
     rb: ReadableBinary = b"abc"
     assert rb
+
+
+@pytest.mark.parametrize(
+    "buffer", [b"a", bytearray(b"a"), memoryview(b"a"), array("B", b"a")]
+)
+def test_get_buffer(buffer: Buffer) -> None:
+    assert get_buffer(buffer)[0] == b"a"[0]
 
 
 def read_something(data: ReadableBinary) -> int:

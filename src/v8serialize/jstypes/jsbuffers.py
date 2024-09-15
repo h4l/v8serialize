@@ -23,6 +23,7 @@ from typing import (
 from v8serialize._enums import frozen
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._pycompat.inspect import BufferFlags
+from v8serialize._pycompat.typing import get_buffer
 from v8serialize._values import (
     AnyArrayBuffer,
     AnyArrayBufferTransfer,
@@ -45,15 +46,6 @@ else:
 
     AnyBufferT = TypeVar("AnyBufferT")
     BufferT = TypeVar("BufferT")
-
-
-def get_buffer(
-    buffer: Buffer, flags: int | BufferFlags = BufferFlags.SIMPLE
-) -> memoryview:
-    # Python buffer protocol API only available from Python 3.12
-    if hasattr(buffer, "__buffer__"):
-        return buffer.__buffer__(flags)
-    return memoryview(buffer)
 
 
 @dataclass(frozen=True, **slots_if310())

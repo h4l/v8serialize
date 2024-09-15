@@ -9,6 +9,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+from v8serialize._pycompat.typing import get_buffer
 from v8serialize.constants import (
     JS_PRIMITIVE_OBJECT_TAGS,
     JSErrorName,
@@ -36,7 +37,6 @@ from v8serialize.jstypes.jsbuffers import (
     JSSharedArrayBuffer,
     JSTypedArray,
     create_view,
-    get_buffer,
 )
 from v8serialize.jstypes.jserror import JSErrorData
 from v8serialize.jstypes.jsmap import JSMap

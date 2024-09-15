@@ -3,6 +3,8 @@ from __future__ import annotations
 from array import array
 from typing import TYPE_CHECKING, Sequence, Union, overload
 
+from v8serialize._pycompat.inspect import BufferFlags
+
 if TYPE_CHECKING:
     from typing_extensions import Buffer as Buffer
     from typing_extensions import TypeAlias, TypeGuard
@@ -46,3 +48,12 @@ def is_readable_binary(buffer: Buffer) -> TypeGuard[ReadableBinary]:
     True if a binary value can be read directly without wrapping in a `memoryview`.
     """
     return isinstance(buffer, (bytes, bytearray, memoryview, array, Sequence))
+
+
+def get_buffer(
+    buffer: Buffer, flags: int | BufferFlags = BufferFlags.SIMPLE
+) -> memoryview:
+    # Python buffer protocol API only available from Python 3.12
+    if hasattr(buffer, "__buffer__"):
+        return buffer.__buffer__(flags)
+    return memoryview(buffer)
