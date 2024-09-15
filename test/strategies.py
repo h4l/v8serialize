@@ -89,7 +89,6 @@ def dense_js_arrays(
     max_size: int | None = None,
     properties: st.SearchStrategy[JSObject[T]] | None = None,
 ) -> st.SearchStrategy[JSArray[T]]:
-
     if (min_size < 0) if max_size is None else not (0 <= min_size <= max_size):
         raise ValueError(
             f"0 <= min_size <= max_size does not hold: {min_size=}, {max_size=}"
@@ -121,7 +120,6 @@ def sparse_js_arrays(
     max_size: int = MAX_ARRAY_LENGTH,
     properties: st.SearchStrategy[JSObject[T]] | None = None,
 ) -> st.SearchStrategy[JSArray[T]]:
-
     if (
         max_size is not None
         and max_element_count is not None
@@ -132,7 +130,7 @@ def sparse_js_arrays(
         raise ValueError(f"max_size must be >=0 and <= {MAX_ARRAY_LENGTH}")
 
     def create_array(
-        content: tuple[st.DataObject, list[T], JSObject[T] | None]
+        content: tuple[st.DataObject, list[T], JSObject[T] | None],
     ) -> JSArray[T]:
         data, values, properties = content
         length = data.draw(st.integers(min_value=len(values), max_value=max_size))
@@ -236,7 +234,6 @@ def js_array_buffer_views(
         view_format: ViewFormat,
         backing_buffer: JSArrayBuffer | JSSharedArrayBuffer | JSArrayBufferTransfer,
     ) -> JSTypedArray | JSDataView:
-
         if isinstance(backing_buffer, JSArrayBuffer):
             buffer_byte_length = len(backing_buffer.data)
         else:
@@ -309,7 +306,6 @@ def js_error_data(
 def js_regexp_flags(
     allow_linear: bool = False, allow_unicode_sets: bool = True
 ) -> st.SearchStrategy[JSRegExpFlag]:
-
     def normalise_unicode_flags(flags: int | JSRegExpFlag) -> JSRegExpFlag:
         if not allow_linear and flags & JSRegExpFlag.Linear:
             flags &= ~JSRegExpFlag.Linear  # unset Linear

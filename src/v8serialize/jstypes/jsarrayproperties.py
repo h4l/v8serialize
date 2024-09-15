@@ -215,7 +215,7 @@ MAX_DENSE_ARRAY_HOLE_RATIO = 1 / 4
 def iter_items(
     items: (
         Iterable[tuple[_KT, T]] | SupportsKeysAndGetItem[_KT, T] | SupportsItems[_KT, T]
-    )
+    ),
 ) -> Iterable[tuple[_KT, T]]:
     if callable(getattr(items, "items", None)):
         supports_items = cast("SupportsItems[_KT, T]", items)

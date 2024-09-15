@@ -28,7 +28,6 @@ else:
 
 
 if sys.version_info < (3, 11):
-
     # Even though IntFlag is just (int, Flag), MyPy errors if we subclass
     # (IterableFlag, IntFlag), so we have to redundantly define this for both
     # types.

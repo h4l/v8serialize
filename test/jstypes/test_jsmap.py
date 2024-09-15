@@ -23,7 +23,7 @@ entries = st.lists(
     mapping=st.dictionaries(keys=hashable_values_and_objects, values=values_and_objects)
 )
 def test_equal_to_other_mappings_containing_same_object_instances(
-    mapping: dict[object, object]
+    mapping: dict[object, object],
 ) -> None:
     assert JSMap(mapping.items()) == mapping
 

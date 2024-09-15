@@ -87,7 +87,6 @@ def test_RegExpFlag__canonical() -> None:
 
 
 def test_RegExpFlag__from_python_flags() -> None:
-
     assert JSRegExpFlag.from_python_flags(RegexFlag.NOFLAG) == (JSRegExpFlag.NoFlag)
 
     assert JSRegExpFlag.from_python_flags(RegexFlag.MULTILINE | RegexFlag.DOTALL) == (

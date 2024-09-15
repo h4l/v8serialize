@@ -77,7 +77,6 @@ def test_recursive_eq__same_structure_different_identity() -> None:
 
 
 def test_recursive_eq__handles_failure_in_wrapped_eq() -> None:
-
     class FailingNode(Node):
         def __eq__(self, value: object) -> bool:
             raise RuntimeError("oops")

@@ -14,7 +14,6 @@ F = TypeVar("F", bound=Callable[..., Any])
 # typeshed's singledispatchmethod type annotations don't keep the function's
 # argument types. We re-define its types to fix that.
 if TYPE_CHECKING:
-
     P = ParamSpec("P")
     S = TypeVar("S")  # self / class
     D = TypeVar("D")  # default dispatch type

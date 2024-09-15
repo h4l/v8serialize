@@ -93,9 +93,7 @@ Equality_comparisons_and_sameness#same-value-zero_equality
     def __init__(self, /) -> None: ...
 
     @overload
-    def __init__(
-        self: JSMap[str, VT], /, **kwargs: VT
-    ) -> None: ...  # pyright: ignore[reportInvalidTypeVarUse]  #11780
+    def __init__(self: JSMap[str, VT], /, **kwargs: VT) -> None: ...  # pyright: ignore[reportInvalidTypeVarUse]  #11780
 
     @overload
     def __init__(self, map: SupportsKeysAndGetItem[KT, VT], /) -> None: ...
@@ -238,6 +236,6 @@ Equality_comparisons_and_sameness#same-value-zero_equality
 
 
 def _supports_keys_and_get_item(
-    x: SupportsKeysAndGetItem[KT, VT] | Iterable[tuple[KT, VT]]
+    x: SupportsKeysAndGetItem[KT, VT] | Iterable[tuple[KT, VT]],
 ) -> TypeGuard[SupportsKeysAndGetItem[KT, VT]]:
     return hasattr(x, "keys")

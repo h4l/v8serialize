@@ -21,7 +21,6 @@ if TYPE_CHECKING:
         def __getitem__(self, index: int | slice, /) -> int | BufferSequence: ...
 
 else:
-
     try:
         from collections.abc import Buffer
     except ImportError:

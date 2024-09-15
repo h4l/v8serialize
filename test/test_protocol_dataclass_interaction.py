@@ -35,7 +35,6 @@ class NonThing:
 
 
 def test_runtime_checkable_dual_typing_runtime_protocol() -> None:
-
     assert isinstance(Thing(1), Proto)
     assert isinstance(ImplicitThing(1), Proto)
     assert not isinstance(NonThing(1), Proto)
@@ -69,7 +68,6 @@ class NonThing2:
 
 
 def test_runtime_checkable_removed_descriptor_runtime_protocol() -> None:
-
     # type check
     obj: Proto2 = Thing2(1)
     foo = ImplicitThing2(1)

@@ -44,7 +44,6 @@ def test_jsarray_is_not_sequence() -> None:
 
 
 def test_abc_registration() -> None:
-
     class Example:
         pass
 

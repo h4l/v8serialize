@@ -88,7 +88,6 @@ def test_write_methods_accept_float_keys_for_compatibility_with_v8_serialized_da
 
 
 def test_abc_registration() -> None:
-
     class Example:
         pass
 
