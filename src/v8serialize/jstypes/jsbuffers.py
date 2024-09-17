@@ -436,8 +436,8 @@ the itemsize when the view does not have an explicit byte_length"""
             mv = get_buffer(self.backing_buffer)
         except NotImplementedError:
             mv = memoryview(b"")
-        if mv.itemsize != 1 or mv.ndim != 1:
-            mv = mv.cast("c")  # 1-dimensional bytes
+        # get_buffer() guarantees this
+        assert mv.itemsize == 1 and mv.ndim == 1 and mv.format == "B"
         if self.readonly or readonly:
             mv = mv.toreadonly()
 
