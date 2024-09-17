@@ -762,7 +762,7 @@ class DataViewBuffer(AbstractContextManager["DataViewBuffer"]):
         return self.read("<i" if little_endian else ">i", byte_offset)[0]  # type: ignore[no-any-return]
 
     def get_uint16(self, byte_offset: int, little_endian: bool = False) -> int:
-        return self.read("<h" if little_endian else ">h", byte_offset)[0]  # type: ignore[no-any-return]
+        return self.read("<H" if little_endian else ">H", byte_offset)[0]  # type: ignore[no-any-return]
 
     def get_uint32(self, byte_offset: int, little_endian: bool = False) -> int:
         return self.read("<I" if little_endian else ">I", byte_offset)[0]  # type: ignore[no-any-return]
