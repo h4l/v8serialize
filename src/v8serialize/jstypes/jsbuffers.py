@@ -107,7 +107,7 @@ class JSArrayBuffer(
 
         resizable = resizable is True or max_byte_length is not None
         copy_data = True if copy_data is None else copy_data
-        readonly = False if copy_data is None else readonly
+        readonly = False if readonly is None else readonly
 
         if resizable is True and readonly is True:
             raise ValueError("JSArrayBuffer cannot be both resizable and readonly")
