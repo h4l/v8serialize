@@ -19,6 +19,7 @@ from v8serialize.jstypes.jsbuffers import (
     BaseJSArrayBuffer,
     BoundsJSArrayBufferError,
     ByteLengthJSArrayBufferError,
+    DataFormat,
     DataType,
     ItemSizeJSArrayBufferError,
     JSArrayBuffer,
@@ -36,6 +37,40 @@ from v8serialize.jstypes.jsbuffers import (
 
 if TYPE_CHECKING:
     from typing_extensions import Buffer
+
+
+def test_DataType() -> None:
+    assert DataType.UnsignedInt.struct_formats == "BHILQ"
+    assert DataType.UnsignedInt.python_type is int
+    assert DataType.SignedInt.struct_formats == "bhilq"
+    assert DataType.SignedInt.python_type is int
+    assert DataType.Float.struct_formats == "efd"
+    assert DataType.Float.python_type is float
+    assert DataType.Bytes.struct_formats == "c"
+    assert DataType.Bytes.python_type is bytes
+
+
+def test_DataFormat() -> None:
+    uint64 = DataFormat.resolve(data_type=DataType.UnsignedInt, byte_length=8).format
+    assert struct.calcsize(uint64) == 8
+    assert struct.unpack(uint64, b"\xff" * 8)[0] == 2**64 - 1
+
+    int32 = DataFormat.resolve(data_type=DataType.SignedInt, byte_length=4).format
+    assert struct.calcsize(int32) == 4
+    assert struct.unpack(int32, b"\xff" * 4)[0] == -1
+
+    float16 = DataFormat.resolve(data_type=DataType.Float, byte_length=2).format
+    assert struct.calcsize(float16) == 2
+    assert math.isnan(struct.unpack(float16, b"\xff" * 2)[0])
+
+    bytesfmt = DataFormat.resolve(data_type=DataType.Bytes, byte_length=1).format
+    assert struct.calcsize(bytesfmt) == 1
+    assert struct.unpack(bytesfmt, b"\xff")[0] == b"\xff"
+
+    with pytest.raises(
+        ValueError, match=r"DataType UnsignedInt has no struct_format of byte_length 3"
+    ):
+        DataFormat.resolve(data_type=DataType.UnsignedInt, byte_length=3)
 
 
 def test_ArrayBufferViewStructFormat() -> None:

@@ -238,16 +238,21 @@ class ByteOrder(Enum):
 
 @frozen
 class DataType(Enum):
-    UnsignedInt = "integer", "bhilq"
-    SignedInt = "integer", "BHILQ"
-    Float = "float", "efd"
-    Bytes = "bytes", "c"
 
+    UnsignedInt = int, "BHILQ"
+    SignedInt = int, "bhilq"
+    Float = float, "efd"
+    Bytes = bytes, "c"
+
+    python_type: type[int | float | bytes]
     struct_formats: str
 
-    def __new__(cls, name: str, struct_formats: str) -> Self:
+    def __new__(
+        cls, python_type: type[int | float | bytes], struct_formats: str
+    ) -> Self:
         obj = object.__new__(cls)
-        obj._value_ = name
+        obj._value_ = (python_type, struct_formats)
+        obj.python_type = python_type
         obj.struct_formats = struct_formats
         return obj
 
