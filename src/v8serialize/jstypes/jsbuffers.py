@@ -330,7 +330,6 @@ class JSArrayBufferView(Generic[JSArrayBufferT, AnyBufferT]):
         cls,
         backing_buffer: JSArrayBufferT,
         *,
-        view_tag: ArrayBufferViewTag = ArrayBufferViewTag.kUint8Array,
         byte_offset: int = 0,
         byte_length: int | None = None,
         readonly: Literal[True] | None = None,
