@@ -704,23 +704,26 @@ class WritableTagStream:
 
 
 class HostObjectSerializerFn(Protocol[T_con]):
+    """
+    The type of a function that writes custom [HostObjects][HostObject].
+
+    [HostObject]: `v8serialize.constants.SerializationTag.kHostObject`
+    """
+
     def __call__(self, *, stream: WritableTagStream, value: T_con) -> None: ...
 
 
 @runtime_checkable
 class HostObjectSerializerObj(Protocol[T_con]):
     @property
-    def serialize_host_object(self) -> HostObjectSerializerFn[T_con]: ...
+    def serialize_host_object(self) -> HostObjectSerializerFn[T_con]:
+        """The same as `HostObjectSerializerFn`."""
 
 
 HostObjectSerializer: TypeAlias = (
     "HostObjectSerializerObj[T_con] | HostObjectSerializerFn[T_con]"
 )
-"""
-The type of a function or object that writes custom [HostObjects][HostObject].
-
- [HostObject]: `v8serialize.constants.SerializationTag.kHostObject`
- """
+"""Either a `HostObjectSerializerObj` or `HostObjectSerializerFn`."""
 
 
 class EncodeContext(Protocol):
@@ -748,10 +751,28 @@ class EncodeContext(Protocol):
 
 
 class EncodeNextFn(Protocol):
+    """
+    Delegate to the next encode step in the sequence to write a value.
+
+    Raises
+    ------
+    UnhandledValueEncodeV8SerializeError
+        If none of the following steps were able to handle a value.
+    """
+
     def __call__(self, value: object, /) -> None: ...
 
 
 class EncodeStepFn(Protocol):
+    """
+    The signature of a function that writes V8-serialized data to reflect objects.
+
+    Encode steps can either write the `ctx.stream` directly, or delegate to the
+    next encode step by calling `next()`. Steps can modify the representation
+    of objects as JavaScript by passing a different `value` to next than the one
+    they received.
+    """
+
     def __call__(
         self, value: object, /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None: ...
@@ -759,9 +780,11 @@ class EncodeStepFn(Protocol):
 
 class EncodeStepObject(Protocol):
     encode: EncodeStepFn
+    """The same as `EncodeStepFn`."""
 
 
 EncodeStep: TypeAlias = "EncodeStepObject | EncodeStepFn"
+"""Either an `EncodeStepObject` or `EncodeStepFn`."""
 
 
 @dataclass(init=False, **slots_if310())

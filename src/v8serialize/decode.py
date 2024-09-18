@@ -828,21 +828,31 @@ class ReadableTagStream:
 
 
 class HostObjectDeserializerFn(Protocol[T_co]):
+    """The signature of a function that reads HostObject tags from a stream."""
+
     def __call__(self, *, stream: ReadableTagStream) -> T_co: ...
 
 
 @runtime_checkable
 class HostObjectDeserializerObj(Protocol[T_co]):
     @property
-    def deserialize_host_object(self) -> HostObjectDeserializerFn[T_co]: ...
+    def deserialize_host_object(self) -> HostObjectDeserializerFn[T_co]:
+        """The same as `HostObjectDeserializerFn`."""
 
 
 HostObjectDeserializer: TypeAlias = (
     "HostObjectDeserializerObj[T_co] | HostObjectDeserializerFn[T_co]"
 )
+"""Either `HostObjectDeserializerObj` or `HostObjectDeserializerFn`."""
 
 
 class TagReader(Protocol[TagT_con]):
+    """
+    The type of a function that reads tags on behalf of a `TagMapper`.
+
+    Typically this is an unbound method of `TagMapper`.
+    """
+
     def __call__(
         self,
         tag_mapper: TagMapper,
@@ -854,6 +864,12 @@ class TagReader(Protocol[TagT_con]):
 
 @dataclass(init=False, **slots_if310())
 class TagReaderRegistry:
+    """
+    A registry of `SerializationTag`s and the `TagReader` functions that can read them.
+
+    `TagMapper` uses this to dispatch decode calls to an appropriate function.
+    """
+
     index: Mapping[SerializationTag, TagReader[SerializationTag]]
     _index: dict[SerializationTag, TagReader[SerializationTag]]
 
@@ -869,6 +885,7 @@ class TagReaderRegistry:
     def register(
         self, tag: TagT | TagConstraint[TagT], tag_reader: TagReader[TagT]
     ) -> None:
+        """Associate a function with a tag, so that `match()` will return it."""
         if isinstance(tag, TagConstraint):
             for t in sorted(tag.allowed_tags):
                 self._index[cast(SerializationTag, t)] = cast(
@@ -880,13 +897,21 @@ class TagReaderRegistry:
             )
 
     def register_all(self, registry: TagReaderRegistry) -> None:
+        """
+        Copy the registrations of another registry into this one.
+
+        Existing registrations that also occur in `registry` are overwritten.
+        """
         self._index.update(registry.index)
 
     def match(self, tag: TagT) -> TagReader[TagT] | None:
+        """Get the `TagReader` function registered for a tag, or `None`."""
         return self._index.get(tag)
 
 
 class ReadableTagStreamReadFunction(Protocol):
+    """The type of an unbound, argument-less `ReadableTagStream` method."""
+
     def __call__(self, cls: ReadableTagStream, /) -> object: ...
 
     @property
@@ -894,7 +919,7 @@ class ReadableTagStreamReadFunction(Protocol):
 
 
 def read_stream(rts_fn: ReadableTagStreamReadFunction) -> TagReader:
-    """Create a TagReader that calls a primitive read_xxx function on the stream."""
+    """Create a `TagReader` that calls a primitive `read_xxx` function on the stream."""
     read_fn = operator.methodcaller(rts_fn.__name__)
 
     def read_stream__tag_reader(
@@ -916,22 +941,64 @@ class DecodeContext(Protocol):
     if TYPE_CHECKING:
 
         @property
-        def stream(self) -> ReadableTagStream: ...
+        def stream(self) -> ReadableTagStream:
+            """The `ReadableTagStream` this context reads from."""
 
     else:
         # test/test_protocol_dataclass_interaction.py
-        stream = ...
+        stream: ReadableTagStream
+        """The `ReadableTagStream` this context reads from."""
 
-    def decode_object(self, *, tag: SerializationTag | None = ...) -> object: ...
+    def decode_object(self, *, tag: SerializationTag | None = ...) -> object:
+        """
+        Return a value by reading a tag's data from this context's stream.
+
+        If `tag` is None, the stream is positioned on a tag which must be read
+        and advanced over. If `tag` is a `SerializationTag`, it is the tag that
+        the stream is now positioned just after, and a tag must not be read from
+        the stream again before handling the provided `tag`.
+
+        Returns
+        -------
+        :
+            A value representing the `tag`.
+
+        Raises
+        ------
+        UnhandledTagDecodeV8SerializeError
+            If it's not possible to read the tag.
+        """
 
 
 class DecodeNextFn(Protocol):
+    """
+    Delegate to the next decode step in the sequence to read a tag from the stream.
+
+    Returns
+    -------
+    :
+        The value representing the tag the next decode step read.
+
+    Raises
+    ------
+    UnhandledTagDecodeV8SerializeError
+        If none of the following decode steps were able to read the tag.
+    """
+
     # TODO: should we allow passing tag? Is there ever a valid use case for
     #   changing the apparent tag? Seems lke the DecodeContext should control it
     def __call__(self, tag: SerializationTag, /) -> object: ...
 
 
 class DecodeStepFn(Protocol):
+    """
+    The signature of a function that returns objects to reflect V8-serialized data.
+
+    Decode steps can either read the `ctx.stream` directly, or delegate to the
+    next decode step by calling `next()`. Steps can modify the return the value
+    decoded by the next step before returning it.
+    """
+
     def __call__(
         self, tag: SerializationTag, /, ctx: DecodeContext, next: DecodeNextFn
     ) -> object: ...
@@ -939,13 +1006,21 @@ class DecodeStepFn(Protocol):
 
 class DecodeStepObject(Protocol):
     decode: DecodeStepFn
+    """The same as `DecodeStepFn`."""
 
 
 DecodeStep: TypeAlias = "DecodeStepObject | DecodeStepFn"
+"""Either a `DecodeStepObject` or `DecodeStepFn`."""
 
 
 @dataclass(init=False, **slots_if310())
 class DefaultDecodeContext(DecodeContext):
+    """
+    The default implementation of [`DecodeContext`].
+
+    [`DecodeContext`]: `v8serialize.decode.DecodeContext`
+    """
+
     decode_steps: Sequence[DecodeStep]
     stream: ReadableTagStream
 
