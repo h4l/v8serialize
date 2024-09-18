@@ -29,7 +29,7 @@ from typing import (
 
 from v8serialize._errors import (
     DecodeV8SerializeError,
-    UnmappedTagDecodeV8SerializeError,
+    UnhandledTagDecodeV8SerializeError,
     V8SerializeError,
 )
 from v8serialize._pycompat.dataclasses import slots_if310
@@ -925,28 +925,28 @@ class DecodeContext(Protocol):
     def decode_object(self, *, tag: SerializationTag | None = ...) -> object: ...
 
 
-class DeserializeNextFn(Protocol):
+class DecodeNextFn(Protocol):
     # TODO: should we allow passing tag? Is there ever a valid use case for
     #   changing the apparent tag? Seems lke the DecodeContext should control it
     def __call__(self, tag: SerializationTag, /) -> object: ...
 
 
-class DeserializeTagFn(Protocol):
+class DecodeStepFn(Protocol):
     def __call__(
-        self, tag: SerializationTag, /, ctx: DecodeContext, next: DeserializeNextFn
+        self, tag: SerializationTag, /, ctx: DecodeContext, next: DecodeNextFn
     ) -> object: ...
 
 
-class TagMapperObject(Protocol):
-    deserialize: DeserializeTagFn
+class DecodeStepObject(Protocol):
+    decode: DecodeStepFn
 
 
-AnyTagMapper: TypeAlias = "TagMapperObject | DeserializeTagFn"
+DecodeStep: TypeAlias = "DecodeStepObject | DecodeStepFn"
 
 
 @dataclass(init=False, **slots_if310())
 class DefaultDecodeContext(DecodeContext):
-    tag_mappers: Sequence[AnyTagMapper]
+    decode_steps: Sequence[DecodeStep]
     stream: ReadableTagStream
 
     @overload
@@ -955,7 +955,7 @@ class DefaultDecodeContext(DecodeContext):
         *,
         data: None = None,
         stream: ReadableTagStream,
-        tag_mappers: Iterable[AnyTagMapper] | None = None,
+        decode_steps: Iterable[DecodeStep] | None = None,
     ) -> None: ...
 
     @overload
@@ -964,7 +964,7 @@ class DefaultDecodeContext(DecodeContext):
         *,
         data: ReadableBinary,
         stream: None = None,
-        tag_mappers: Iterable[AnyTagMapper] | None = None,
+        decode_steps: Iterable[DecodeStep] | None = None,
     ) -> None: ...
 
     def __init__(
@@ -972,7 +972,7 @@ class DefaultDecodeContext(DecodeContext):
         *,
         data: ReadableBinary | None = None,
         stream: ReadableTagStream | None = None,
-        tag_mappers: Iterable[AnyTagMapper] | None = None,
+        decode_steps: Iterable[DecodeStep] | None = None,
     ) -> None:
         if stream is None:
             if data is None:
@@ -982,29 +982,29 @@ class DefaultDecodeContext(DecodeContext):
             raise ValueError("data and stream cannot both be provided")
 
         self.stream = stream
-        self.tag_mappers = list(
-            default_tag_mappers if tag_mappers is None else tag_mappers
+        self.decode_steps = list(
+            default_decode_steps if decode_steps is None else decode_steps
         )
 
-    def __decode_object_with_mapper(self, tag: SerializationTag, *, i: int) -> object:
-        if i < len(self.tag_mappers):
-            tm = self.tag_mappers[i]
-            next = partial(self.__decode_object_with_mapper, i=i + 1)
+    def __decode_tag_with_step(self, tag: SerializationTag, *, i: int) -> object:
+        if i < len(self.decode_steps):
+            tm = self.decode_steps[i]
+            next = partial(self.__decode_tag_with_step, i=i + 1)
             if callable(tm):
                 return tm(tag, ctx=self, next=next)
             else:
-                return tm.deserialize(tag, ctx=self, next=next)
-        self._report_unmapped_value(tag)
+                return tm.decode(tag, ctx=self, next=next)
+        self._report_unhandled_tag(tag)
         raise AssertionError("report_unmapped_value returned")
 
     def decode_object(self, *, tag: SerializationTag | None = None) -> object:
         if tag is None:
             tag = self.stream.read_tag()
-        return self.__decode_object_with_mapper(tag, i=0)
+        return self.__decode_tag_with_step(tag, i=0)
 
-    def _report_unmapped_value(self, tag: SerializationTag) -> Never:
-        raise UnmappedTagDecodeV8SerializeError(
-            f"No tag mapper was able to read the tag {tag.name}",
+    def _report_unhandled_tag(self, tag: SerializationTag) -> Never:
+        raise UnhandledTagDecodeV8SerializeError(
+            f"No decode step was able to read the tag {tag.name}",
             tag=tag,
             position=self.stream.pos,
             data=self.stream.data,
@@ -1018,17 +1018,16 @@ JSArrayType = Callable[[], JSArray[object]]
 
 
 @dataclass(init=False, **slots_if310())
-class TagMapper(TagMapperObject):
+class TagMapper(DecodeStepObject):
     """
     Controls how V8 serialization data is converted to Python values when deserializing.
 
     You can customise the way JavaScript values are represented in Python by
     creating a TagMapper instance with non-default options, and passing it to
-    the `tag_mappers` option of `v8serialize.loads()` or `v8serialize.Decoder()`
+    the `decode_steps` option of `v8serialize.loads()` or `v8serialize.Decoder()`
     """
 
     tag_readers: TagReaderRegistry
-    default_tag_mapper: TagMapper | None
     jsmap_type: JSMapType
     jsset_type: JSSetType
     js_object_type: JSObjectType
@@ -1041,7 +1040,6 @@ class TagMapper(TagMapperObject):
     def __init__(
         self,
         tag_readers: TagReaderRegistry | None = None,
-        default_tag_mapper: TagMapper | None = None,
         jsmap_type: JSMapType | None = None,
         jsset_type: JSSetType | None = None,
         js_object_type: JSObjectType | None = None,
@@ -1051,7 +1049,6 @@ class TagMapper(TagMapperObject):
         js_error_builder: JSErrorBuilder[object] | None = None,
         default_timezone: tzinfo | None = None,
     ) -> None:
-        self.default_tag_mapper = default_tag_mapper
         self.jsmap_type = jsmap_type or JSMap
         self.jsset_type = jsset_type or JSSet
         self.js_object_type = js_object_type or JSObject
@@ -1112,8 +1109,8 @@ class TagMapper(TagMapperObject):
 
         # fmt: on
 
-    def deserialize(
-        self, tag: SerializationTag, /, ctx: DecodeContext, next: DeserializeNextFn
+    def decode(
+        self, tag: SerializationTag, /, ctx: DecodeContext, next: DecodeNextFn
     ) -> object:
         read_tag = self.tag_readers.match(tag)
         if not read_tag:
@@ -1296,12 +1293,12 @@ class TagMapper(TagMapperObject):
         return ctx.stream.read_js_date(tz=self.default_timezone).object
 
 
-default_tag_mappers: Final[Sequence[AnyTagMapper]] = (TagMapper(),)
+default_decode_steps: Final[Sequence[DecodeStep]] = (TagMapper(),)
 """
-The default TagMapper chain used to map `SerializationTag`s to Python objects.
+The default sequence of decode steps used to map `SerializationTag`s to Python objects.
 
-This is an instance of [`TagMapper`](TagMapper.qmd) with no options changed from
-the defaults.
+This is an instance of [`TagMapper`](`v8serialize.TagMapper`) with no options
+changed from the defaults.
 
 JavaScript types are deserialized as the `v8serialize.jstypes.JS*` types, unless
 a built-in Python type can represent the value precisely, such as strings and
@@ -1316,27 +1313,27 @@ class Decoder:
 
     Parameters
     ----------
-    tag_mappers
-        A chain of tag mappers, which are responsible for creating Python
+    decode_steps
+        A sequence of decode steps, which are responsible for creating Python
         values to represent the JavaScript values found when decoding data.
 
     """
 
-    tag_mappers: Sequence[AnyTagMapper]
-    """The chain of Tag Mappers that define how to create Python values."""
+    decode_steps: Sequence[DecodeStep]
+    """The sequence of decode steps that define how to create Python values."""
 
     def __init__(
-        self, tag_mappers: Iterable[AnyTagMapper] | None = default_tag_mappers
+        self, decode_steps: Iterable[DecodeStep] | None = default_decode_steps
     ) -> None:
-        self.tag_mappers = (
-            default_tag_mappers if tag_mappers is None else tuple(tag_mappers)
+        self.decode_steps = (
+            default_decode_steps if decode_steps is None else tuple(decode_steps)
         )
 
     def decode(self, fp: SupportsRead[bytes]) -> object:
         """
         Deserialize V8 serialization format data from a file.
 
-        This Decoder's `tag_mappers` are used to create Python types from the
+        This Decoder's `decode_steps` are used to create Python types from the
         serialized data.
 
         Parameters
@@ -1356,7 +1353,7 @@ class Decoder:
         """
         Deserialize V8 serialization format data from a bytes-like object.
 
-        This Decoder's `tag_mappers` are used to create Python types from the
+        This Decoder's `decode_steps` are used to create Python types from the
         serialized data.
 
         Parameters
@@ -1373,7 +1370,7 @@ class Decoder:
             stream=ReadableTagStream(
                 data if is_readable_binary(data) else get_buffer(data)
             ),
-            tag_mappers=self.tag_mappers,
+            decode_steps=self.decode_steps,
         )
         ctx.stream.read_header()
         return ctx.decode_object()
@@ -1382,12 +1379,12 @@ class Decoder:
 def loads(
     data: ReadableBinary | Buffer,
     *,
-    tag_mappers: Iterable[AnyTagMapper] | None = default_tag_mappers,
+    decode_steps: Iterable[DecodeStep] | None = default_decode_steps,
 ) -> object:
     """Deserialize a JavaScript value encoded in V8 serialization format.
 
     The serialized JavaScript types are mapped to appropriate Python equivalents
-    using the `tag_mappers`.
+    using the `decode_steps`.
 
     Data serialized by V8 serialization format version 13 or newer can be
     decoded. ([13 was introduced in 2017, V8 version 5.8.294][fmt13], used by
@@ -1406,24 +1403,24 @@ def loads(
     data
         The bytes to deserialize as a bytes-like object such as `bytes`,
         `bytearray`, `memoryview`.
-    tag_mappers
-        A chain of tag mappers, which are responsible for creating Python values
-        to represent the JavaScript values found in the `data`.
+    decode_steps
+        A sequence of decode steps, which are responsible for creating Python
+        values to represent the JavaScript values found in the `data`.
 
     Returns
     -------
     :
-        The first value in the `data`, as deserialized by the `tag_mappers`.
-        Using the [`default_tag_mappers`](default_tag_mappers.qmd), this will be
-        a type from `v8serialize.jstypes`, such as `JSObject` to represent a
-        JavaScript Object.
+        The first value in the `data`, as deserialized by the `decode_steps`.
+        Using the [`default_decode_steps`](`v8serialize.default_decode_steps`),
+        this will be a type from `v8serialize.jstypes`, such as `JSObject` to
+        represent a JavaScript Object.
 
     Raises
     ------
     DecodeV8SerializeError
         When `data` is not well-formed V8 serialization format data.
-    UnmappedTagDecodeV8SerializeError
-        When the `tag_mappers` don't support a JavaScript type occurring in the
+    UnhandledTagDecodeV8SerializeError
+        When the `decode_steps` don't support a JavaScript type occurring in the
         `data`.
 
     Examples
@@ -1432,4 +1429,4 @@ def loads(
     >>> loads(dumps({'Hello': 'World'}))
     JSMap([('Hello', 'World')])
     """
-    return Decoder(tag_mappers=tag_mappers).decodes(data)
+    return Decoder(decode_steps=decode_steps).decodes(data)

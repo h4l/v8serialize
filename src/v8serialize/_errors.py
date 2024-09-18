@@ -50,7 +50,7 @@ class DecodeV8SerializeError(V8SerializeError, ValueError):
 
 
 @dataclass(init=False)
-class UnmappedTagDecodeV8SerializeError(DecodeV8SerializeError):
+class UnhandledTagDecodeV8SerializeError(DecodeV8SerializeError):
     """
     No TagMapper is able to handle a `SerializationTag`.
 

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from v8serialize._errors import (
     NormalizedKeyError,
-    UnmappedTagDecodeV8SerializeError,
+    UnhandledTagDecodeV8SerializeError,
     V8SerializeError,
 )
 from v8serialize.constants import SerializationTag
@@ -69,7 +69,7 @@ def test_NormalizedKeyError() -> None:
 
 
 def test_UnmappedTagDecodeV8CodecError() -> None:
-    err = UnmappedTagDecodeV8SerializeError(
+    err = UnhandledTagDecodeV8SerializeError(
         "Msg", tag=SerializationTag.kArrayBuffer, position=2, data=b"foo"
     )
 

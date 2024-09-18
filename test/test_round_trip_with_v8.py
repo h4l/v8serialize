@@ -20,7 +20,7 @@ from typing_extensions import Generator, Self
 from v8serialize._pycompat.enum import StrEnum
 from v8serialize._versions import parse_lenient_version
 from v8serialize.constants import SerializationFeature
-from v8serialize.decode import AnyTagMapper, TagMapper, loads
+from v8serialize.decode import DecodeStep, TagMapper, loads
 from v8serialize.encode import DefaultEncodeContext, ObjectMapper, WritableTagStream
 from v8serialize.extensions import node_js_array_buffer_view_host_object_handler
 
@@ -363,7 +363,7 @@ def enabled_features(
 
 # TODO: also test with serialize_object_references (default_encode_steps)
 encode_steps = [ObjectMapper()]
-tag_mappers: Sequence[AnyTagMapper] = [
+decode_steps: Sequence[DecodeStep] = [
     TagMapper(host_object_deserializer=node_js_array_buffer_view_host_object_handler)
 ]
 
@@ -396,7 +396,7 @@ def test_codec_rt_object(
 
     v8_result = echoclient.round_trip_serialized_value(our_serialized_value)
     assert isinstance(v8_result, ReSerializedValue)
-    round_tripped_value = loads(v8_result.reserialized_value, tag_mappers=tag_mappers)
+    round_tripped_value = loads(v8_result.reserialized_value, decode_steps=decode_steps)
 
     if start_value != round_tripped_value:
         print(f"start_value: {start_value!r}")

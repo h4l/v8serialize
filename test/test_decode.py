@@ -90,7 +90,7 @@ def test_VerifyObjectCount_not_supported() -> None:
 
     with pytest.raises(
         DecodeV8SerializeError,
-        match="No tag mapper was able to read the tag kVerifyObjectCount",
+        match="No decode step was able to read the tag kVerifyObjectCount",
     ):
         loads(wts.data)
 
@@ -152,7 +152,7 @@ def test_decode_array_buffer_as_error_cause(example: object) -> None:
 
     result = loads(
         encode_ctx.stream.data,
-        tag_mappers=[TagMapper(js_error_builder=JSErrorData.builder)],
+        decode_steps=[TagMapper(js_error_builder=JSErrorData.builder)],
     )
     assert result == example
 

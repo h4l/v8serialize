@@ -78,7 +78,7 @@ def create_rw_ctx() -> CreateContexts:
             stream=WritableTagStream(features=~SerializationFeature.MaxCompatibility),
         )
         decode_ctx = DefaultDecodeContext(
-            data=encode_ctx.stream.data, tag_mappers=[TagMapper()]
+            data=encode_ctx.stream.data, decode_steps=[TagMapper()]
         )
         return encode_ctx, decode_ctx
 
@@ -421,7 +421,7 @@ def test_codec_rt_object_identity__simple(
         encode_steps=[serialize_object_references, ObjectMapper()]
     )
     decode_ctx = DefaultDecodeContext(
-        data=encode_ctx.stream.data, tag_mappers=[TagMapper()]
+        data=encode_ctx.stream.data, decode_steps=[TagMapper()]
     )
 
     set1 = {1, 2}
@@ -542,7 +542,7 @@ def test_codec_rt_js_error(value: JSErrorData) -> None:
     decode_ctx = DefaultDecodeContext(
         data=encode_ctx.stream.data,
         # Change default error type to deserialize as JSErrorData
-        tag_mappers=[TagMapper(js_error_builder=JSErrorData.builder)],
+        decode_steps=[TagMapper(js_error_builder=JSErrorData.builder)],
     )
 
     encode_ctx.encode_object(value)
