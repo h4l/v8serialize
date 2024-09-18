@@ -92,7 +92,7 @@ quartodoc:
             - decode.read_stream
             - decode.DefaultDecodeContext
             - decode.TagMapper
-            - decode.default_tag_mappers
+            - decode.default_decode_steps
 
         - path: 'exceptions'
           kind: page
@@ -106,7 +106,7 @@ quartodoc:
             - EncodeV8SerializeError
             - UnhandledValueEncodeV8SerializeError
             - FeatureNotEnabledEncodeV8SerializeError
-            - UnmappedTagDecodeV8SerializeError
+            - UnhandledTagDecodeV8SerializeError
             - IllegalCyclicReferenceV8SerializeError
 
         - path: 'types_protocols'
@@ -119,11 +119,11 @@ quartodoc:
               :::{.callout-note}
               Our documentation generator that made this page doesn't yet
               display type annotations, so for the moment you'll need to look at
-              the [`v8serialize` source code`](), or use your editor's tooling to
+              the [`v8serialize` source code], or use your editor's tooling to
               display types.
               :::
 
-              [`v8serialize` source code`]: https://github.com/h4l/v8serialize/tree/main/src/v8serialize
+              [`v8serialize` source code]: https://github.com/h4l/v8serialize/tree/main/src/v8serialize
           contents:
             - constants.AnySerializationTag
             - constants.UnreleasedVersion
@@ -141,10 +141,10 @@ quartodoc:
             - decode.TagReader
             - decode.ReadableTagStreamReadFunction
             - decode.DecodeContext
-            - decode.DeserializeNextFn
-            - decode.DeserializeTagFn
-            - decode.TagMapperObject
-            - decode.AnyTagMapper
+            - decode.DecodeNextFn
+            - decode.DecodeStepFn
+            - decode.DecodeStepObject
+            - decode.DecodeStep
             - decode.JSMapType
             - decode.JSSetType
             - decode.JSObjectType
@@ -346,6 +346,3 @@ quartodoc:
         - SparseMutableSequence
         - SparseSequence
 
-    - title: Other things
-      contents:
-        - AnyTagMapper
