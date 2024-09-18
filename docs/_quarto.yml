@@ -51,9 +51,6 @@ quartodoc:
             name: Encoding & Decoding
             desc: |
               `loads()` and `dumps()` read and write V8-serialized data.
-
-              Create `Encoder` and `Decoder` instances to store a particular
-              configuration and re-use it.
           contents:
             - dumps
             - loads
@@ -65,15 +62,11 @@ quartodoc:
           summary:
             name: Customized Encoding
             desc: |
-              The `v8serialize.encode` module encodes Python objects as
-              JavaScript objects in the V8 serialization format. The encoding
-              can be customised at a high level, by changing how a Python type
-              is mapped to JavaScript, or at a lower level by manually writing
-              V8 serialization tagged data.
+              The `v8serialize.encode` module provides types to write V8 serialization format data.
           contents:
-            - encode.default_encode_steps
+            - default_encode_steps
             - encode.serialize_object_references
-            - encode.ObjectMapper
+            - encode.TagWriter
             - encode.DefaultEncodeContext
             - encode.WritableTagStream
             - encode.TagConstraintRemover
@@ -83,16 +76,16 @@ quartodoc:
           summary:
             name: Customized Decoding
             desc: |
-              XXXX Core encoding and decoding API.
+              The `v8serialize.encode` module provides types to read V8 serialization format data.
           contents:
+            - default_decode_steps
+            - decode.TagReader
+            - decode.DefaultDecodeContext
+            - decode.ReadableTagStream
             - decode.ArrayReadResult
             - decode.ReferencedObject
-            - decode.ReadableTagStream
             - decode.TagReaderRegistry
             - decode.read_stream
-            - decode.DefaultDecodeContext
-            - decode.TagMapper
-            - decode.default_decode_steps
 
         - path: 'exceptions'
           kind: page
@@ -115,15 +108,6 @@ quartodoc:
             name: Types & Protocols
             desc: |
               Type annotations & Protocols used throughout `v8serialize`.
-
-              :::{.callout-note}
-              Our documentation generator that made this page doesn't yet
-              display type annotations, so for the moment you'll need to look at
-              the [`v8serialize` source code], or use your editor's tooling to
-              display types.
-              :::
-
-              [`v8serialize` source code]: https://github.com/h4l/v8serialize/tree/main/src/v8serialize
           contents:
             - constants.AnySerializationTag
             - constants.UnreleasedVersion
@@ -149,7 +133,19 @@ quartodoc:
             - decode.JSSetType
             - decode.JSObjectType
             - decode.JSArrayType
-
+            - decode.AnyJSError
+            - decode.ArrayBufferConstructor
+            - decode.ArrayBufferTransferConstructor
+            - decode.ArrayBufferViewConstructor
+            - decode.JSErrorBuilder
+            - decode.SharedArrayBufferConstructor
+            - decode.SharedArrayBufferId
+            - decode.TransferId
+            - Buffer
+            - BufferSequence
+            - ReadableBinary
+            - SparseMutableSequence
+            - SparseSequence
 
     - title: JavaScript types
       options:
@@ -207,9 +203,7 @@ quartodoc:
           summary:
             name: Date
             desc: |
-              Python equivalent of [JavaScript's Date] is [](`datetime.datetime`).
-
-              [JavaScript's Date]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date
+              Python equivalent of [JavaScript's Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date) is [](`datetime.datetime`).
           contents: []
         - kind: page
           path: 'javascript_error'
@@ -217,10 +211,6 @@ quartodoc:
             name: Error
             desc: |
               Python equivalents of JavaScript Error types.
-
-              `v8serialize` provides `JSError` and `JSErrorData` to represent
-              the JavaScript Error type and the Error subclasses that can be
-              serialized.
           contents:
             - jstypes.JSErrorData
             - jstypes.JSError
@@ -246,24 +236,9 @@ quartodoc:
         - kind: page
           path: 'javascript_primitives'
           summary:
-            name: primitive types
+            name: Primitives
             desc: |
-              Python equivalents of string, number, null, etc.
-
-              `v8serialize` uses builtin Python types for JavaScript primitives
-              that have natural equivalents:
-
-              | JavaScript type                   | Python type                                                    |
-              |-----------------------------------|----------------------------------------------------------------|
-              | `true`/`false`                    | `True`/`False`                                                 |
-              | `string`                          | `str`                                                          |
-              | `number`                          | `int` and or `float`                                           |
-              | `bigint`                          | `int`                                                          |
-              | `null`                            | `None`                                                         |
-              | `undefined`                       | [`JSUndefined`](`v8serialize.jstypes.JSUndefined`)             |
-              | [Wrapped/boxed primitive Objects] | [`JSPrimitiveObject`](`v8serialize.jstypes.JSPrimitiveObject`) |
-
-              [Wrapped/boxed primitive Objects]: https://developer.mozilla.org/en-US/docs/Glossary/Primitive
+              Python equivalents of JavaScript primitives that don't have a natural Python analogue.
           contents:
             - jstypes.JSUndefined
             - jstypes.JSPrimitiveObject
@@ -278,7 +253,7 @@ quartodoc:
         - kind: page
           path: 'javascript_utils'
           summary:
-            name: utilities
+            name: Utilities
             desc: Functions associated with `v8codec.jstypes`.
           contents:
             - jstypes.js_repr_settings
@@ -286,6 +261,7 @@ quartodoc:
             - jstypes.JSReprSettingsNotRestored
             - jstypes.same_value_zero
             - jstypes.JSSameValueZero
+
 
     - title: Constants & Enums
       desc: V8 serialization format and JavaScript constants.
@@ -317,11 +293,6 @@ quartodoc:
             name: V8 Serialization Format Constants
             desc: |
               Enums and constant values for the V8 serialization format.
-
-              ::: {.callout-note}
-              These are low-level details of the serialization format, and only
-              needed when customising serialization/deserialization.
-              :::
           contents:
             - constants.kLatestVersion
             - name: constants.SerializationTag
@@ -339,10 +310,18 @@ quartodoc:
             - constants.JS_PRIMITIVE_OBJECT_TAGS
             - constants.JS_STRING_TAGS
 
-    - title: Type Annotations and Protocols
+    - title: HostObject Extensions
+      desc: Platform-specific HostObject support.
       contents:
-        - Buffer
-        - ReadableBinary
-        - SparseMutableSequence
-        - SparseSequence
-
+        - kind: page
+          path: 'extensions_nodejs'
+          summary:
+            name: Node.JS Buffers
+            desc: |
+              Node.JS's custom Buffer HostObjects.
+          contents:
+            - extensions.NodeJsArrayBufferViewHostObjectHandler
+            - extensions.serialize_js_array_buffer_views_as_nodejs_host_object
+            - extensions.ViewFormat
+            - extensions.NodeBufferFormat
+            - extensions.NodeJsArrayBufferViewHostObjectHandlerDecodeError
