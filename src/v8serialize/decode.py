@@ -1010,7 +1010,13 @@ class DecodeStepObject(Protocol):
 
 
 DecodeStep: TypeAlias = "DecodeStepObject | DecodeStepFn"
-"""Either a `DecodeStepObject` or `DecodeStepFn`."""
+"""
+Either a `DecodeStepObject` or `DecodeStepFn`.
+
+See Also
+--------
+[`default_decode_steps`](`v8serialize.default_decode_steps`)
+"""
 
 
 @dataclass(init=False, **slots_if310())

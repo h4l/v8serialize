@@ -784,7 +784,13 @@ class EncodeStepObject(Protocol):
 
 
 EncodeStep: TypeAlias = "EncodeStepObject | EncodeStepFn"
-"""Either an `EncodeStepObject` or `EncodeStepFn`."""
+"""
+Either an `EncodeStepObject` or `EncodeStepFn`.
+
+See Also
+--------
+[`default_encode_steps`](`v8serialize.default_encode_steps`)
+"""
 
 
 @dataclass(init=False, **slots_if310())
