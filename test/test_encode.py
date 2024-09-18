@@ -14,7 +14,7 @@ from v8serialize.encode import (
     DefaultEncodeContext,
     Encoder,
     FeatureNotEnabledEncodeV8SerializeError,
-    ObjectMapper,
+    TagWriter,
     UnhandledValueEncodeV8SerializeError,
     WritableTagStream,
     dumps,
@@ -85,7 +85,7 @@ def test_feature_float16__cannot_write_float16array_when_disabled() -> None:
         ctx.encode_object(f16)
 
     assert has_notes(exc_info1.value) and (
-        "ObjectMapper is not handling JSArrayBufferViews with the Float16Array "
+        "TagWriter is not handling JSArrayBufferViews with the Float16Array "
         "tag because <SerializationFeature.Float16Array: 8> is not enabled."
         in exc_info1.value.__notes__
     )
@@ -155,7 +155,7 @@ def test_feature_cyclic_error_cause__cyclic_errors_not_allowed_when_disabled() -
     err.cause = err
 
     ctx = DefaultEncodeContext(
-        encode_steps=[serialize_object_references, ObjectMapper()],
+        encode_steps=[serialize_object_references, TagWriter()],
         stream=WritableTagStream(features=~SerializationFeature.CircularErrorCause),
     )
 
@@ -177,7 +177,7 @@ def test_feature_cyclic_error_cause__cyclic_errors_are_allowed_when_enabled() ->
     err.cause = err
 
     ctx = DefaultEncodeContext(
-        encode_steps=[serialize_object_references, ObjectMapper()],
+        encode_steps=[serialize_object_references, TagWriter()],
         stream=WritableTagStream(features=SerializationFeature.CircularErrorCause),
     )
 

@@ -19,7 +19,7 @@ from v8serialize.constants import (
 from v8serialize.decode import DefaultDecodeContext, ReadableTagStream, TagMapper
 from v8serialize.encode import (
     DefaultEncodeContext,
-    ObjectMapper,
+    TagWriter,
     WritableTagStream,
     serialize_object_references,
 )
@@ -73,7 +73,7 @@ any_theoretical_atomic = any_atomic(allow_theoretical=True)
 def create_rw_ctx() -> CreateContexts:
     def create_rw_ctx() -> tuple[DefaultEncodeContext, DefaultDecodeContext]:
         encode_ctx = DefaultEncodeContext(
-            encode_steps=[ObjectMapper()],
+            encode_steps=[TagWriter()],
             # Enable all features
             stream=WritableTagStream(features=~SerializationFeature.MaxCompatibility),
         )
@@ -418,7 +418,7 @@ def test_codec_rt_object_identity__simple(
 ) -> None:
     encode_ctx = DefaultEncodeContext(
         # Change test-default mappers to include serialize_object_references
-        encode_steps=[serialize_object_references, ObjectMapper()]
+        encode_steps=[serialize_object_references, TagWriter()]
     )
     decode_ctx = DefaultDecodeContext(
         data=encode_ctx.stream.data, decode_steps=[TagMapper()]
@@ -538,7 +538,7 @@ def test_codec_rt_js_regexp(
     )
 )
 def test_codec_rt_js_error(value: JSErrorData) -> None:
-    encode_ctx = DefaultEncodeContext(encode_steps=[ObjectMapper()])
+    encode_ctx = DefaultEncodeContext(encode_steps=[TagWriter()])
     decode_ctx = DefaultDecodeContext(
         data=encode_ctx.stream.data,
         # Change default error type to deserialize as JSErrorData

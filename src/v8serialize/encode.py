@@ -164,7 +164,7 @@ class WritableTagStream:
     """Write individual tagged data items in the V8 serialization format.
 
     This is a low-level interface to incrementally generate a V8 serialization
-    byte stream. The Encoder in conjunction with ObjectMapper provides the
+    byte stream. The Encoder in conjunction with TagWriter provides the
     high-level interface to serialize data in V8 format.
     """
 
@@ -850,16 +850,16 @@ class DefaultEncodeContext(EncodeContext):
 
 
 @dataclass(**slots_if310())
-class ObjectMapper(EncodeStepObject):
+class TagWriter(EncodeStepObject):
     """Defines the conversion of Python types into the V8 serialization format.
 
-    ObjectMappers are responsible for making suitable calls to a WritableTagStream
+    TagWriters are responsible for making suitable calls to a WritableTagStream
     to represent Python objects with the various encoded representations supported
     by the V8 serialization format.
 
-    The stream delegates back to the mapper when writing hierarchical objects,
-    like arrays, to let the mapper drive the encoded representation of each
-    sub-object.
+    The stream delegates back to the `EncodeContext` when writing hierarchical
+    objects, like arrays, to let the context pass sub-values through a sequence
+    of encode steps, typically ending with a `TagWriter` as the final step.
     """
 
     @singledispatchmethod
@@ -1121,7 +1121,7 @@ def serialize_object_references(
 
 default_encode_steps: tuple[EncodeStep, ...] = (
     serialize_object_references,
-    ObjectMapper(),
+    TagWriter(),
 )
 """
 The default sequence of [encode steps] used to map Python objects to JavaScript values.
@@ -1132,7 +1132,7 @@ type.
 
 This sequence contains
 [`serialize_object_references`](serialize_object_references.qmd) and an instance
-of [`ObjectMapper`](ObjectMapper.qmd).
+of [`TagWriter`](`v8serialize.encode.TagWriter`).
 
 [encode steps]: `v8serialize.encode.EncodeStep`
 """
@@ -1161,7 +1161,7 @@ SerializationFeature.qmd#maxcompatibility).
 
     Notes
     -----
-    Encoder is a high-level interface that wraps an ObjectMapper — to decide how
+    Encoder is a high-level interface that wraps a `TagWriter` — to decide how
     to represent Python types — and WritableTagStream — to write out the
     V8 serialization format tag data.
     """
