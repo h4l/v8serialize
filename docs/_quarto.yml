@@ -43,6 +43,7 @@ quartodoc:
       desc: Core `v8serialize` functionality.
       options:
         include_empty: true
+        # dynamic: true
       contents:
         - path: 'encoding_decoding'
           kind: page
@@ -70,7 +71,7 @@ quartodoc:
               is mapped to JavaScript, or at a lower level by manually writing
               V8 serialization tagged data.
           contents:
-            - encode.default_object_mappers
+            - encode.default_encode_steps
             - encode.serialize_object_references
             - encode.ObjectMapper
             - encode.DefaultEncodeContext
@@ -100,13 +101,13 @@ quartodoc:
             desc: |
               Exceptions raised by `v8serialize`.
           contents:
-            - V8CodecError
-            - DecodeV8CodecError
-            - EncodeV8CodecError
-            - UnmappedValueEncodeV8CodecError
-            - FeatureNotEnabledEncodeV8CodecError
-            - UnmappedTagDecodeV8CodecError
-            - IllegalCyclicReferenceV8CodecError
+            - V8SerializeError
+            - DecodeV8SerializeError
+            - EncodeV8SerializeError
+            - UnhandledValueEncodeV8SerializeError
+            - FeatureNotEnabledEncodeV8SerializeError
+            - UnmappedTagDecodeV8SerializeError
+            - IllegalCyclicReferenceV8SerializeError
 
         - path: 'types_protocols'
           kind: page
@@ -118,11 +119,11 @@ quartodoc:
               :::{.callout-note}
               Our documentation generator that made this page doesn't yet
               display type annotations, so for the moment you'll need to look at
-              the [`v8serialize` source code](), or use your editor's tooling to
+              the [`v8serialize` source code`](), or use your editor's tooling to
               display types.
               :::
 
-              [`v8serialize` source code]: https://github.com/h4l/v8serialize/tree/main/src/v8serialize
+              [`v8serialize` source code`]: https://github.com/h4l/v8serialize/tree/main/src/v8serialize
           contents:
             - constants.AnySerializationTag
             - constants.UnreleasedVersion
@@ -130,10 +131,10 @@ quartodoc:
             - encode.HostObjectSerializerObj
             - encode.HostObjectSerializer
             - encode.EncodeContext
-            - encode.SerializeNextFn
-            - encode.SerializeObjectFn
-            - encode.ObjectMapperObject
-            - encode.AnyObjectMapper
+            - encode.EncodeNextFn
+            - encode.EncodeStepFn
+            - encode.EncodeStepObject
+            - encode.EncodeStep
             - decode.HostObjectDeserializerFn
             - decode.HostObjectDeserializerObj
             - decode.HostObjectDeserializer
