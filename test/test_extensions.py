@@ -11,7 +11,7 @@ from v8serialize.decode import ReadableTagStream
 from v8serialize.encode import WritableTagStream
 from v8serialize.extensions import (
     NodeBufferFormat,
-    node_js_array_buffer_view_host_object_handler,
+    NodeJsArrayBufferViewHostObjectHandler,
 )
 from v8serialize.jstypes.jsbuffers import (
     JSArrayBuffer,
@@ -60,7 +60,7 @@ def test_NodeJsArrayBufferViewHostObjectHandler_deserialize_host_object(
     assert stream.read_header() == 15
     assert NodeBufferFormat(stream.data[3]) is node_type
     view = stream.read_host_object(
-        deserializer=node_js_array_buffer_view_host_object_handler, tag=True
+        deserializer=NodeJsArrayBufferViewHostObjectHandler(), tag=True
     )
     assert stream.eof
 
@@ -93,14 +93,12 @@ def test_NodeJsArrayBufferViewHostObjectHandler_serialize_host_object(
 
     stream = WritableTagStream()
     stream.write_header()
-    stream.write_host_object(
-        value, serializer=node_js_array_buffer_view_host_object_handler
-    )
+    stream.write_host_object(value, serializer=NodeJsArrayBufferViewHostObjectHandler())
 
     rts = ReadableTagStream(stream.data)
     rts.read_header()
     result = rts.read_host_object(
-        tag=True, deserializer=node_js_array_buffer_view_host_object_handler
+        tag=True, deserializer=NodeJsArrayBufferViewHostObjectHandler()
     )
     assert rts.eof
     assert NodeBufferFormat(rts.data[3]) == node_type

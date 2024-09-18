@@ -164,8 +164,7 @@ class WritableTagStream:
     """Write individual tagged data items in the V8 serialization format.
 
     This is a low-level interface to incrementally generate a V8 serialization
-    byte stream. The Encoder in conjunction with TagWriter provides the
-    high-level interface to serialize data in V8 format.
+    byte stream.
     """
 
     data: bytearray = field(default_factory=bytearray)
@@ -1143,10 +1142,11 @@ class Encoder:
     """
     A re-usable configuration for serializing objects into V8 serialization format.
 
-    If `features` and `v8_version` are left unchanged, no serialization features
-    beyond the baseline are enabled, so serialized data can be read by any V8
-    runtime from [`SerializationFeature.MaxCompatibility.first_v8_version`](\
-SerializationFeature.qmd#maxcompatibility).
+    The `encode_steps`, `features` and `v8_version` arguments behave as
+    described for [`dumps()`]. The `encode()` method behaves like `dumps()`
+    without needing to pass the arguments for every call.
+
+    [`dumps()`]: `v8serialize.dumps`
 
     Parameters
     ----------
@@ -1158,12 +1158,6 @@ SerializationFeature.qmd#maxcompatibility).
     v8_version
         The minimum version of V8 that needs to be able to read the serialized
         data.
-
-    Notes
-    -----
-    Encoder is a high-level interface that wraps a `TagWriter` — to decide how
-    to represent Python types — and WritableTagStream — to write out the
-    V8 serialization format tag data.
     """
 
     encode_steps: Sequence[EncodeStep]
@@ -1224,17 +1218,20 @@ def dumps(
     """
     Serialize a Python value into a JavaScript value in the V8 serialization format.
 
-    `v8_version` and `features` together control the [`SerializationFeature`]s
-    that are enabled. Setting `v8_version` enables all features supported by the
-    version. Setting `features` selectively enables the specified features. The
-    union of these feature sets is enabled when encoding.
+    `v8_version` and `features` together control the
+    [SerializationFeatures][SerializationFeature] that are enabled. Setting
+    `v8_version` enables all features supported by the version. Setting
+    `features` selectively enables the specified features. The union of these
+    feature sets is enabled when encoding.
 
     If `features` and `v8_version` are left unchanged, no serialization features
     beyond the baseline are enabled, so serialized data can be read by any V8
-    runtime from [`SerializationFeature.MaxCompatibility.first_v8_version`](\
-SerializationFeature.qmd#maxcompatibility).
+    runtime from
+    [`SerializationFeature.MaxCompatibility.first_v8_version`][MaxCompatibility].
 
     [encode steps]: `v8serialize.encode.EncodeStep`
+    [SerializationFeature]: `v8serialize.SerializationFeature`
+    [MaxCompatibility]: `v8serialize.SerializationFeature.MaxCompatibility`
 
     Parameters
     ----------
@@ -1260,7 +1257,7 @@ SerializationFeature.qmd#maxcompatibility).
         When a `value` (or a sub-value within it) is not supported by the
         `encode_steps`.
     FeatureNotEnabledEncodeV8SerializeError
-        When encoding `value` requires a [`SerializationFeature`] to be enabled
+        When encoding `value` requires a [`SerializationFeature`][SerializationFeature] to be enabled
         that isn't enabled.
     EncodeV8SerializeError
         Is the parent of all data-specific errors thrown when encoding.

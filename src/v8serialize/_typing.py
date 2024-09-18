@@ -88,7 +88,7 @@ if TYPE_CHECKING:
 
         @property
         def hole_value(self) -> _HoleT_co:
-            """Get the empty value used by the sequence to represent holes."""
+            """The empty value used by the sequence to represent holes."""
 
         @property
         def elements_used(self) -> int:
@@ -128,7 +128,7 @@ else:
         # test/test_protocol_dataclass_interaction.py
 
         hole_value: _HoleT_co
-        """Get the empty value used by the sequence to represent holes."""
+        """The empty value used by the sequence to represent holes."""
 
         elements_used: int
         """The number of index positions that are not holes."""

@@ -24,6 +24,12 @@ TransferId = NewType("TransferId", int)
 
 @runtime_checkable
 class AnyArrayBuffer(Protocol):
+    """
+    A Protocol matching [JSArrayBuffer].
+
+    [JSArrayBuffer]: `v8serialize.jstypes.JSArrayBuffer`
+    """
+
     if TYPE_CHECKING:
 
         @property
@@ -42,6 +48,12 @@ class AnyArrayBuffer(Protocol):
 
 @runtime_checkable
 class AnySharedArrayBuffer(Protocol):
+    """
+    A Protocol matching [JSSharedArrayBuffer].
+
+    [JSSharedArrayBuffer]: `v8serialize.jstypes.JSSharedArrayBuffer`
+    """
+
     if TYPE_CHECKING:
 
         @property
@@ -54,6 +66,12 @@ class AnySharedArrayBuffer(Protocol):
 
 @runtime_checkable
 class AnyArrayBufferTransfer(Protocol):
+    """
+    A Protocol matching [JSArrayBufferTransfer].
+
+    [JSArrayBufferTransfer]: `v8serialize.jstypes.JSArrayBufferTransfer`
+    """
+
     if TYPE_CHECKING:
 
         @property
@@ -66,6 +84,13 @@ class AnyArrayBufferTransfer(Protocol):
 
 @runtime_checkable
 class AnyArrayBufferView(Protocol):
+    """
+    A Protocol matching [JSJSTypedArray] and [JSJSDataView].
+
+    [JSJSTypedArray]: `v8serialize.jstypes.JSJSTypedArray`
+    [JSJSDataView]: `v8serialize.jstypes.JSJSDataView`
+    """
+
     if TYPE_CHECKING:
 
         @property
@@ -91,6 +116,7 @@ class AnyArrayBufferView(Protocol):
 AnyArrayBufferData: TypeAlias = (
     "AnyArrayBuffer | AnySharedArrayBuffer | AnyArrayBufferTransfer"
 )
+"""Any of the 3 ArrayBuffer types."""
 
 BufferT = TypeVar("BufferT")
 BufferT_co = TypeVar("BufferT_co", covariant=True)
@@ -100,6 +126,8 @@ ViewT_co = TypeVar("ViewT_co", covariant=True)
 
 
 class ArrayBufferConstructor(Protocol[BufferT_co]):
+    """A function that creates a representation of a serialized ArrayBuffer."""
+
     @overload
     def __call__(
         self, data: memoryview, *, max_byte_length: None, resizable: Literal[False]
@@ -112,14 +140,20 @@ class ArrayBufferConstructor(Protocol[BufferT_co]):
 
 
 class SharedArrayBufferConstructor(Protocol[BufferT_co]):
+    """A function that creates a representation of a serialized SharedArrayBuffer."""
+
     def __call__(self, buffer_id: SharedArrayBufferId) -> BufferT_co: ...
 
 
 class ArrayBufferTransferConstructor(Protocol[BufferT_co]):
+    """A function that creates a representation of a serialized ArrayBufferTransfer."""
+
     def __call__(self, transfer_id: TransferId) -> BufferT_co: ...
 
 
 class ArrayBufferViewConstructor(Protocol[BufferT_con, ViewT_co]):
+    """A function that creates a representation of a serialized ArrayBuffer view."""
+
     def __call__(
         self,
         buffer: BufferT_con,
@@ -131,6 +165,13 @@ class ArrayBufferViewConstructor(Protocol[BufferT_con, ViewT_co]):
 
 
 class AnyJSError(Protocol):
+    """
+    A Protocol matching [JSError] and [JSErrorData].
+
+    [JSError]: `v8serialize.jstypes.JSError`
+    [JSErrorData]: `v8serialize.jstypes.JSErrorData`
+    """
+
     # properties from protocols mess up concrete classes if they exist at runtime
     if TYPE_CHECKING:
 
@@ -145,4 +186,6 @@ class AnyJSError(Protocol):
 
 
 class JSErrorBuilder(Protocol[T_co]):
+    """A function that creates a representation of a serialized Error."""
+
     def __call__(self, partial: AnyJSError, /) -> tuple[T_co, AnyJSError]: ...

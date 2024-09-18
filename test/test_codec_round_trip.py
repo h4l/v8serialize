@@ -23,7 +23,7 @@ from v8serialize.encode import (
     WritableTagStream,
     serialize_object_references,
 )
-from v8serialize.extensions import node_js_array_buffer_view_host_object_handler
+from v8serialize.extensions import NodeJsArrayBufferViewHostObjectHandler
 from v8serialize.jstypes import JSObject, JSUndefined
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
 from v8serialize.jstypes._v8 import V8SharedObjectReference
@@ -492,12 +492,11 @@ def test_codec_rt_nodejs_array_buffer_host_object(
     create_rw_ctx: CreateContexts,
 ) -> None:
     encode_ctx, decode_ctx = create_rw_ctx()
-    encode_ctx.stream.write_host_object(
-        value, serializer=node_js_array_buffer_view_host_object_handler
-    )
+    host_obj_handler = NodeJsArrayBufferViewHostObjectHandler()
+    encode_ctx.stream.write_host_object(value, serializer=host_obj_handler)
     assert decode_ctx.stream.read_tag(consume=False) == SerializationTag.kHostObject
     result: JSTypedArray | JSDataView = decode_ctx.stream.read_host_object(
-        deserializer=node_js_array_buffer_view_host_object_handler, tag=True
+        deserializer=host_obj_handler, tag=True
     )
     # Node's view serialization intentionally only shares the portion of the
     # buffer that the view references, so the rest of the initial buffer is not

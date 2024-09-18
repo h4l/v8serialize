@@ -22,7 +22,7 @@ from v8serialize._versions import parse_lenient_version
 from v8serialize.constants import SerializationFeature
 from v8serialize.decode import DecodeStep, TagReader, loads
 from v8serialize.encode import DefaultEncodeContext, TagWriter, WritableTagStream
-from v8serialize.extensions import node_js_array_buffer_view_host_object_handler
+from v8serialize.extensions import NodeJsArrayBufferViewHostObjectHandler
 
 from .strategies import any_object
 
@@ -364,7 +364,7 @@ def enabled_features(
 # TODO: also test with serialize_object_references (default_encode_steps)
 encode_steps = [TagWriter()]
 decode_steps: Sequence[DecodeStep] = [
-    TagReader(host_object_deserializer=node_js_array_buffer_view_host_object_handler)
+    TagReader(host_object_deserializer=NodeJsArrayBufferViewHostObjectHandler())
 ]
 
 

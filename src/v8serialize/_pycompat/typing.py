@@ -10,7 +10,11 @@ if TYPE_CHECKING:
     from typing_extensions import TypeAlias, TypeGuard
 
     class BufferSequence(Sequence[int], Buffer):
-        """Binary data such as `bytes`, `bytearray`, `array.array` and `memoryview`."""
+        """
+        Binary data, like `bytes`, `bytearray`, `array.array` and `memoryview`.
+
+        Essentially a `Sequence[int]` that's also a `Buffer`.
+        """
 
         @overload  # type: ignore[override]
         def __getitem__(self, index: slice, /) -> BufferSequence: ...
@@ -33,7 +37,12 @@ else:
             def __buffer__(self, flags: int) -> memoryview: ...
 
     class BufferSequence(Sequence, Buffer):
-        """Binary data, like `bytes`, `bytearray`, `array.array` and `memoryview`."""
+        """
+        A `Sequence[int]` that's also a `Buffer`.
+
+        Essentially binary data, like `bytes`, `bytearray`, `array.array` and
+        `memoryview`.
+        """
 
 
 ReadableBinary: TypeAlias = Union[
@@ -42,16 +51,7 @@ ReadableBinary: TypeAlias = Union[
 """
 Binary data such as `bytes`, `bytearray`, `array.array` and `memoryview`.
 
-Can also be any `Sequence[int]` that supports `collections.abc.Buffer`.
-
-Test 123 :role:`Buffer <collections.abc.Buffer>`.
-Test 123 [Buffer]
-
-[Buffer]: https://python.org/foo
-
-Also:
-
-[`Buffer`](#collections.abc.Buffer)
+Can also be any [`BufferSequence`](`v8serialize.BufferSequence`).
 """
 
 

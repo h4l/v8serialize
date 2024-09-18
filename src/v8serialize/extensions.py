@@ -24,17 +24,52 @@ if TYPE_CHECKING:
 
 
 class NodeJsArrayBufferViewHostObjectHandler:
-    """Support for deserializing ArrayBuffer views from NodeJS's custom serialization.
+    """
+    Support for deserializing ArrayBuffer views from NodeJS's custom serialization.
 
     NodeJS uses its own method of serializing ArrayBuffer views instead of the
     default V8 serialization. It encodes them in HostObject tag data (HostObject
     tags are the V8 serialization format's way to allow an application to insert
     their own custom data into the serialized data).
-    """
+
+    Examples
+    --------
+    Serialize a Buffer from Node.JS something like:
+    ```bash
+    $ node --version
+    v22.4.0
+    $ node -e 'console.log(
+        require("v8").serialize(Uint8Array.from([1, 2, 3]))
+            .toString("base64"))'
+    /w9cAQMBAgM=
+    ```
+
+    >>> from v8serialize import loads, TagReader
+    >>> from base64 import b64decode
+    >>> decode_steps = [TagReader(
+    ...   host_object_deserializer=NodeJsArrayBufferViewHostObjectHandler()
+    ... )]
+    >>> loads(b64decode('/w9cAQMBAgM='), decode_steps=decode_steps)
+    JSUint8Array(JSArrayBuffer(_data=bytearray(b'\\x01\\x02\\x03'), \
+max_byte_length=3, resizable=False))
+    """  # noqa: D301
 
     def deserialize_host_object(
         self, *, stream: ReadableTagStream
     ) -> JSDataView | JSTypedArray:
+        """
+        Read a HostObject from the stream as a Node.JS ArrayBuffer/TypedArray.
+
+        Returns
+        -------
+        :
+            The buffer wrapped in a view.
+
+        Raises
+        ------
+        NodeJsArrayBufferViewHostObjectHandlerDecodeError
+            When the stream's HostObject data is not a valid Node.JS Buffer.
+        """
         raw_view_code = stream.read_uint32()
         byte_length = stream.read_uint32()
         try:
@@ -63,6 +98,16 @@ class NodeJsArrayBufferViewHostObjectHandler:
     def serialize_host_object(
         self, *, stream: WritableTagStream, value: JSDataView | JSTypedArray
     ) -> None:
+        """
+        Serialize JSDataView and JSTypedArray using Node.js's custom HostObject format.
+
+        [`serialize_js_array_buffer_views_as_nodejs_host_object`]: \
+`v8serialize.extensions.serialize_js_array_buffer_views_as_nodejs_host_object`
+
+        See Also
+        --------
+        [`serialize_js_array_buffer_views_as_nodejs_host_object`]
+        """
         # The backing buffer is not shared as a whole, just the portion
         # referenced by the view.
         buffer_format = NodeBufferFormat(value.view_tag)
@@ -73,7 +118,9 @@ class NodeJsArrayBufferViewHostObjectHandler:
             stream.data.extend(data)
 
 
-node_js_array_buffer_view_host_object_handler = NodeJsArrayBufferViewHostObjectHandler()
+_node_js_array_buffer_view_host_object_handler = (
+    NodeJsArrayBufferViewHostObjectHandler()
+)
 
 
 def serialize_js_array_buffer_views_as_nodejs_host_object(
@@ -98,7 +145,7 @@ def serialize_js_array_buffer_views_as_nodejs_host_object(
         value.view_tag
     ):
         ctx.stream.write_host_object(
-            value, serializer=node_js_array_buffer_view_host_object_handler
+            value, serializer=_node_js_array_buffer_view_host_object_handler
         )
         return
     next(value)
@@ -157,4 +204,6 @@ class NodeBufferFormat(ViewFormat, Enum):
 
 
 class NodeJsArrayBufferViewHostObjectHandlerDecodeError(DecodeV8SerializeError):
+    """Raised when decoding a HostObject as a Node.JS Buffer fails."""
+
     pass

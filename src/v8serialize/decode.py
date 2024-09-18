@@ -40,18 +40,19 @@ from v8serialize._pycompat.typing import (
     is_readable_binary,
 )
 from v8serialize._references import SerializedId, SerializedObjectLog
+from v8serialize._values import AnyJSError as AnyJSError
+from v8serialize._values import ArrayBufferConstructor as ArrayBufferConstructor
 from v8serialize._values import (
-    AnyJSError,
-    ArrayBufferConstructor,
-    ArrayBufferTransferConstructor,
-    ArrayBufferViewConstructor,
-    BufferT,
-    JSErrorBuilder,
-    SharedArrayBufferConstructor,
-    SharedArrayBufferId,
-    TransferId,
-    ViewT,
+    ArrayBufferTransferConstructor as ArrayBufferTransferConstructor,
 )
+from v8serialize._values import ArrayBufferViewConstructor as ArrayBufferViewConstructor
+from v8serialize._values import BufferT, ViewT
+from v8serialize._values import JSErrorBuilder as JSErrorBuilder
+from v8serialize._values import (
+    SharedArrayBufferConstructor as SharedArrayBufferConstructor,
+)
+from v8serialize._values import SharedArrayBufferId as SharedArrayBufferId
+from v8serialize._values import TransferId as TransferId
 from v8serialize.constants import (
     INT32_RANGE,
     JS_ARRAY_BUFFER_TAGS,
@@ -1391,6 +1392,12 @@ numbers.
 class Decoder:
     """
     A re-usable configuration for deserializing V8 serialization format data.
+
+    The `decode_steps` argument behaves as described for [`loads()`]. The
+    `decode()` and `decodes()` methods behave like `loads()` without needing to
+    pass the `decode_steps` for every call.
+
+    [`loads()`]: `v8serialize.loads`
 
     Parameters
     ----------

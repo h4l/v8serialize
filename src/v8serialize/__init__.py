@@ -9,6 +9,7 @@ from v8serialize._errors import (
 )
 from v8serialize._errors import V8SerializeError as V8SerializeError
 from v8serialize._pycompat.typing import Buffer as Buffer
+from v8serialize._pycompat.typing import BufferSequence as BufferSequence
 from v8serialize._pycompat.typing import ReadableBinary as ReadableBinary
 from v8serialize._references import (
     IllegalCyclicReferenceV8SerializeError as IllegalCyclicReferenceV8SerializeError,
