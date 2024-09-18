@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from v8serialize._errors import DecodeV8CodecError as DecodeV8CodecError
-from v8serialize._errors import JSRegExpV8CodecError as JSRegExpV8CodecError
+from v8serialize._errors import DecodeV8SerializeError as DecodeV8SerializeError
+from v8serialize._errors import JSRegExpV8SerializeError as JSRegExpV8SerializeError
 from v8serialize._errors import (
-    UnmappedTagDecodeV8CodecError as UnmappedTagDecodeV8CodecError,
+    UnmappedTagDecodeV8SerializeError as UnmappedTagDecodeV8SerializeError,
 )
-from v8serialize._errors import V8CodecError as V8CodecError
+from v8serialize._errors import V8SerializeError as V8SerializeError
 from v8serialize._pycompat.typing import Buffer as Buffer
 from v8serialize._pycompat.typing import ReadableBinary as ReadableBinary
 from v8serialize._references import (
-    IllegalCyclicReferenceV8CodecError as IllegalCyclicReferenceV8CodecError,
+    IllegalCyclicReferenceV8SerializeError as IllegalCyclicReferenceV8SerializeError,
 )
 from v8serialize._typing import SparseMutableSequence as SparseMutableSequence
 from v8serialize._typing import SparseSequence as SparseSequence
@@ -27,12 +27,12 @@ from v8serialize.decode import TagMapperObject as TagMapperObject
 from v8serialize.decode import default_tag_mappers as default_tag_mappers
 from v8serialize.decode import loads as loads
 from v8serialize.encode import Encoder as Encoder
-from v8serialize.encode import EncodeV8CodecError as EncodeV8CodecError
+from v8serialize.encode import EncodeV8SerializeError as EncodeV8SerializeError
 from v8serialize.encode import (
-    FeatureNotEnabledEncodeV8CodecError as FeatureNotEnabledEncodeV8CodecError,
+    FeatureNotEnabledEncodeV8SerializeError as FeatureNotEnabledEncodeV8SerializeError,
 )
 from v8serialize.encode import (
-    UnhandledValueEncodeV8CodecError as UnhandledValueEncodeV8CodecError,
+    UnhandledValueEncodeV8SerializeError as UnhandledValueEncodeV8SerializeError,
 )
 from v8serialize.encode import default_encode_steps as default_encode_steps
 from v8serialize.encode import dumps as dumps

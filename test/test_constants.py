@@ -6,7 +6,7 @@ from functools import reduce
 import pytest
 from packaging.version import Version
 
-from v8serialize._errors import JSRegExpV8CodecError
+from v8serialize._errors import JSRegExpV8SerializeError
 from v8serialize._pycompat.re import RegexFlag
 from v8serialize.constants import (
     JSErrorName,
@@ -65,7 +65,7 @@ def test_RegExpFlag() -> None:
     ).as_python_flags(throw=False) is None
 
     with pytest.raises(
-        JSRegExpV8CodecError,
+        JSRegExpV8SerializeError,
         match=r"No equivalent Python flags exist for JSRegExp\.Linear",
         # ValueError, match=r"No equivalent Python flags exist for JSRegExp\.Linear"
     ):
@@ -94,7 +94,7 @@ def test_RegExpFlag__from_python_flags() -> None:
     )
 
     with pytest.raises(
-        JSRegExpV8CodecError,
+        JSRegExpV8SerializeError,
         match=r"No equivalent JavaScript RegExp flags exist for RegexFlag\.VERBOSE",
     ):
         assert JSRegExpFlag.from_python_flags(RegexFlag.MULTILINE | RegexFlag.VERBOSE)

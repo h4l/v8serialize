@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from re import Pattern, compile
 from typing import AnyStr, Literal, overload
 
-from v8serialize._errors import JSRegExpV8CodecError
+from v8serialize._errors import JSRegExpV8SerializeError
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._pycompat.re import RegexFlag
 from v8serialize.constants import JSRegExpFlag
@@ -74,9 +74,9 @@ JavaScript/Reference/Global_Objects/RegExp
             source = pattern.pattern
         try:
             flags = JSRegExpFlag.from_python_flags(RegexFlag(pattern.flags))
-        except JSRegExpV8CodecError as e:
+        except JSRegExpV8SerializeError as e:
             if throw:
-                raise JSRegExpV8CodecError(
+                raise JSRegExpV8SerializeError(
                     f"Python re.Pattern flags cannot be represented by "
                     f"JavaScript RegExp: {e}"
                 ) from e
@@ -101,9 +101,9 @@ JavaScript/Reference/Global_Objects/RegExp
         # so some patterns still don't work.
         try:
             return compile(self.source, self.flags.as_python_flags())
-        except (JSRegExpV8CodecError, re.error) as e:
+        except (JSRegExpV8SerializeError, re.error) as e:
             if throw:
-                raise JSRegExpV8CodecError(
+                raise JSRegExpV8SerializeError(
                     f"JSRegExp is not a valid Python re.Pattern: {e}"
                 ) from e
             return None

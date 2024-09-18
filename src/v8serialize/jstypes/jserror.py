@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from traceback import TracebackException
 from typing import TYPE_CHECKING, Final
 
-from v8serialize._errors import V8CodecError
+from v8serialize._errors import V8SerializeError
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._recursive_eq import recursive_eq
 from v8serialize._values import AnyJSError, JSErrorBuilder
@@ -129,7 +129,7 @@ def _get_message(tbe: TracebackException) -> str | None:
 @recursive_eq
 @JSErrorData.register
 @dataclass(init=False)
-class JSError(AnyJSError, V8CodecError):
+class JSError(AnyJSError, V8SerializeError):
     """A Python Exception that represents a JavaScript Error.
 
     This is intended to be used to handle JavaScript errors on the Python side.
@@ -159,7 +159,7 @@ class JSError(AnyJSError, V8CodecError):
         stack: str | None = None,
         cause: object | None = None,
     ) -> None:
-        # Serialized errors can have message, but V8CodecError expects one
+        # Serialized errors can have message, but V8SerializeError expects one
         if message is None:
             message = ""
         super(JSError, self).__init__(message)

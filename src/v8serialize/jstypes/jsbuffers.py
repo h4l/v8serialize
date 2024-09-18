@@ -21,7 +21,7 @@ from typing import (
 )
 
 from v8serialize._enums import frozen
-from v8serialize._errors import V8CodecError
+from v8serialize._errors import V8SerializeError
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._pycompat.inspect import BufferFlags
 from v8serialize._pycompat.typing import ReadableBinary, get_buffer
@@ -1156,14 +1156,14 @@ def create_view(
 
 
 @dataclass(init=False)
-class JSArrayBufferError(V8CodecError):
+class JSArrayBufferError(V8SerializeError):
     """The parent type of exceptions raised by the JavaScript buffer types."""
 
     pass
 
 
 @dataclass(init=False)
-class ByteLengthJSArrayBufferError(V8CodecError, ValueError):
+class ByteLengthJSArrayBufferError(V8SerializeError, ValueError):
     """Raised when a byte length is out of bounds."""
 
     byte_length: int

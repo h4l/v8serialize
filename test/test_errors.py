@@ -4,14 +4,14 @@ from dataclasses import dataclass
 
 from v8serialize._errors import (
     NormalizedKeyError,
-    UnmappedTagDecodeV8CodecError,
-    V8CodecError,
+    UnmappedTagDecodeV8SerializeError,
+    V8SerializeError,
 )
 from v8serialize.constants import SerializationTag
 
 
 @dataclass(init=False)
-class ExampleV8CodecError(V8CodecError):
+class ExampleV8CodecError(V8SerializeError):
     level: int
     limit: float
 
@@ -29,7 +29,7 @@ def test_v8codecerror_str_with_fields() -> None:
 
 
 @dataclass(init=False)
-class RecursiveV8CodecError(V8CodecError):
+class RecursiveV8CodecError(V8SerializeError):
     obj: object
 
     def __init__(self, message: str, *, obj: object) -> None:
@@ -55,7 +55,7 @@ def test_v8codecerror_str_with_recursive_dataclass_field() -> None:
 
 
 def test_v8codecerror_str_without_fields() -> None:
-    assert str(V8CodecError("Something went wrong")) == "Something went wrong"
+    assert str(V8SerializeError("Something went wrong")) == "Something went wrong"
 
 
 def test_NormalizedKeyError() -> None:
@@ -69,7 +69,7 @@ def test_NormalizedKeyError() -> None:
 
 
 def test_UnmappedTagDecodeV8CodecError() -> None:
-    err = UnmappedTagDecodeV8CodecError(
+    err = UnmappedTagDecodeV8SerializeError(
         "Msg", tag=SerializationTag.kArrayBuffer, position=2, data=b"foo"
     )
 

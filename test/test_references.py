@@ -5,9 +5,9 @@ from copy import copy
 import pytest
 
 from v8serialize._references import (
-    ObjectNotSerializedV8CodecError,
+    ObjectNotSerializedV8SerializeError,
     SerializedId,
-    SerializedIdOutOfRangeV8CodecError,
+    SerializedIdOutOfRangeV8SerializeError,
     SerializedObjectLog,
 )
 
@@ -85,7 +85,7 @@ def test_serialized_object_log__does_not_contain_unreferenced_objects() -> None:
 def test_serialized_object_log__getting_unrecorded_id_throws() -> None:
     objects = SerializedObjectLog()
 
-    with pytest.raises(SerializedIdOutOfRangeV8CodecError) as exc_info:
+    with pytest.raises(SerializedIdOutOfRangeV8SerializeError) as exc_info:
         objects.get_object(SerializedId(42))
 
     assert exc_info.value.serialized_id == SerializedId(42)
@@ -96,7 +96,7 @@ def test_serialized_object_log__getting_unrecorded_object_throws() -> None:
     objects = SerializedObjectLog()
 
     unrecorded = object()
-    with pytest.raises(ObjectNotSerializedV8CodecError) as exc_info:
+    with pytest.raises(ObjectNotSerializedV8SerializeError) as exc_info:
         objects.get_serialized_id(unrecorded)
 
     assert exc_info.value.obj is unrecorded

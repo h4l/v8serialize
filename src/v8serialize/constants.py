@@ -21,7 +21,7 @@ from typing import (
 
 from packaging.version import Version
 
-from v8serialize._errors import JSRegExpV8CodecError
+from v8serialize._errors import JSRegExpV8SerializeError
 from v8serialize._pycompat.dataclasses import FrozenAfterInitDataclass, slots_if310
 from v8serialize._pycompat.enum import IntEnum, IterableFlag, IterableIntFlag, StrEnum
 from v8serialize._pycompat.re import RegexFlag
@@ -295,7 +295,7 @@ class JSRegExpFlag(IterableIntFlag):
     def from_python_flags(python_flags: RegexFlag) -> JSRegExpFlag:
         """Get the JavaScript flags equivalent to Python `re` module flags."""
         if python_flags & RegexFlag.VERBOSE:
-            raise JSRegExpV8CodecError(
+            raise JSRegExpV8SerializeError(
                 "No equivalent JavaScript RegExp flags exist for RegexFlag.VERBOSE"
             )
         mapping = JSRegExpFlag._python_flag_mapping()
@@ -341,7 +341,7 @@ class JSRegExpFlag(IterableIntFlag):
         incompatible = ", ".join(
             f"JSRegExp.{f.name}" for f in self if f.__python_flag is None
         )
-        raise JSRegExpV8CodecError(
+        raise JSRegExpV8SerializeError(
             f"No equivalent Python flags exist for {incompatible}"
         )
 
@@ -542,7 +542,8 @@ https://github.com/v8/v8/commit/5ff265b202a593d7f45348c2a3f0d4dd5fdff74e)
 
     `v8serialize` must avoid writing errors with self-referencing cause
     values unless this feature is enabled, and the encoder raises a
-    [`IllegalCyclicReferenceV8CodecError`](IllegalCyclicReferenceV8CodecError.qmd)
+    [`IllegalCyclicReferenceV8SerializeError`]\
+(`v8serialize.IllegalCyclicReferenceV8SerializeError`)
     if this happens.
     """
 

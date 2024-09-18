@@ -7,15 +7,15 @@ import pytest
 from packaging.version import Version
 
 from v8serialize._pycompat.exceptions import has_notes
-from v8serialize._references import IllegalCyclicReferenceV8CodecError
+from v8serialize._references import IllegalCyclicReferenceV8SerializeError
 from v8serialize.constants import JSRegExpFlag, SerializationFeature
 from v8serialize.decode import loads
 from v8serialize.encode import (
     DefaultEncodeContext,
     Encoder,
-    FeatureNotEnabledEncodeV8CodecError,
+    FeatureNotEnabledEncodeV8SerializeError,
     ObjectMapper,
-    UnhandledValueEncodeV8CodecError,
+    UnhandledValueEncodeV8SerializeError,
     WritableTagStream,
     dumps,
     serialize_object_references,
@@ -79,7 +79,7 @@ def test_feature_float16__cannot_write_float16array_when_disabled() -> None:
     )
 
     with pytest.raises(
-        UnhandledValueEncodeV8CodecError,
+        UnhandledValueEncodeV8SerializeError,
         match="No encode step was able to write the value",
     ) as exc_info1:
         ctx.encode_object(f16)
@@ -91,7 +91,7 @@ def test_feature_float16__cannot_write_float16array_when_disabled() -> None:
     )
 
     with pytest.raises(
-        FeatureNotEnabledEncodeV8CodecError,
+        FeatureNotEnabledEncodeV8SerializeError,
         match="Cannot write Float16Array when the Float16Array "
         "SerializationFeature is not enabled",
     ) as exc_info2:
@@ -161,7 +161,7 @@ def test_feature_cyclic_error_cause__cyclic_errors_not_allowed_when_disabled() -
 
     ctx.stream.write_header()
     with pytest.raises(
-        IllegalCyclicReferenceV8CodecError,
+        IllegalCyclicReferenceV8SerializeError,
     ) as exc_info:
         ctx.encode_object(err)
 
@@ -227,7 +227,7 @@ def test_dumps__uses_features_and_v8_version_to_configure_serialization_features
     err = JSError()
     err.cause = err
 
-    with pytest.raises(IllegalCyclicReferenceV8CodecError):
+    with pytest.raises(IllegalCyclicReferenceV8SerializeError):
         dumps(err)
 
     assert loads(dumps(err, features=SerializationFeature.CircularErrorCause)) == err

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(init=False)
-class V8CodecError(Exception):
+class V8SerializeError(Exception):
     """The base class that all v8serialize errors are subclasses of."""
 
     if not TYPE_CHECKING:
@@ -37,7 +37,7 @@ class V8CodecError(Exception):
 
 # TODO: str/repr needs customising to abbreviate the data field
 @dataclass(init=False)
-class DecodeV8CodecError(V8CodecError, ValueError):
+class DecodeV8SerializeError(V8SerializeError, ValueError):
     position: int
     data: ReadableBinary
 
@@ -50,7 +50,7 @@ class DecodeV8CodecError(V8CodecError, ValueError):
 
 
 @dataclass(init=False)
-class UnmappedTagDecodeV8CodecError(DecodeV8CodecError):
+class UnmappedTagDecodeV8SerializeError(DecodeV8SerializeError):
     """
     No TagMapper is able to handle a `SerializationTag`.
 
@@ -98,5 +98,5 @@ class NormalizedKeyError(KeyError):
         )
 
 
-class JSRegExpV8CodecError(V8CodecError):
+class JSRegExpV8SerializeError(V8SerializeError):
     pass

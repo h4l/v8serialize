@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import re
-from test.strategies import js_regexp_flags
 
 import pytest
 from hypothesis import given
 
-from v8serialize._errors import JSRegExpV8CodecError
+from test.strategies import js_regexp_flags
+from v8serialize._errors import JSRegExpV8SerializeError
 from v8serialize.constants import JSRegExpFlag
 from v8serialize.jstypes.jsregexp import JSRegExp
 
@@ -28,7 +28,7 @@ from v8serialize.jstypes.jsregexp import JSRegExp
 )
 def test_compile__incompatible(jsregexp: JSRegExp, msg: str) -> None:
     with pytest.raises(
-        JSRegExpV8CodecError,
+        JSRegExpV8SerializeError,
         match=re.escape(f"JSRegExp is not a valid Python re.Pattern: {msg}"),
     ):
         jsregexp.as_python_pattern()
@@ -44,7 +44,7 @@ def test_from_python_pattern() -> None:
     assert JSRegExp.from_python_pattern(re.compile(b".*")) == JSRegExp(".*")
 
     with pytest.raises(
-        JSRegExpV8CodecError,
+        JSRegExpV8SerializeError,
         match=re.escape(
             "Python re.Pattern flags cannot be represented by JavaScript RegExp: "
             "No equivalent JavaScript RegExp flags exist for RegexFlag.VERBOSE"

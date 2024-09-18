@@ -6,7 +6,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from v8serialize._errors import DecodeV8CodecError
+from v8serialize._errors import DecodeV8SerializeError
 from v8serialize.constants import JSErrorName, SerializationTag, kLatestVersion
 from v8serialize.decode import DefaultDecodeContext, ReadableTagStream, TagMapper, loads
 from v8serialize.encode import (
@@ -26,7 +26,7 @@ def test_decode_varint__truncated(n: int) -> None:
     wts.write_varint(n)
     rts = ReadableTagStream(wts.data[:-2])
 
-    with pytest.raises(DecodeV8CodecError, match="Data truncated") as exc_info:
+    with pytest.raises(DecodeV8SerializeError, match="Data truncated") as exc_info:
         rts.read_varint()
 
     assert exc_info.value.position == max(0, len(rts.data) - 1)
@@ -89,7 +89,7 @@ def test_VerifyObjectCount_not_supported() -> None:
     wts.write_varint(1)
 
     with pytest.raises(
-        DecodeV8CodecError,
+        DecodeV8SerializeError,
         match="No tag mapper was able to read the tag kVerifyObjectCount",
     ):
         loads(wts.data)
@@ -102,7 +102,7 @@ def test_ReadableTagStream__rejects_unsupported_versions(version: int) -> None:
     wts.write_varint(version)
 
     rts = ReadableTagStream(wts.data)
-    with pytest.raises(DecodeV8CodecError) as exc_info:
+    with pytest.raises(DecodeV8SerializeError) as exc_info:
         rts.read_header()
 
     assert f"Unsupported version {version}" in str(exc_info.value)
@@ -117,7 +117,7 @@ def test_wasm_is_not_supported(tag: SerializationTag) -> None:
     decode_ctx = DefaultDecodeContext(stream=ReadableTagStream(wts.data))
 
     with pytest.raises(
-        DecodeV8CodecError,
+        DecodeV8SerializeError,
         match=f"Stream contains a {tag.name} which is not supported.",
     ):
         decode_ctx.decode_object()

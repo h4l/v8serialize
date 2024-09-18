@@ -28,9 +28,9 @@ from typing import (
 )
 
 from v8serialize._errors import (
-    DecodeV8CodecError,
-    UnmappedTagDecodeV8CodecError,
-    V8CodecError,
+    DecodeV8SerializeError,
+    UnmappedTagDecodeV8SerializeError,
+    V8SerializeError,
 )
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._pycompat.typing import (
@@ -171,7 +171,9 @@ class ReadableTagStream:
             )
 
     def throw(self, message: str, *, cause: BaseException | None = None) -> Never:
-        raise DecodeV8CodecError(message, data=self.data, position=self.pos) from cause
+        raise DecodeV8SerializeError(
+            message, data=self.data, position=self.pos
+        ) from cause
 
     def peak_tag(self) -> SerializationTag | None:
         """
@@ -666,7 +668,7 @@ class ReadableTagStream:
 
         try:
             return serialized_id, self.objects.get_object(serialized_id)
-        except V8CodecError as e:
+        except V8SerializeError as e:
             self.throw(
                 "ObjectReference contains serialized ID which has not been "
                 "deserialized",
@@ -1001,7 +1003,7 @@ class DefaultDecodeContext(DecodeContext):
         return self.__decode_object_with_mapper(tag, i=0)
 
     def _report_unmapped_value(self, tag: SerializationTag) -> Never:
-        raise UnmappedTagDecodeV8CodecError(
+        raise UnmappedTagDecodeV8SerializeError(
             f"No tag mapper was able to read the tag {tag.name}",
             tag=tag,
             position=self.stream.pos,
@@ -1418,9 +1420,9 @@ def loads(
 
     Raises
     ------
-    DecodeV8CodecError
+    DecodeV8SerializeError
         When `data` is not well-formed V8 serialization format data.
-    UnmappedTagDecodeV8CodecError
+    UnmappedTagDecodeV8SerializeError
         When the `tag_mappers` don't support a JavaScript type occurring in the
         `data`.
 

@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, Generator, Generic, NewType, overload
 
-from v8serialize._errors import V8CodecError
+from v8serialize._errors import V8SerializeError
 from v8serialize._pycompat.dataclasses import slots_if310
 
 if TYPE_CHECKING:
@@ -17,35 +17,35 @@ else:
     T = TypeVar("T")
 
 
-class ObjectReferenceV8CodecError(V8CodecError, KeyError):
+class ObjectReferenceV8SerializeError(V8SerializeError, KeyError):
     pass
 
 
 @dataclass(init=False)
-class ObjectNotSerializedV8CodecError(ObjectReferenceV8CodecError):
+class ObjectNotSerializedV8SerializeError(ObjectReferenceV8SerializeError):
     obj: object
 
     def __init__(self, message: str, *args: object, obj: object) -> None:
-        super(ObjectNotSerializedV8CodecError, self).__init__(message, *args)
+        super(ObjectNotSerializedV8SerializeError, self).__init__(message, *args)
         self.obj = obj
 
 
 @dataclass(init=False)
-class SerializedIdOutOfRangeV8CodecError(ObjectReferenceV8CodecError):
+class SerializedIdOutOfRangeV8SerializeError(ObjectReferenceV8SerializeError):
     serialized_id: SerializedId
 
     def __init__(self, message: str, serialized_id: SerializedId) -> None:
-        super(SerializedIdOutOfRangeV8CodecError, self).__init__(message)
+        super(SerializedIdOutOfRangeV8SerializeError, self).__init__(message)
         self.serialized_id = serialized_id
 
 
 @dataclass(init=False)
-class IllegalCyclicReferenceV8CodecError(ObjectReferenceV8CodecError):
+class IllegalCyclicReferenceV8SerializeError(ObjectReferenceV8SerializeError):
     serialized_id: SerializedId
     obj: object
 
     def __init__(self, message: str, serialized_id: SerializedId, obj: object) -> None:
-        super(IllegalCyclicReferenceV8CodecError, self).__init__(message)
+        super(IllegalCyclicReferenceV8SerializeError, self).__init__(message)
         self.serialized_id = serialized_id
         self.obj = obj
 
@@ -80,7 +80,7 @@ class SerializedObjectLog:
                 value.get_value()  # throw if not yet set
             return serialized_id
         except KeyError:
-            raise ObjectNotSerializedV8CodecError(
+            raise ObjectNotSerializedV8SerializeError(
                 "Object has not been recorded in the log", obj=obj
             ) from None
 
@@ -88,7 +88,7 @@ class SerializedObjectLog:
         try:
             return self._object_by_serialized_id[serialized_id]
         except IndexError:
-            raise SerializedIdOutOfRangeV8CodecError(
+            raise SerializedIdOutOfRangeV8SerializeError(
                 "Serialized ID has not been recorded in the log",
                 serialized_id=serialized_id,
             ) from None
@@ -119,7 +119,7 @@ class SerializedObjectLog:
                 msg = "An illegal cyclic reference was made to an object"
                 if error_detail:
                     msg = f"{msg}: {error_detail}"
-                raise IllegalCyclicReferenceV8CodecError(
+                raise IllegalCyclicReferenceV8SerializeError(
                     msg, serialized_id=serialized_id, obj=obj
                 ) from e
             raise

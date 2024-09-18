@@ -8,7 +8,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from v8serialize._enums import frozen
-from v8serialize._errors import DecodeV8CodecError
+from v8serialize._errors import DecodeV8SerializeError
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize.constants import ArrayBufferViewTag
 from v8serialize.jstypes.jsbuffers import (
@@ -156,5 +156,5 @@ class NodeBufferFormat(ViewFormat, Enum):
         ) -> None: ...
 
 
-class NodeJsArrayBufferViewHostObjectHandlerDecodeError(DecodeV8CodecError):
+class NodeJsArrayBufferViewHostObjectHandlerDecodeError(DecodeV8SerializeError):
     pass

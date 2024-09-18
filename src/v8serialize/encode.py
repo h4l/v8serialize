@@ -27,7 +27,7 @@ from typing import (
 from packaging.version import Version
 
 from v8serialize._decorators import singledispatchmethod
-from v8serialize._errors import V8CodecError
+from v8serialize._errors import V8SerializeError
 from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._pycompat.exceptions import add_note
 from v8serialize._pycompat.types import NoneType
@@ -85,12 +85,12 @@ T_con = TypeVar("T_con", contravariant=True)
 
 
 @dataclass(init=False)
-class EncodeV8CodecError(V8CodecError, ValueError):
+class EncodeV8SerializeError(V8SerializeError, ValueError):
     pass
 
 
 @dataclass(init=False)
-class UnhandledValueEncodeV8CodecError(EncodeV8CodecError, ValueError):
+class UnhandledValueEncodeV8SerializeError(EncodeV8SerializeError, ValueError):
     """
     No [encode step] is able to represent a Python value in the V8 Serialization format.
 
@@ -116,7 +116,7 @@ class UnhandledValueEncodeV8CodecError(EncodeV8CodecError, ValueError):
 
 
 @dataclass(init=False)
-class FeatureNotEnabledEncodeV8CodecError(EncodeV8CodecError):
+class FeatureNotEnabledEncodeV8SerializeError(EncodeV8SerializeError):
     """
     The SerializationFeature required to write a value is not enabled.
 
@@ -127,7 +127,7 @@ class FeatureNotEnabledEncodeV8CodecError(EncodeV8CodecError):
     feature_required: SerializationFeature
 
     def __init__(self, message: str, *, feature_required: SerializationFeature) -> None:
-        super(FeatureNotEnabledEncodeV8CodecError, self).__init__(message)
+        super(FeatureNotEnabledEncodeV8SerializeError, self).__init__(message)
         self.feature_required = feature_required
 
 
@@ -219,7 +219,7 @@ class WritableTagStream:
     def write_tag(self, tag: SerializationTag | None) -> None:
         if tag is not None:
             if self.allowed_tags is not None and tag not in self.allowed_tags:
-                raise EncodeV8CodecError(
+                raise EncodeV8SerializeError(
                     f"Attempted to write tag {tag.name} in a context where "
                     f"allowed tags are {self.allowed_tags}"
                 )
@@ -666,7 +666,7 @@ class WritableTagStream:
             SerializationFeature.Float16Array not in self.features
             and buffer_view.view_tag == ArrayBufferViewTag.kFloat16Array
         ):
-            raise FeatureNotEnabledEncodeV8CodecError(
+            raise FeatureNotEnabledEncodeV8SerializeError(
                 "Cannot write Float16Array when the Float16Array "
                 "SerializationFeature is not enabled.",
                 feature_required=SerializationFeature.Float16Array,
@@ -807,7 +807,7 @@ class DefaultEncodeContext(EncodeContext):
         return self.__encode_object_with_step(value, i=0)
 
     def _report_unmapped_value(self, value: object) -> Never:
-        raise UnhandledValueEncodeV8CodecError(
+        raise UnhandledValueEncodeV8SerializeError(
             "No encode step was able to write the value", value=value
         )
 
@@ -1050,7 +1050,7 @@ class ObjectMapper(EncodeStepObject):
         ):
             try:
                 return next(value)
-            except UnhandledValueEncodeV8CodecError as e:
+            except UnhandledValueEncodeV8SerializeError as e:
                 add_note(
                     e,
                     f"{type(self).__name__} is not handling JSArrayBufferViews "
@@ -1227,13 +1227,13 @@ SerializationFeature.qmd#maxcompatibility).
 
     Raises
     ------
-    UnhandledValueEncodeV8CodecError
+    UnhandledValueEncodeV8SerializeError
         When a `value` (or a sub-value within it) is not supported by the
         `encode_steps`.
-    FeatureNotEnabledEncodeV8CodecError
+    FeatureNotEnabledEncodeV8SerializeError
         When encoding `value` requires a [`SerializationFeature`] to be enabled
         that isn't enabled.
-    EncodeV8CodecError
+    EncodeV8SerializeError
         Is the parent of all data-specific errors thrown when encoding.
 
 
