@@ -846,7 +846,7 @@ HostObjectDeserializer: TypeAlias = (
 """Either `HostObjectDeserializerObj` or `HostObjectDeserializerFn`."""
 
 
-class TagReader(Protocol[TagT_con]):
+class TagReaderFn(Protocol[TagT_con]):
     """
     The type of a function that reads tags on behalf of a `TagMapper`.
 
@@ -865,13 +865,13 @@ class TagReader(Protocol[TagT_con]):
 @dataclass(init=False, **slots_if310())
 class TagReaderRegistry:
     """
-    A registry of `SerializationTag`s and the `TagReader` functions that can read them.
+    A registry of `SerializationTag`s and the functions that can read them.
 
     `TagMapper` uses this to dispatch decode calls to an appropriate function.
     """
 
-    index: Mapping[SerializationTag, TagReader[SerializationTag]]
-    _index: dict[SerializationTag, TagReader[SerializationTag]]
+    index: Mapping[SerializationTag, TagReaderFn[SerializationTag]]
+    _index: dict[SerializationTag, TagReaderFn[SerializationTag]]
 
     def __init__(self, entries: TagReaderRegistry | None = None) -> None:
         self._index = {}
@@ -883,17 +883,17 @@ class TagReaderRegistry:
     #         though)
     #       - could pre-bind tag arg value with partial
     def register(
-        self, tag: TagT | TagConstraint[TagT], tag_reader: TagReader[TagT]
+        self, tag: TagT | TagConstraint[TagT], tag_reader: TagReaderFn[TagT]
     ) -> None:
         """Associate a function with a tag, so that `match()` will return it."""
         if isinstance(tag, TagConstraint):
             for t in sorted(tag.allowed_tags):
                 self._index[cast(SerializationTag, t)] = cast(
-                    TagReader[SerializationTag], tag_reader
+                    TagReaderFn[SerializationTag], tag_reader
                 )
         else:
             self._index[cast(SerializationTag, tag)] = cast(
-                TagReader[SerializationTag], tag_reader
+                TagReaderFn[SerializationTag], tag_reader
             )
 
     def register_all(self, registry: TagReaderRegistry) -> None:
@@ -904,8 +904,8 @@ class TagReaderRegistry:
         """
         self._index.update(registry.index)
 
-    def match(self, tag: TagT) -> TagReader[TagT] | None:
-        """Get the `TagReader` function registered for a tag, or `None`."""
+    def match(self, tag: TagT) -> TagReaderFn[TagT] | None:
+        """Get the `TagReaderFn` function registered for a tag, or `None`."""
         return self._index.get(tag)
 
 
@@ -918,8 +918,8 @@ class ReadableTagStreamReadFunction(Protocol):
     def __name__(self) -> str: ...
 
 
-def read_stream(rts_fn: ReadableTagStreamReadFunction) -> TagReader:
-    """Create a `TagReader` that calls a primitive `read_xxx` function on the stream."""
+def read_stream(rts_fn: ReadableTagStreamReadFunction) -> TagReaderFn:
+    """Create a `TagReaderFn` that calls a `read_xxx` function on the stream."""
     read_fn = operator.methodcaller(rts_fn.__name__)
 
     def read_stream__tag_reader(
