@@ -848,14 +848,14 @@ HostObjectDeserializer: TypeAlias = (
 
 class TagReaderFn(Protocol[TagT_con]):
     """
-    The type of a function that reads tags on behalf of a `TagMapper`.
+    The type of a function that reads tags on behalf of a `TagReader`.
 
-    Typically this is an unbound method of `TagMapper`.
+    Typically this is an unbound method of `TagReader`.
     """
 
     def __call__(
         self,
-        tag_mapper: TagMapper,
+        tag_reader: TagReader,
         tag: TagT_con,
         ctx: DecodeContext,
         /,
@@ -867,7 +867,7 @@ class TagReaderRegistry:
     """
     A registry of `SerializationTag`s and the functions that can read them.
 
-    `TagMapper` uses this to dispatch decode calls to an appropriate function.
+    `TagReader` uses this to dispatch decode calls to an appropriate function.
     """
 
     index: Mapping[SerializationTag, TagReaderFn[SerializationTag]]
@@ -923,7 +923,7 @@ def read_stream(rts_fn: ReadableTagStreamReadFunction) -> TagReaderFn:
     read_fn = operator.methodcaller(rts_fn.__name__)
 
     def read_stream__tag_reader(
-        tag_mapper: TagMapper, tag: SerializationTag, ctx: DecodeContext
+        tag_mapper: TagReader, tag: SerializationTag, ctx: DecodeContext
     ) -> object:
         return read_fn(ctx.stream)
 
@@ -1099,12 +1099,12 @@ JSArrayType = Callable[[], JSArray[object]]
 
 
 @dataclass(init=False, **slots_if310())
-class TagMapper(DecodeStepObject):
+class TagReader(DecodeStepObject):
     """
     Controls how V8 serialization data is converted to Python values when deserializing.
 
     You can customise the way JavaScript values are represented in Python by
-    creating a TagMapper instance with non-default options, and passing it to
+    creating a `TagReader` instance with non-default options, and passing it to
     the `decode_steps` option of `v8serialize.loads()` or `v8serialize.Decoder()`
     """
 
@@ -1170,23 +1170,23 @@ class TagMapper(DecodeStepObject):
         r(SerializationTag.kUint32, read_stream(ReadableTagStream.read_uint32))
 
         # Tags which require tag-specific behaviour
-        r(JS_CONSTANT_TAGS, TagMapper.deserialize_constant)
-        r(SerializationTag.kRegExp, TagMapper.deserialize_js_regexp)
-        r(SerializationTag.kBeginJSMap, TagMapper.deserialize_jsmap)
-        r(SerializationTag.kBeginJSSet, TagMapper.deserialize_jsset)
-        r(SerializationTag.kObjectReference, TagMapper.deserialize_object_reference)
-        r(SerializationTag.kBeginJSObject, TagMapper.deserialize_js_object)
-        r(SerializationTag.kBeginDenseJSArray, TagMapper.deserialize_js_array_dense)
-        r(SerializationTag.kBeginSparseJSArray, TagMapper.deserialize_js_array_sparse)
-        r(JS_ARRAY_BUFFER_TAGS, TagMapper.deserialize_js_array_buffer)
-        r(SerializationTag.kArrayBufferView, TagMapper.deserialize_js_array_buffer_view)
-        r(JS_PRIMITIVE_OBJECT_TAGS, TagMapper.deserialize_js_primitive_object)
-        r(SerializationTag.kError, TagMapper.deserialize_js_error)
-        r(SerializationTag.kDate, TagMapper.deserialize_js_date)
-        r(SerializationTag.kSharedObject, TagMapper.deserialize_v8_shared_object_reference)  # noqa: E501
-        r(SerializationTag.kWasmModuleTransfer, TagMapper.deserialize_unsupported_wasm)
-        r(SerializationTag.kWasmMemoryTransfer, TagMapper.deserialize_unsupported_wasm)
-        r(SerializationTag.kHostObject, TagMapper.deserialize_host_object)
+        r(JS_CONSTANT_TAGS, TagReader.deserialize_constant)
+        r(SerializationTag.kRegExp, TagReader.deserialize_js_regexp)
+        r(SerializationTag.kBeginJSMap, TagReader.deserialize_jsmap)
+        r(SerializationTag.kBeginJSSet, TagReader.deserialize_jsset)
+        r(SerializationTag.kObjectReference, TagReader.deserialize_object_reference)
+        r(SerializationTag.kBeginJSObject, TagReader.deserialize_js_object)
+        r(SerializationTag.kBeginDenseJSArray, TagReader.deserialize_js_array_dense)
+        r(SerializationTag.kBeginSparseJSArray, TagReader.deserialize_js_array_sparse)
+        r(JS_ARRAY_BUFFER_TAGS, TagReader.deserialize_js_array_buffer)
+        r(SerializationTag.kArrayBufferView, TagReader.deserialize_js_array_buffer_view)
+        r(JS_PRIMITIVE_OBJECT_TAGS, TagReader.deserialize_js_primitive_object)
+        r(SerializationTag.kError, TagReader.deserialize_js_error)
+        r(SerializationTag.kDate, TagReader.deserialize_js_date)
+        r(SerializationTag.kSharedObject, TagReader.deserialize_v8_shared_object_reference)  # noqa: E501
+        r(SerializationTag.kWasmModuleTransfer, TagReader.deserialize_unsupported_wasm)
+        r(SerializationTag.kWasmMemoryTransfer, TagReader.deserialize_unsupported_wasm)
+        r(SerializationTag.kHostObject, TagReader.deserialize_host_object)
 
         # fmt: on
 
@@ -1301,7 +1301,7 @@ class TagMapper(DecodeStepObject):
         if self.host_object_deserializer is None:
             ctx.stream.throw(
                 "Stream contains HostObject data without deserializer available "
-                "to handle it. TagMapper needs a host_object_deserializer set "
+                "to handle it. TagReader needs a host_object_deserializer set "
                 "to read this serialized data."
             )
         return ctx.stream.read_host_object(self.host_object_deserializer)
@@ -1374,11 +1374,11 @@ class TagMapper(DecodeStepObject):
         return ctx.stream.read_js_date(tz=self.default_timezone).object
 
 
-default_decode_steps: Final[Sequence[DecodeStep]] = (TagMapper(),)
+default_decode_steps: Final[Sequence[DecodeStep]] = (TagReader(),)
 """
 The default sequence of decode steps used to map `SerializationTag`s to Python objects.
 
-This is an instance of [`TagMapper`](`v8serialize.TagMapper`) with no options
+This is an instance of [`TagReader`](`v8serialize.TagReader`) with no options
 changed from the defaults.
 
 JavaScript types are deserialized as the `v8serialize.jstypes.JS*` types, unless

@@ -103,7 +103,7 @@ class JSErrorData(_JSErrorData, AnyJSError, ABC):
         """
         Create a `JSErrorData` by copying another, satisfying [`JSErrorBuilder`].
 
-        This is a [`JSErrorBuilder`] function to configure [`TagMapper`] to
+        This is a [`JSErrorBuilder`] function to configure [`TagReader`] to
         build `JSErrorData`s.
 
         [`JSErrorBuilder`]: `v8serialize.decode.JSErrorBuilder`
@@ -192,15 +192,15 @@ class JSError(AnyJSError, V8SerializeError):
         """
         Create a `JSError` by copying another, satisfying [`JSErrorBuilder`].
 
-        This is a [`JSErrorBuilder`] function to configure [`TagMapper`] to
+        This is a [`JSErrorBuilder`] function to configure [`TagReader`] to
         build `JSError`s.
 
-        [`TagMapper`] has `js_error_builder` option that this function can be
+        [`TagReader`] has `js_error_builder` option that this function can be
         passed to to have it create `JSError` objects when deserializing
         JavaScript Errors.
 
         [`JSErrorBuilder`]: `v8serialize.decode.JSErrorBuilder`
-        [`TagMapper`]: `v8serialize.decode.TagMapper`
+        [`TagReader`]: `v8serialize.decode.TagReader`
         """
         js_error = cls.from_js_error(initial_js_error)
         return js_error, js_error

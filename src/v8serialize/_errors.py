@@ -52,9 +52,9 @@ class DecodeV8SerializeError(V8SerializeError, ValueError):
 @dataclass(init=False)
 class UnhandledTagDecodeV8SerializeError(DecodeV8SerializeError):
     """
-    No TagMapper is able to handle a `SerializationTag`.
+    No `TagReader` is able to handle a `SerializationTag`.
 
-    Raised when attempting to deserialize a tag that no TagMapper is able to
+    Raised when attempting to deserialize a tag that no `TagReader` is able to
     handle (by reading the tag's data from the stream and representing the data
     as a Python object).
     """

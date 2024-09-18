@@ -8,7 +8,7 @@ from hypothesis import strategies as st
 
 from v8serialize._errors import DecodeV8SerializeError
 from v8serialize.constants import JSErrorName, SerializationTag, kLatestVersion
-from v8serialize.decode import DefaultDecodeContext, ReadableTagStream, TagMapper, loads
+from v8serialize.decode import DefaultDecodeContext, ReadableTagStream, TagReader, loads
 from v8serialize.encode import (
     DefaultEncodeContext,
     TagWriter,
@@ -152,7 +152,7 @@ def test_decode_array_buffer_as_error_cause(example: object) -> None:
 
     result = loads(
         encode_ctx.stream.data,
-        decode_steps=[TagMapper(js_error_builder=JSErrorData.builder)],
+        decode_steps=[TagReader(js_error_builder=JSErrorData.builder)],
     )
     assert result == example
 

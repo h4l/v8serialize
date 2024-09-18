@@ -23,7 +23,7 @@ from v8serialize.decode import Decoder as Decoder
 from v8serialize.decode import DecodeStep as DecodeStep
 from v8serialize.decode import DecodeStepFn as DecodeStepFn
 from v8serialize.decode import DecodeStepObject as DecodeStepObject
-from v8serialize.decode import TagMapper as TagMapper
+from v8serialize.decode import TagReader as TagReader
 from v8serialize.decode import default_decode_steps as default_decode_steps
 from v8serialize.decode import loads as loads
 from v8serialize.encode import Encoder as Encoder
