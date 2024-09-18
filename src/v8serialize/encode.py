@@ -90,12 +90,14 @@ class EncodeV8CodecError(V8CodecError, ValueError):
 
 
 @dataclass(init=False)
-class UnmappedValueEncodeV8CodecError(EncodeV8CodecError, ValueError):
+class UnhandledValueEncodeV8CodecError(EncodeV8CodecError, ValueError):
     """
-    No ObjectMapper is able to represent a Python value in the V8 Serialization format.
+    No [encode step] is able to represent a Python value in the V8 Serialization format.
 
     Raised when attempting to serialize an object that the none of the
-    configured ObjectMappers know how to represent as V8 serialization tags.
+    configured encode steps know how to represent as V8 serialization tags.
+
+    [encode step]: `v8serialize.encode.EncodeStep`
     """
 
     value: object
@@ -727,18 +729,16 @@ class EncodeContext(Protocol):
     if TYPE_CHECKING:
 
         @property
-        def stream(self) -> WritableTagStream: ...
+        def stream(self) -> WritableTagStream:
+            """The `WritableTagStream` this context writes to."""
 
     else:
         # test/test_protocol_dataclass_interaction.py
-        stream = ...
+        stream: WritableTagStream
+        """The `WritableTagStream` this context writes to."""
 
     def encode_object(self, value: object) -> None:
-        """Serialize a single Python value to the stream.
-
-        The object_mappers convert the Python value to JavaScript representation,
-        and the stream writes out V8 serialization format tagged data.
-        """
+        """Encode and write a single Python value to the stream."""
 
     def deduplicate(self, value: T) -> T:
         """Look up and return a previously seen value equal to this value.
@@ -747,39 +747,39 @@ class EncodeContext(Protocol):
         """
 
 
-class SerializeNextFn(Protocol):
+class EncodeNextFn(Protocol):
     def __call__(self, value: object, /) -> None: ...
 
 
-class SerializeObjectFn(Protocol):
+class EncodeStepFn(Protocol):
     def __call__(
-        self, value: object, /, ctx: EncodeContext, next: SerializeNextFn
+        self, value: object, /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None: ...
 
 
-class ObjectMapperObject(Protocol):
-    serialize: SerializeObjectFn
+class EncodeStepObject(Protocol):
+    encode: EncodeStepFn
 
 
-AnyObjectMapper: TypeAlias = "ObjectMapperObject | SerializeObjectFn"
+EncodeStep: TypeAlias = "EncodeStepObject | EncodeStepFn"
 
 
 @dataclass(init=False, **slots_if310())
 class DefaultEncodeContext(EncodeContext):
-    object_mappers: Sequence[ObjectMapperObject | SerializeObjectFn]
+    encode_steps: Sequence[EncodeStep]
     stream: WritableTagStream
     _memoized: _lru_cache_wrapper[Any]
 
     # TODO: make this signature more consistent with DefaultDecodeContext
     def __init__(
         self,
-        object_mappers: Iterable[ObjectMapperObject | SerializeObjectFn] | None = None,
+        encode_steps: Iterable[EncodeStepObject | EncodeStepFn] | None = None,
         *,
         stream: WritableTagStream | None = None,
         deduplicate_max_size: int | None = None,
     ) -> None:
-        self.object_mappers = list(
-            default_object_mappers if object_mappers is None else object_mappers
+        self.encode_steps = list(
+            default_encode_steps if encode_steps is None else encode_steps
         )
         self.stream = WritableTagStream() if stream is None else stream
 
@@ -787,28 +787,28 @@ class DefaultEncodeContext(EncodeContext):
             lambda x: x
         )
 
-    def __encode_object_with_mapper(self, value: object, *, i: int) -> None:
-        if i < len(self.object_mappers):
-            om = self.object_mappers[i]
-            next = partial(self.__encode_object_with_mapper, i=i + 1)
+    def __encode_object_with_step(self, value: object, *, i: int) -> None:
+        if i < len(self.encode_steps):
+            om = self.encode_steps[i]
+            next = partial(self.__encode_object_with_step, i=i + 1)
             if callable(om):
                 return om(value, ctx=self, next=next)
             else:
-                return om.serialize(value, ctx=self, next=next)
+                return om.encode(value, ctx=self, next=next)
         self._report_unmapped_value(value)
         raise AssertionError("report_unmapped_value returned")
 
     def encode_object(self, value: object) -> None:
         """Serialize a single Python value to the stream.
 
-        The object_mappers convert the Python value to JavaScript representation,
+        The encode_steps convert the Python value to JavaScript representation,
         and the stream writes out V8 serialization format tagged data.
         """
-        return self.__encode_object_with_mapper(value, i=0)
+        return self.__encode_object_with_step(value, i=0)
 
     def _report_unmapped_value(self, value: object) -> Never:
-        raise UnmappedValueEncodeV8CodecError(
-            "No object mapper was able to write the value", value=value
+        raise UnhandledValueEncodeV8CodecError(
+            "No encode step was able to write the value", value=value
         )
 
     def deduplicate(self, value: T) -> T:
@@ -821,7 +821,7 @@ class DefaultEncodeContext(EncodeContext):
 
 
 @dataclass(**slots_if310())
-class ObjectMapper(ObjectMapperObject):
+class ObjectMapper(EncodeStepObject):
     """Defines the conversion of Python types into the V8 serialization format.
 
     ObjectMappers are responsible for making suitable calls to a WritableTagStream
@@ -834,8 +834,8 @@ class ObjectMapper(ObjectMapperObject):
     """
 
     @singledispatchmethod
-    def serialize(  # type: ignore[override]
-        self, value: object, /, ctx: EncodeContext, next: SerializeNextFn
+    def encode(  # type: ignore[override]
+        self, value: object, /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None:
         next(value)
 
@@ -844,9 +844,9 @@ class ObjectMapper(ObjectMapperObject):
     # them in order (seems like a bug).
     # TODO: replace @singledispatchmethod with a purpose-specific solution.
 
-    @serialize.register(int)
+    @encode.register(int)
     def serialize_int(
-        self, value: int, /, ctx: EncodeContext, next: SerializeNextFn
+        self, value: int, /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None:
         if value in UINT32_RANGE:
             ctx.stream.write_uint32(value)
@@ -861,79 +861,79 @@ class ObjectMapper(ObjectMapperObject):
             else:
                 ctx.stream.write_bigint(value)
 
-    @serialize.register(JSHoleEnum)
+    @encode.register(JSHoleEnum)
     def serialize_hole(
-        self, value: JSHoleType, /, ctx: EncodeContext, next: SerializeNextFn
+        self, value: JSHoleType, /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None:
         ctx.stream.write_constant(SerializationTag.kTheHole)
 
-    @serialize.register(JSUndefinedEnum)
+    @encode.register(JSUndefinedEnum)
     def serialize_undefined(
-        self, value: JSUndefinedType, /, ctx: EncodeContext, next: SerializeNextFn
+        self, value: JSUndefinedType, /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None:
         ctx.stream.write_constant(SerializationTag.kUndefined)
 
-    @serialize.register(bool)
+    @encode.register(bool)
     def serialize_bool(
-        self, value: bool, /, ctx: EncodeContext, next: SerializeNextFn
+        self, value: bool, /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None:
         ctx.stream.write_constant(
             SerializationTag.kTrue if value else SerializationTag.kFalse
         )
 
-    @serialize.register(cast(Any, NoneType))  # None confuses the register() type
+    @encode.register(cast(Any, NoneType))  # None confuses the register() type
     def serialize_none(
-        self, value: None, /, ctx: EncodeContext, next: SerializeNextFn
+        self, value: None, /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None:
         ctx.stream.write_constant(SerializationTag.kNull)
 
-    @serialize.register(str)
+    @encode.register(str)
     def serialize_str(
-        self, value: str, /, ctx: EncodeContext, next: SerializeNextFn
+        self, value: str, /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None:
         ctx.stream.write_string_utf8(value)
 
-    @serialize.register(float)
+    @encode.register(float)
     def serialize_float(
-        self, value: float, /, ctx: EncodeContext, next: SerializeNextFn
+        self, value: float, /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None:
         ctx.stream.write_double(value)
 
-    @serialize.register(JSPrimitiveObject)
+    @encode.register(JSPrimitiveObject)
     def serialize_js_primitive_object(
-        self, value: JSPrimitiveObject, /, ctx: EncodeContext, next: SerializeNextFn
+        self, value: JSPrimitiveObject, /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None:
         ctx.stream.write_js_primitive_object(value)
 
-    @serialize.register(JSRegExp)
+    @encode.register(JSRegExp)
     def serialize_js_regexp(
-        self, value: JSRegExp, /, ctx: EncodeContext, next: SerializeNextFn
+        self, value: JSRegExp, /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None:
         ctx.stream.write_js_regexp(value)
 
-    @serialize.register(re.Pattern)
+    @encode.register(re.Pattern)
     def serialize_python_regexp(
-        self, value: re.Pattern[AnyStr], /, ctx: EncodeContext, next: SerializeNextFn
+        self, value: re.Pattern[AnyStr], /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None:
         ctx.stream.write_js_regexp(JSRegExp.from_python_pattern(value))
 
-    @serialize.register(JSErrorData)
+    @encode.register(JSErrorData)
     def serialize_js_error(
-        self, value: AnyJSError, /, ctx: EncodeContext, next: SerializeNextFn
+        self, value: AnyJSError, /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None:
         ctx.stream.write_js_error(value, ctx)
 
-    @serialize.register(BaseException)
+    @encode.register(BaseException)
     def serialize_python_exception(
-        self, value: BaseException, /, ctx: EncodeContext, next: SerializeNextFn
+        self, value: BaseException, /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None:
         ctx.stream.write_js_error(
             JSErrorData.from_exception(value), ctx, identity=value
         )
 
-    @serialize.register(datetime)
+    @encode.register(datetime)
     def serialize_python_datetime(
-        self, value: datetime, /, ctx: EncodeContext, next: SerializeNextFn
+        self, value: datetime, /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None:
         # Note that we don't handle date objects because JavaScript Date is a
         # fixed point in time, whereas Python date is a calendar date. A date
@@ -941,33 +941,33 @@ class ObjectMapper(ObjectMapperObject):
         # otherwise it's ambiguous.
         ctx.stream.write_js_date(value)
 
-    @serialize.register(V8SharedObjectReference)
+    @encode.register(V8SharedObjectReference)
     def serialize_v8_shared_object_reference(
         self,
         value: V8SharedObjectReference,
         /,
         ctx: EncodeContext,
-        next: SerializeNextFn,
+        next: EncodeNextFn,
     ) -> None:
         ctx.stream.write_v8_shared_object_reference(value)
 
-    @serialize.register(JSObject)
+    @encode.register(JSObject)
     def serialize_js_object(
         self,
         value: JSObject[object],
         /,
         ctx: EncodeContext,
-        next: SerializeNextFn,
+        next: EncodeNextFn,
     ) -> None:
         ctx.stream.write_js_object(value.items(), ctx=ctx, identity=value)
 
-    @serialize.register(JSArray)
+    @encode.register(JSArray)
     def serialize_js_array(
         self,
         value: JSArray[object],
         /,
         ctx: EncodeContext,
-        next: SerializeNextFn,
+        next: EncodeNextFn,
     ) -> None:
         # Dense hole tags take 1 byte for the hole tag
         elements_used, length = value.array.elements_used, len(value.array)
@@ -989,60 +989,60 @@ class ObjectMapper(ObjectMapperObject):
                 identity=value,
             )
 
-    @serialize.register(abc.Mapping)
+    @encode.register(abc.Mapping)
     def serialize_mapping(
         self,
         value: Mapping[object, object],
         /,
         ctx: EncodeContext,
-        next: SerializeNextFn,
+        next: EncodeNextFn,
     ) -> None:
         ctx.stream.write_jsmap(value.items(), ctx=ctx, identity=value)
 
-    @serialize.register(abc.Set)
+    @encode.register(abc.Set)
     def serialize_set(
-        self, value: AbstractSet[object], /, ctx: EncodeContext, next: SerializeNextFn
+        self, value: AbstractSet[object], /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None:
         ctx.stream.write_jsset(value, ctx=ctx)
 
-    @serialize.register(abc.Collection)
+    @encode.register(abc.Collection)
     def serialize_collection(
-        self, value: Collection[object], /, ctx: EncodeContext, next: SerializeNextFn
+        self, value: Collection[object], /, ctx: EncodeContext, next: EncodeNextFn
     ) -> None:
         ctx.stream.write_js_array_dense(value, ctx=ctx)
 
-    @serialize.register(BaseJSArrayBuffer)
+    @encode.register(BaseJSArrayBuffer)
     def serialize_js_array_buffer(
         self,
         value: JSArrayBuffer | JSSharedArrayBuffer | JSArrayBufferTransfer,
         /,
         ctx: EncodeContext,
-        next: SerializeNextFn,
+        next: EncodeNextFn,
     ) -> None:
         ctx.stream.write_js_array_buffer(value)
 
-    @serialize.register(bytes)
-    @serialize.register(bytearray)
-    @serialize.register(memoryview)
+    @encode.register(bytes)
+    @encode.register(bytearray)
+    @encode.register(memoryview)
     def serialize_buffer(
         self,
         value: bytes | bytearray,
         /,
         ctx: EncodeContext,
-        next: SerializeNextFn,
+        next: EncodeNextFn,
     ) -> None:
         with memoryview(value) as data:
             ctx.stream.write_js_array_buffer(
                 buffer=JSArrayBuffer(data), identity=ctx.deduplicate(value)
             )
 
-    @serialize.register(JSArrayBufferView)
+    @encode.register(JSArrayBufferView)
     def serialize_buffer_view(
         self,
         value: JSArrayBufferView,
         /,
         ctx: EncodeContext,
-        next: SerializeNextFn,
+        next: EncodeNextFn,
     ) -> None:
         if (
             value.view_tag == ArrayBufferViewTag.kFloat16Array
@@ -1050,7 +1050,7 @@ class ObjectMapper(ObjectMapperObject):
         ):
             try:
                 return next(value)
-            except UnmappedValueEncodeV8CodecError as e:
+            except UnhandledValueEncodeV8CodecError as e:
                 add_note(
                     e,
                     f"{type(self).__name__} is not handling JSArrayBufferViews "
@@ -1063,7 +1063,7 @@ class ObjectMapper(ObjectMapperObject):
 
 
 def serialize_object_references(
-    value: object, /, ctx: EncodeContext, next: SerializeNextFn
+    value: object, /, ctx: EncodeContext, next: EncodeNextFn
 ) -> None:
     """
     Serialize references to previously-seen objects instead of duplicating them.
@@ -1078,9 +1078,10 @@ def serialize_object_references(
 
     Notes
     -----
-    This is an Object Mapper (`SerializeObjectFn`) that can be used as one of
-    the `object_mappers` with `dumps()` or `Encoder()`.
+    This is an [encode step] that can be used as one of
+    the `encode_steps` with `dumps()` or `Encoder()`.
 
+    [encode step]: `v8serialize.encode.EncodeStep`
     """
     value = ctx.deduplicate(value)
     if value in ctx.stream.objects:
@@ -1089,20 +1090,22 @@ def serialize_object_references(
         next(value)
 
 
-default_object_mappers: tuple[AnyObjectMapper, ...] = (
+default_encode_steps: tuple[EncodeStep, ...] = (
     serialize_object_references,
     ObjectMapper(),
 )
 """
-The default ObjectMapper chain used to map Python objects to JavaScript values.
+The default sequence of [encode steps] used to map Python objects to JavaScript values.
 
 The defaults represent common Python types as their JavaScript equivalents, and
 serializes the `v8serialize.jstypes.JS*` types as their corresponding JavaScript
 type.
 
-This chain contains
+This sequence contains
 [`serialize_object_references`](serialize_object_references.qmd) and an instance
 of [`ObjectMapper`](ObjectMapper.qmd).
+
+[encode steps]: `v8serialize.encode.EncodeStep`
 """
 
 
@@ -1118,9 +1121,9 @@ SerializationFeature.qmd#maxcompatibility).
 
     Parameters
     ----------
-    object_mappers
-        The chain of Object Mappers that control how the `value` is converted to
-        JavaScript types.
+    encode_steps
+        The sequence of encode steps that control how the `value` is converted
+        to JavaScript types.
     features
         Additional features of the V8 serialization format to enable.
     v8_version
@@ -1134,17 +1137,18 @@ SerializationFeature.qmd#maxcompatibility).
     V8 serialization format tag data.
     """
 
-    object_mappers: Sequence[AnyObjectMapper]
+    encode_steps: Sequence[EncodeStep]
     features: SerializationFeature
 
     def __init__(
         self,
-        object_mappers: Iterable[AnyObjectMapper] | None = default_object_mappers,
+        *,
+        encode_steps: Iterable[EncodeStep] | None = default_encode_steps,
         features: SerializationFeature | None = None,
         v8_version: Version | UnreleasedVersion | str | None = None,
     ) -> None:
-        self.object_mappers = (
-            default_object_mappers if object_mappers is None else tuple(object_mappers)
+        self.encode_steps = (
+            default_encode_steps if encode_steps is None else tuple(encode_steps)
         )
 
         if features is None:
@@ -1174,7 +1178,7 @@ SerializationFeature.qmd#maxcompatibility).
         """
         ctx = DefaultEncodeContext(
             stream=WritableTagStream(features=self.features),
-            object_mappers=self.object_mappers,
+            encode_steps=self.encode_steps,
         )
         ctx.stream.write_header()
         ctx.encode_object(value)
@@ -1184,7 +1188,7 @@ SerializationFeature.qmd#maxcompatibility).
 def dumps(
     value: object,
     *,
-    object_mappers: Iterable[AnyObjectMapper] | None = default_object_mappers,
+    encode_steps: Iterable[EncodeStep] | None = default_encode_steps,
     features: SerializationFeature | None = None,
     v8_version: Version | SymbolicVersion | str | None = None,
 ) -> bytes:
@@ -1201,13 +1205,15 @@ def dumps(
     runtime from [`SerializationFeature.MaxCompatibility.first_v8_version`](\
 SerializationFeature.qmd#maxcompatibility).
 
+    [encode steps]: `v8serialize.encode.EncodeStep`
+
     Parameters
     ----------
     value
         The Python value to serialize.
-    object_mappers
-        The chain of Object Mappers that control how the `value` is converted to
-        JavaScript types.
+    encode_steps
+        The sequence of [encode steps] that control how the `value` is converted
+        to JavaScript types.
     features
         Additional features of the V8 serialization format to enable.
     v8_version
@@ -1221,9 +1227,9 @@ SerializationFeature.qmd#maxcompatibility).
 
     Raises
     ------
-    UnmappedValueEncodeV8CodecError
+    UnhandledValueEncodeV8CodecError
         When a `value` (or a sub-value within it) is not supported by the
-        `object_mappers`.
+        `encode_steps`.
     FeatureNotEnabledEncodeV8CodecError
         When encoding `value` requires a [`SerializationFeature`] to be enabled
         that isn't enabled.
@@ -1242,6 +1248,6 @@ SerializationFeature.qmd#maxcompatibility).
     JSObject(id=42, title='Stuff', tags=JSSet(['foo', 'bar']))
     """
     encoder = Encoder(
-        object_mappers=object_mappers, features=features, v8_version=v8_version
+        encode_steps=encode_steps, features=features, v8_version=v8_version
     )
     return bytes(encoder.encode(value))

@@ -20,7 +20,7 @@ from v8serialize.jstypes.jsbuffers import (
 
 if TYPE_CHECKING:
     from v8serialize.decode import ReadableTagStream
-    from v8serialize.encode import EncodeContext, SerializeNextFn, WritableTagStream
+    from v8serialize.encode import EncodeContext, EncodeNextFn, WritableTagStream
 
 
 class NodeJsArrayBufferViewHostObjectHandler:
@@ -77,7 +77,7 @@ node_js_array_buffer_view_host_object_handler = NodeJsArrayBufferViewHostObjectH
 
 
 def serialize_js_array_buffer_views_as_nodejs_host_object(
-    value: object, /, ctx: EncodeContext, next: SerializeNextFn
+    value: object, /, ctx: EncodeContext, next: EncodeNextFn
 ) -> None:
     """
     Serialize JSDataView and JSTypedArray using node.js's custom HostObject format.

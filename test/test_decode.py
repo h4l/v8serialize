@@ -142,7 +142,7 @@ def test_decode_array_buffer_as_error_cause(example: object) -> None:
     # tag, which is not a Serialization Tag.
 
     encode_ctx = DefaultEncodeContext(
-        object_mappers=[serialize_object_references, ObjectMapper()]
+        encode_steps=[serialize_object_references, ObjectMapper()]
     )
     encode_ctx.stream.write_header()
     encode_ctx.encode_object(example)

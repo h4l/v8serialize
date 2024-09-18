@@ -3,11 +3,11 @@ from __future__ import annotations
 import math
 from datetime import datetime
 from typing import Callable, cast
-from typing_extensions import Literal
 
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
+from typing_extensions import Literal
 
 from v8serialize._pycompat.typing import get_buffer
 from v8serialize.constants import (
@@ -73,7 +73,7 @@ any_theoretical_atomic = any_atomic(allow_theoretical=True)
 def create_rw_ctx() -> CreateContexts:
     def create_rw_ctx() -> tuple[DefaultEncodeContext, DefaultDecodeContext]:
         encode_ctx = DefaultEncodeContext(
-            object_mappers=[ObjectMapper()],
+            encode_steps=[ObjectMapper()],
             # Enable all features
             stream=WritableTagStream(features=~SerializationFeature.MaxCompatibility),
         )
@@ -418,7 +418,7 @@ def test_codec_rt_object_identity__simple(
 ) -> None:
     encode_ctx = DefaultEncodeContext(
         # Change test-default mappers to include serialize_object_references
-        object_mappers=[serialize_object_references, ObjectMapper()]
+        encode_steps=[serialize_object_references, ObjectMapper()]
     )
     decode_ctx = DefaultDecodeContext(
         data=encode_ctx.stream.data, tag_mappers=[TagMapper()]
@@ -538,7 +538,7 @@ def test_codec_rt_js_regexp(
     )
 )
 def test_codec_rt_js_error(value: JSErrorData) -> None:
-    encode_ctx = DefaultEncodeContext(object_mappers=[ObjectMapper()])
+    encode_ctx = DefaultEncodeContext(encode_steps=[ObjectMapper()])
     decode_ctx = DefaultDecodeContext(
         data=encode_ctx.stream.data,
         # Change default error type to deserialize as JSErrorData

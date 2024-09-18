@@ -15,7 +15,7 @@ from v8serialize.encode import (
     Encoder,
     FeatureNotEnabledEncodeV8CodecError,
     ObjectMapper,
-    UnmappedValueEncodeV8CodecError,
+    UnhandledValueEncodeV8CodecError,
     WritableTagStream,
     dumps,
     serialize_object_references,
@@ -79,8 +79,8 @@ def test_feature_float16__cannot_write_float16array_when_disabled() -> None:
     )
 
     with pytest.raises(
-        UnmappedValueEncodeV8CodecError,
-        match="No object mapper was able to write the value",
+        UnhandledValueEncodeV8CodecError,
+        match="No encode step was able to write the value",
     ) as exc_info1:
         ctx.encode_object(f16)
 
@@ -155,7 +155,7 @@ def test_feature_cyclic_error_cause__cyclic_errors_not_allowed_when_disabled() -
     err.cause = err
 
     ctx = DefaultEncodeContext(
-        object_mappers=[serialize_object_references, ObjectMapper()],
+        encode_steps=[serialize_object_references, ObjectMapper()],
         stream=WritableTagStream(features=~SerializationFeature.CircularErrorCause),
     )
 
@@ -177,7 +177,7 @@ def test_feature_cyclic_error_cause__cyclic_errors_are_allowed_when_enabled() ->
     err.cause = err
 
     ctx = DefaultEncodeContext(
-        object_mappers=[serialize_object_references, ObjectMapper()],
+        encode_steps=[serialize_object_references, ObjectMapper()],
         stream=WritableTagStream(features=SerializationFeature.CircularErrorCause),
     )
 

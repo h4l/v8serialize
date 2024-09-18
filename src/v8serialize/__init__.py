@@ -32,7 +32,7 @@ from v8serialize.encode import (
     FeatureNotEnabledEncodeV8CodecError as FeatureNotEnabledEncodeV8CodecError,
 )
 from v8serialize.encode import (
-    UnmappedValueEncodeV8CodecError as UnmappedValueEncodeV8CodecError,
+    UnhandledValueEncodeV8CodecError as UnhandledValueEncodeV8CodecError,
 )
-from v8serialize.encode import default_object_mappers as default_object_mappers
+from v8serialize.encode import default_encode_steps as default_encode_steps
 from v8serialize.encode import dumps as dumps

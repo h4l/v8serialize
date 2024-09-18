@@ -9,13 +9,13 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
-from typing_extensions import Generator, Self
 
 import httpx
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 from packaging.version import InvalidVersion, Version
+from typing_extensions import Generator, Self
 
 from v8serialize._pycompat.enum import StrEnum
 from v8serialize._versions import parse_lenient_version
@@ -361,8 +361,8 @@ def enabled_features(
     return SerializationFeature.MaxCompatibility
 
 
-# TODO: also test with serialize_object_references (default_object_mappers)
-object_mappers = [ObjectMapper()]
+# TODO: also test with serialize_object_references (default_encode_steps)
+encode_steps = [ObjectMapper()]
 tag_mappers: Sequence[AnyTagMapper] = [
     TagMapper(host_object_deserializer=node_js_array_buffer_view_host_object_handler)
 ]
@@ -387,7 +387,7 @@ def test_codec_rt_object(
 
     # TODO: support feature flags in dumps()
     encode_ctx = DefaultEncodeContext(
-        object_mappers=object_mappers,
+        encode_steps=encode_steps,
         stream=WritableTagStream(features=enabled_features),
     )
     encode_ctx.stream.write_header()
