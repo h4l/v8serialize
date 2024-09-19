@@ -719,6 +719,28 @@ JS_CONSTANT_TAGS: Final = TagConstraint[ConstantTags](
         }
     ),
 )
+"""
+Tags for JavaScript constant values.
+
+When deserializing, the default Python values representing the JavaScript
+constants are:
+
+| SerializationTag | JavaScript          | Python        |
+|------------------|---------------------|---------------|
+| [kTheHole]       | (empty array index) | [JSHole]      |
+| [kUndefined]     | `undefined`         | [JSUndefined] |
+| [kNull]          | `null`              | `None`        |
+| [kTrue]          | `true`              | `True`        |
+| [kFalse]         | `false`             | `False`       |
+
+[kTheHole]: `v8serialize.constants.SerializationTag.kTheHole`
+[kUndefined]: `v8serialize.constants.SerializationTag.kUndefined`
+[kNull]: `v8serialize.constants.SerializationTag.kNull`
+[kTrue]: `v8serialize.constants.SerializationTag.kTrue`
+[kFalse]: `v8serialize.constants.SerializationTag.kFalse`
+[JSHole]: `v8serialize.jstypes.JSHole`
+[JSUndefined]: `v8serialize.jstypes.JSUndefined`
+"""
 
 ArrayBufferTags = Literal[
     SerializationTag.kArrayBuffer,

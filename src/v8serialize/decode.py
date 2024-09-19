@@ -1107,9 +1107,46 @@ class TagReader(DecodeStepObject):
     """
     Controls how V8 serialization data is converted to Python values when deserializing.
 
-    You can customise the way JavaScript values are represented in Python by
-    creating a `TagReader` instance with non-default options, and passing it to
-    the `decode_steps` option of `v8serialize.loads()` or `v8serialize.Decoder()`
+    Customise the way JavaScript values are represented in Python by creating a
+    `TagReader` instance with non-default options, and passing it to the
+    `decode_steps` option of `v8serialize.loads()` or `v8serialize.Decoder()`
+
+    [JSMap]: `v8serialize.jstypes.JSMap`
+    [JSSet]: `v8serialize.jstypes.JSSet`
+    [JSObject]: `v8serialize.jstypes.JSObject`
+    [JSArray]: `v8serialize.jstypes.JSArray`
+    [SerializationTags]: `v8serialize.constants.SerializationTag`
+    [JS_CONSTANT_TAGS]: `v8serialize.constants.JS_CONSTANT_TAGS`
+    [HostObjectDeserializer]: `v8serialize.decode.HostObjectDeserializer`
+    [HostObject]: `v8serialize.constants.SerializationTag.kHostObject`
+    [JSError.builder]: `v8serialize.jstypes.JSError.builder`
+    [datetime]: `datetime.datetime`
+    [desc]: `v8serialize.loads`
+
+    Parameters
+    ----------
+    tag_readers
+        Override the tag reader functions implied by other arguments.
+        Default: no overrides.
+    jsmap_type
+        A function returning an empty `dict` to represent Map. Default: [JSMap].
+    jsset_type
+        A function returning an empty `set` to represent Set. Default: [JSSet].
+    js_object_type
+        A function returning an empty `dict` to represent Object. Default: [JSObject].
+    js_array_type
+        A function returning an empty `dict` to represent Array. Default: [JSArray].
+    js_constants
+        A dict mapping tags from [JS_CONSTANT_TAGS] to the values to represent
+        them as. Default: see [JS_CONSTANT_TAGS].
+    host_object_deserializer
+        A [HostObjectDeserializer] to load [HostObject] extension tags.
+        Default: see [desc].
+    js_error_builder
+        A JSErrorBuilder to create Error representations. Default: [JSError.builder]
+    default_timezone
+        The timezone to use when creating [datetime] to represent Date.
+        Default: datetimes have no timezone.
     """
 
     tag_readers: TagReaderRegistry
@@ -1508,19 +1545,33 @@ def loads(
     """Deserialize a JavaScript value encoded in V8 serialization format.
 
     The serialized JavaScript types are mapped to appropriate Python equivalents
-    using the `decode_steps`.
+    according to the keyword argument options:
 
-    Data serialized by V8 serialization format version 13 or newer can be
-    decoded. ([13 was introduced in 2017, V8 version 5.8.294][fmt13], used by
-    Node.JS 16.)
+    1. If `decode_steps` is set, the steps are used as-is and no other options
+        can also be set.
+    2. If `decode_steps` is not set, other options are used to construct
+        a [TagReader] to serve as the `decode_steps`.
+        - `host_object_deserializer` defaults to
+            [NodeJsArrayBufferViewHostObjectHandler] unless `nodejs` is `False`.
 
-    [fmt13]: https://github.com/v8/v8/commit/6543519977b2012b58a4ffef28b8527db404fbdb
 
-    :::{.callout-note}
-    `loads()` does not need any configuration of V8 version or serialization
-    features, because it automatically supports decoding data encoded with or
-    without optional features enabled.
-    :::
+
+    [NodeJsArrayBufferViewHostObjectHandler]: \
+`v8serialize.extensions.NodeJsArrayBufferViewHostObjectHandler`
+    [TagReader]: `v8serialize.decode.TagReader`
+
+
+    [JSMap]: `v8serialize.jstypes.JSMap`
+    [JSSet]: `v8serialize.jstypes.JSSet`
+    [JSObject]: `v8serialize.jstypes.JSObject`
+    [JSArray]: `v8serialize.jstypes.JSArray`
+    [SerializationTags]: `v8serialize.constants.SerializationTag`
+    [JS_CONSTANT_TAGS]: `v8serialize.constants.JS_CONSTANT_TAGS`
+    [HostObjectDeserializer]: `v8serialize.decode.HostObjectDeserializer`
+    [HostObject]: `v8serialize.constants.SerializationTag.kHostObject`
+    [JSError.builder]: `v8serialize.jstypes.JSError.builder`
+    [datetime]: `datetime.datetime`
+    [desc]: `v8serialize.loads`
 
     Parameters
     ----------
@@ -1530,6 +1581,29 @@ def loads(
     decode_steps
         A sequence of decode steps, which are responsible for creating Python
         values to represent the JavaScript values found in the `data`.
+    nodejs
+        Node.js's custom buffer HostObject extension is enabled unless `False`,
+        or `host_object_deserializer` is set.
+    jsmap_type
+        A function returning an empty `dict` to represent Map. Default: [JSMap].
+    jsset_type
+        A function returning an empty `set` to represent Set. Default: [JSSet].
+    js_object_type
+        A function returning an empty `dict` to represent Object. Default: [JSObject].
+    js_array_type
+        A function returning an empty `dict` to represent Array. Default: [JSArray].
+    js_constants
+        A dict mapping tags from [JS_CONSTANT_TAGS] to the values to represent
+        them as. Default: see [JS_CONSTANT_TAGS].
+    host_object_deserializer
+        A [HostObjectDeserializer] to load [HostObject] extension tags.
+        Default: see [desc].
+    js_error_builder
+        A JSErrorBuilder to create Error representations. Default: [JSError.builder]
+    default_timezone
+        The timezone to use when creating [datetime] to represent Date.
+        Default: datetimes have no timezone.
+
 
     Returns
     -------
@@ -1547,11 +1621,45 @@ def loads(
         When the `decode_steps` don't support a JavaScript type occurring in the
         `data`.
 
+    Notes
+    -----
+    Data serialized by V8 serialization format version 13 or newer can be
+    decoded. ([13 was introduced in 2017, V8 version 5.8.294][fmt13], used by
+    Node.JS 16.)
+
+    [fmt13]: https://github.com/v8/v8/commit/6543519977b2012b58a4ffef28b8527db404fbdb
+
+    :::{.callout-notes}
+    `loads()` does not need any configuration of V8 version or serialization
+    features, because it automatically supports decoding data encoded with or
+    without optional features enabled.
+    :::
+
     Examples
     --------
     >>> from v8serialize import dumps, loads
     >>> loads(dumps({'Hello': 'World'}))
     JSMap([('Hello', 'World')])
+
+    The types used to represent JavaScript values can be changed, for example,
+    we can use a regular Python dict to represent JavaScript Map.
+
+    >>> loads(dumps({'Hello': 'World'}), jsmap_type=dict)
+    {'Hello': 'World'}
+
+    By default JavaScript null and undefined are also different in Python:
+
+    >>> from v8serialize.constants import SerializationTag
+    >>> from v8serialize.jstypes import JSUndefined, JSObject
+    >>> loads(dumps(JSObject(missing_null=None, missing_undefined=JSUndefined)))
+    JSObject(missing_null=None, missing_undefined=JSUndefined)
+
+    But we can make them both be None:
+
+    >>> loads(dumps(JSObject(missing_null=None,
+    ...                      missing_undefined=JSUndefined)),
+    ...       js_constants={SerializationTag.kUndefined: None})
+    JSObject(missing_null=None, missing_undefined=None)
     """
     if decode_steps is not None:
         if not (
