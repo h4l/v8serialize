@@ -77,7 +77,6 @@ from v8serialize.jstypes.jsundefined import JSUndefinedEnum, JSUndefinedType
 
 if TYPE_CHECKING:
     from functools import _lru_cache_wrapper
-
     from typing_extensions import Never, TypeAlias
 
 T = TypeVar("T")
@@ -1257,8 +1256,9 @@ def dumps(
         When a `value` (or a sub-value within it) is not supported by the
         `encode_steps`.
     FeatureNotEnabledEncodeV8SerializeError
-        When encoding `value` requires a [`SerializationFeature`][SerializationFeature] to be enabled
-        that isn't enabled.
+        When encoding `value` requires a
+        [`SerializationFeature`][SerializationFeature] to be enabled that isn't
+        enabled.
     EncodeV8SerializeError
         Is the parent of all data-specific errors thrown when encoding.
 
