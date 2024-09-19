@@ -46,13 +46,14 @@ from v8serialize._values import (
     ArrayBufferTransferConstructor as ArrayBufferTransferConstructor,
 )
 from v8serialize._values import ArrayBufferViewConstructor as ArrayBufferViewConstructor
-from v8serialize._values import BufferT, ViewT
+from v8serialize._values import BufferT
 from v8serialize._values import JSErrorBuilder as JSErrorBuilder
 from v8serialize._values import (
     SharedArrayBufferConstructor as SharedArrayBufferConstructor,
 )
 from v8serialize._values import SharedArrayBufferId as SharedArrayBufferId
 from v8serialize._values import TransferId as TransferId
+from v8serialize._values import ViewT
 from v8serialize.constants import (
     INT32_RANGE,
     JS_ARRAY_BUFFER_TAGS,
@@ -74,6 +75,7 @@ from v8serialize.constants import (
     TagConstraint,
     kLatestVersion,
 )
+from v8serialize.extensions import NodeJsArrayBufferViewHostObjectHandler
 from v8serialize.jstypes import JSHole, JSObject, JSUndefined
 from v8serialize.jstypes._v8 import V8SharedObjectReference, V8SharedValueId
 from v8serialize.jstypes.jsarray import JSArray
@@ -92,8 +94,9 @@ from v8serialize.jstypes.jsregexp import JSRegExp
 from v8serialize.jstypes.jsset import JSSet
 
 if TYPE_CHECKING:
-    from _typeshed import SupportsRead
     from typing_extensions import Never, TypeAlias
+
+    from _typeshed import SupportsRead
 
 T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
@@ -1464,10 +1467,43 @@ class Decoder:
         return ctx.decode_object()
 
 
+@overload
 def loads(
     data: ReadableBinary | Buffer,
     *,
     decode_steps: Iterable[DecodeStep] | None = default_decode_steps,
+) -> object: ...
+
+
+@overload
+def loads(
+    data: ReadableBinary | Buffer,
+    *,
+    nodejs: bool = ...,
+    jsmap_type: JSMapType | None = None,
+    jsset_type: JSSetType | None = None,
+    js_object_type: JSObjectType | None = None,
+    js_array_type: JSArrayType | None = None,
+    js_constants: Mapping[ConstantTags, object] | None = None,
+    host_object_deserializer: HostObjectDeserializer[object] | None = None,
+    js_error_builder: JSErrorBuilder[object] | None = None,
+    default_timezone: tzinfo | None = None,
+) -> object: ...
+
+
+def loads(
+    data: ReadableBinary | Buffer,
+    *,
+    decode_steps: Iterable[DecodeStep] | None = None,
+    nodejs: bool | None = None,
+    jsmap_type: JSMapType | None = None,
+    jsset_type: JSSetType | None = None,
+    js_object_type: JSObjectType | None = None,
+    js_array_type: JSArrayType | None = None,
+    js_constants: Mapping[ConstantTags, object] | None = None,
+    host_object_deserializer: HostObjectDeserializer[object] | None = None,
+    js_error_builder: JSErrorBuilder[object] | None = None,
+    default_timezone: tzinfo | None = None,
 ) -> object:
     """Deserialize a JavaScript value encoded in V8 serialization format.
 
@@ -1517,4 +1553,41 @@ def loads(
     >>> loads(dumps({'Hello': 'World'}))
     JSMap([('Hello', 'World')])
     """
-    return Decoder(decode_steps=decode_steps).decodes(data)
+    if decode_steps is not None:
+        if not (
+            nodejs is None
+            and jsmap_type is None
+            and jsset_type is None
+            and js_object_type is None
+            and js_array_type is None
+            and js_constants is None
+            and host_object_deserializer is None
+            and js_error_builder is None
+            and default_timezone is None
+        ):
+            raise TypeError(
+                "'decode_steps' argument cannot be passed to loads() with "
+                "'nodejs' or other arguments for TagReader"
+            )
+        return Decoder(decode_steps=decode_steps).decodes(data)
+
+    if nodejs and host_object_deserializer is not None:
+        raise TypeError(
+            "arguments 'nodejs' and 'host_object_deserializer' cannot both be "
+            "set for loads()"
+        )
+
+    if host_object_deserializer is None and (nodejs or nodejs is None):
+        host_object_deserializer = NodeJsArrayBufferViewHostObjectHandler()
+
+    tag_reader = TagReader(
+        jsmap_type=jsmap_type,
+        jsset_type=jsset_type,
+        js_object_type=js_object_type,
+        js_array_type=js_array_type,
+        js_constants=js_constants,
+        host_object_deserializer=host_object_deserializer,
+        js_error_builder=js_error_builder,
+        default_timezone=default_timezone,
+    )
+    return Decoder(decode_steps=[tag_reader]).decodes(data)

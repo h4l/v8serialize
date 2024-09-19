@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from base64 import b64decode
+from typing import Any, cast
 
 import pytest
 from hypothesis import given
@@ -8,16 +9,25 @@ from hypothesis import strategies as st
 
 from v8serialize._errors import DecodeV8SerializeError
 from v8serialize.constants import JSErrorName, SerializationTag, kLatestVersion
-from v8serialize.decode import DefaultDecodeContext, ReadableTagStream, TagReader, loads
+from v8serialize.decode import (
+    DefaultDecodeContext,
+    ReadableTagStream,
+    TagReader,
+    default_decode_steps,
+    loads,
+)
 from v8serialize.encode import (
     DefaultEncodeContext,
     TagWriter,
     WritableTagStream,
+    dumps,
     serialize_object_references,
 )
+from v8serialize.extensions import NodeJsArrayBufferViewHostObjectHandler
 from v8serialize.jstypes.jsarray import JSArray
-from v8serialize.jstypes.jsbuffers import JSArrayBuffer, JSUint8Array
+from v8serialize.jstypes.jsbuffers import JSArrayBuffer, JSUint8Array, JSUint32Array
 from v8serialize.jstypes.jserror import JSError, JSErrorData
+from v8serialize.jstypes.jsmap import JSMap
 
 
 @given(st.integers(min_value=1))
@@ -47,6 +57,60 @@ def test_decode_varint__truncated(n: int) -> None:
 def test_loads(serialized: str, expected: object) -> None:
     result = loads(b64decode(serialized))
     assert result == expected
+
+
+def test_loads_options__invalid_args() -> None:
+    with pytest.raises(
+        TypeError,
+        match=r"arguments 'nodejs' and 'host_object_deserializer' cannot both be set",
+    ):
+        loads(b"", nodejs=True, host_object_deserializer=cast(Any, lambda: None))
+
+    with pytest.raises(
+        TypeError,
+        match=r"'decode_steps' argument cannot be passed to loads\(\) with "
+        r"'nodejs' or other arguments for TagReader",
+    ):
+        loads(b"", nodejs=True, decode_steps=default_decode_steps)  # type: ignore [call-overload]
+
+    with pytest.raises(
+        TypeError,
+        match=r"loads\(\) got an unexpected keyword argument 'frob'",
+    ):
+        loads(b"", frob=True)  # type: ignore [call-overload]
+
+
+def test_loads_options__nodejs() -> None:
+    # see test_extensions, this is a Node.js host object with a Uint32Array
+    data = b64decode("/w9cBgj/////Fc1bBw==")
+
+    assert isinstance(loads(data), JSUint32Array)
+    assert isinstance(loads(data, nodejs=True), JSUint32Array)
+
+    with pytest.raises(
+        DecodeV8SerializeError,
+        match=r"Stream contains HostObject data without deserializer available "
+        r"to handle it.",
+    ):
+        loads(data, nodejs=False)
+
+
+def test_loads_options__tagreader() -> None:
+    # see test_extensions, this is a Node.js host object with a Uint32Array
+    data = b64decode("/w9cBgj/////Fc1bBw==")
+
+    assert isinstance(
+        loads(data, host_object_deserializer=NodeJsArrayBufferViewHostObjectHandler()),
+        JSUint32Array,
+    )
+
+    regular_dict = loads(dumps({"a": 1}), jsmap_type=dict)
+    assert regular_dict == {"a": 1}
+    assert type(regular_dict) is dict
+
+    jsmap = loads(dumps({"a": 1}), jsmap_type=None)
+    assert jsmap == JSMap(a=1)
+    assert type(jsmap) is JSMap
 
 
 def test_load_v13_arraybufferview() -> None:
