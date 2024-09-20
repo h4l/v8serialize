@@ -330,6 +330,7 @@ quartodoc:
               include_empty: true
             - constants.TagConstraint
             - constants.JS_OBJECT_KEY_TAGS
+            - constants.ConstantTags
             - constants.JS_CONSTANT_TAGS
             - constants.JS_ARRAY_BUFFER_TAGS
             - constants.JS_PRIMITIVE_OBJECT_TAGS
