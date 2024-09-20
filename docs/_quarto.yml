@@ -85,7 +85,7 @@ quartodoc:
           summary:
             name: Customized Encoding
             desc: |
-              The `v8serialize.encode` module provides types to write V8 serialization format data.
+              The `v8serialize.encode` module writes V8-serialized data.
           contents:
             - default_encode_steps
             - encode.serialize_object_references
@@ -99,7 +99,7 @@ quartodoc:
           summary:
             name: Customized Decoding
             desc: |
-              The `v8serialize.encode` module provides types to read V8 serialization format data.
+              The `v8serialize.decode` module reads V8-serialized data.
           contents:
             - default_decode_steps
             - decode.TagReader
@@ -171,6 +171,8 @@ quartodoc:
             - SparseSequence
 
     - title: JavaScript types
+      desc: |
+        `v8serialize.jstypes` provides Python equivalents of JavaScript types used in V8-serialized data.
       options:
         include_empty: true
       contents:
