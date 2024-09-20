@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import warnings
 from _thread import get_ident
 from collections.abc import Collection, Iterable
@@ -440,9 +441,11 @@ _known_fields: Final = (
     "indent",
 )
 
+_is_interactive = hasattr(sys, "ps1")
+
 
 default_js_repr = JSRepr(
-    indent=None,
+    indent=2 if _is_interactive else None,
     maxjsobject=100,
     maxjsarray=100,
     maxlevel=20,
