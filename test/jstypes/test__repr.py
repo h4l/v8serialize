@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 from contextlib import ExitStack
+from datetime import date
 from typing import Callable
 from typing_extensions import Generator, TypeAlias
 
@@ -15,6 +16,7 @@ from v8serialize.jstypes._repr import (
     js_repr_settings,
 )
 from v8serialize.jstypes.jsarray import JSArray
+from v8serialize.jstypes.jsmap import JSMap
 from v8serialize.jstypes.jsobject import JSObject
 
 
@@ -167,6 +169,17 @@ def test_jsarray_maxjsarray_indented(check_repr: CheckRepr) -> None:
         check_repr(JSArray(["a", "b"], c="C"))
 
         check_repr(JSArray(["a", "b"], **{"!": "C"}))
+
+
+def test_jsmap__uses_dict_init_if_possible() -> None:
+    assert repr(JSMap(a=1, b=2)) == "JSMap({'a': 1, 'b': 2})"
+    assert repr(JSMap([(bytearray(b""), 1)])) == "JSMap([(bytearray(b''), 1)])"
+    # keys hashable two equal values with distinct identity, so would collapse
+    # to 1 key in a dict.
+    assert (
+        repr(JSMap([(date(2024, 1, 1), 1), (date(2024, 1, 1), 2)]))
+        == "JSMap([(datetime.date(2024, 1, 1), 1), (datetime.date(2024, 1, 1), 2)])"
+    )
 
 
 @py311_plus  # fillvalue not supported < 3.11

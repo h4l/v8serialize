@@ -1639,7 +1639,7 @@ def loads(
     --------
     >>> from v8serialize import dumps, loads
     >>> loads(dumps({'Hello': 'World'}))
-    JSMap([('Hello', 'World')])
+    JSMap({'Hello': 'World'})
 
     The types used to represent JavaScript values can be changed, for example,
     we can use a regular Python dict to represent JavaScript Map.

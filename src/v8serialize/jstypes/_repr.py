@@ -270,15 +270,23 @@ class JSRepr(RecursiveReprMixin, Repr):
             return "JSMap([" + self.fillvalue + "])"
         newlevel = level - 1
         repr1 = self.repr1
+
+        # Use dict to initialise the entries in the repr if possible, as it
+        # results in an easier to read repr.
+        if _is_dict_equivalent_jsmap(obj, maxdict=self.maxdict):
+            jsmap_repr, entry_repr = "JSMap({%s})", "%s: %s"
+        else:
+            jsmap_repr, entry_repr = "JSMap([%s])", "(%s, %s)"
+
         pieces = []
         for key in islice(obj, self.maxdict):
             keyrepr = repr1(key, newlevel)
             valrepr = repr1(obj[key], newlevel)
-            pieces.append("(%s, %s)" % (keyrepr, valrepr))
+            pieces.append(entry_repr % (keyrepr, valrepr))
         if n > self.maxdict:
             pieces.append(self.fillvalue)
         s = self._join(pieces, level)
-        return "JSMap([%s])" % (s,)
+        return jsmap_repr % (s,)
 
     def repr_JSSet(self, obj: JSSet, level: int) -> str:
         if not obj:
@@ -317,6 +325,15 @@ def _contains_single_piece(pieces: list[str]) -> bool:
 def js_repr(obj: object) -> str:
     """Create an indented/recursively-safe repr with the active repr settings."""
     return active_js_repr.repr(obj)
+
+
+def _is_dict_equivalent_jsmap(obj: JSMap[object, object], *, maxdict: int) -> bool:
+    if len(obj) > maxdict:
+        return False
+    try:
+        return dict(obj) == obj
+    except Exception:  # obj may have un-hashable keys
+        return False
 
 
 @overload

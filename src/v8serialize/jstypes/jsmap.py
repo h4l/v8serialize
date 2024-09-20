@@ -11,8 +11,9 @@ from v8serialize.jstypes import _repr
 from v8serialize.jstypes._equality import JSSameValueZero, same_value_zero
 
 if TYPE_CHECKING:
-    from _typeshed import SupportsKeysAndGetItem
     from typing_extensions import TypeGuard, TypeVar
+
+    from _typeshed import SupportsKeysAndGetItem
 
     KT = TypeVar("KT", default=object)
     VT = TypeVar("VT", default=object)
@@ -117,7 +118,7 @@ Equality_comparisons_and_sameness#same-value-zero_equality
     >>> jsm_dup, jsm_no_dup = JSMap([(x, 0), (y, 0)]), JSMap([(x, 0)])
     >>> m = dict([(y, 0), (z, 0)])
     >>> jsm_dup, jsm_no_dup, m
-    (JSMap([((0,), 0), ((0,), 0)]), JSMap([((0,), 0)]), {(0,): 0})
+    (JSMap([((0,), 0), ((0,), 0)]), JSMap({(0,): 0}), {(0,): 0})
 
     >>> jsm_no_dup == m
     True
