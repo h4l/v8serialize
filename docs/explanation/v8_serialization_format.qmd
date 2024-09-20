@@ -1,0 +1,71 @@
+---
+title: "Introduction to the V8 serialization format"
+---
+
+The V8 JavaScript Engine is used by several well-known JavaScript platforms, like Node.js and Deno. V8 has built-in support for serializing JavaScript values to binary data, and deserializing them back to values.
+
+The capabilities of the serialization format are compatible with the Web Platform's [Structured Clone] algorithm, which is used to send JavaScript values between contexts, such as [`postMessage()`] to send values to background workers, and to persistently store JavaScript values as data in [IndexedDB].
+
+[Structured Clone]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm
+[`postMessage()`]: https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage
+[IndexedDB]: https://developer.mozilla.org/en-US/docs/Glossary/IndexedDB
+
+The appealing thing about this from a JavaScript developer's point of view is that many common JavaScript types can be transparently moved between contexts without needing to manually serialize and deserialize them. For example, `Date`, `Map` and `Set`, as well as primitives like `undefined` are transparently handled, whereas with JSON these types need to be explicitly converted to plain objects, `null`, etc.
+
+V8's code base states that its value serialization format is used to persist data, and requires that changes to its own code [maintain backwards compatability][backwards compatability], meaning that newer V8 versions must be able to read values serialized by older versions, but values serialized by newer versions are not required to be readable by older versions.
+
+[backwards compatability]: https://github.com/v8/v8/blob/d49151b/src/objects/value-serializer.cc#L51
+
+## Users of the format
+
+* Node.js [exposes V8 value serialization to users via its `v8` module][node-v8] as `serialize()`/`deserialize()` and `v8.Serializer`/`v8.Deserializer`.
+  * Deno [also implements the `node:v8` module] as part of its Node.js compatibility.
+* Deno uses the format to store JavaScript values in its [Deno KV database](https://deno.com/kv).
+* A few projects on GitHub aim to implement the format in plain JavaScript, to allow it to be used in browsers or other non-V8 runtimes. For example, [worker-tools/v8-value-serializer](https://github.com/worker-tools/v8-value-serializer)
+
+[node-v8]: https://nodejs.org/docs/latest/api/v8.html#serialization-api
+[deno-v8]: https://docs.deno.com/api/node/v8/
+
+## Capabilities
+
+The format is able to represent the JavaScript types that cover typical data used in programs:
+
+- Array
+- ArrayBuffer
+- Boolean
+- DataView
+- Date
+- Error types (with a fixed set of error names).
+- Map
+- Number
+- Object (plain objects only — prototypes, functions and get/set properties are stripped)
+- Primitive (including BigInt, but not Symbol)
+- RegExp
+- Set
+- String
+- TypedArray
+
+The format supports reference cycles, so complex object structures with inter-linked objects are not a problem. It supports multiple references to the same value, so strings can be de-duplicated. It also supports JavaScript's sparse arrays.
+
+These features make it largely transparant for JavaScript to send and receive serialized values.
+
+## Considerations
+
+### JavaScript details
+
+Although the format is very easy to use from JavaScript, using it outside JavaScript is complicated by the format's close ties to the JavaScript data types. Implementations must deal with JavaScript features like sparse arrays, support for mixing integer and string properties in arrays and objects, the object-identity equality used by Map and Set, and the wide variety of binary data representations (ArrayBuffer, DataView and all the TypedArray subclases).
+
+These aspects complicate interoperability with non-JavaScript languages, and mean that the format makes sense in a context where interoperability with JavaScript is an important requirement. For example, when maximising ease of use for the JavaScript side of an application is a priority. For general purpose data interchange, a simpler format like JSON, or a format designed for cross-language support like Protocol Buffers would be more suitable.
+
+### Stability
+
+Although the V8 source code now clearly describes its backwards compatibility requirement, in the past the format has mistakenly broken backwards compatibility. An example of this was [support for Error objects that self-reference in their cause][CircularErrorCause]. Previously V8 failed to deserialize Error objects that self-referenced, but in fixing this the the Error deserialization logic was changed in such a way as to not support reading errors serialized by the previous implementation.
+
+Judging by the history of changes made to V8's serialization code, the backwards compatability requirement became more clearly and strongly emphasised since this occured.
+
+[CircularErrorCause]: `v8serialize.SerializationFeature.CircularErrorCause`
+
+
+### Endianness
+
+V8 defines the format as using the native byte order of the computer V8 runs on. In theory this could pose interoperability problems. In practice serialized data is always little-endian, as big-endian devices are not common.

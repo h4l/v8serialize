@@ -1,1 +1,4 @@
-/* css styles */
+/* Get rid of the circle clip on the about template image used on the homepage. */
+div.quarto-about-jolla img.round {
+  border-radius: 0;
+}

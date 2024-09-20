@@ -3,17 +3,39 @@ project:
 
 website:
   title: "v8serialize"
+  repo-url: https://github.com/h4l/v8serialize
+  repo-actions: [edit, source, issue]
   navbar:
     left:
       - href: index.qmd
         text: Home
-      - about.qmd
+      - sidebar:tutorials
+      - sidebar:howto
+      - reference/index.qmd
+      - sidebar:explanation
+  sidebar:
+    - id: tutorials
+      title: "Tutorials"
+      style: floating
+      contents:
+        - tutorials/js_to_py.qmd
+    - id: howto
+      title: "How-To"
+      style: floating
+      contents:
+        - howto/install.qmd
+    - id: explanation
+      title: "Explanation"
+      style: floating
+      contents:
+        - explanation/v8_serialization_format.qmd
 
 format:
   html:
     theme: cosmo
     css: styles.css
     toc: true
+    code-overflow: wrap
 
 filters:
   - interlinks

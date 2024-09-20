@@ -1,7 +1,19 @@
 ---
-title: "website_test"
+title: v8serialize
+description: "Python library for V8's value serialization format"
+image: v8serialize_logo.svg
+about:
+  template: jolla
+  links:
+  - icon: github
+    text: GitHub
+    href: https://github.com/h4l/v8serialize/
+  - icon: boxes
+    text: PyPI
+    href: https://pypi.org/project/v8serialize/
 ---
 
-This is a Quarto website.
+```bash
+pip install v8serialize
+```
 
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.

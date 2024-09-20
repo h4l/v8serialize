@@ -1,0 +1,425 @@
+---
+title: "Pass JavaScript values to and from Python"
+number-sections: true
+---
+
+In this tutorial we will pass JavaScript values between separate Python and Node.js programs using the V8 serialization format. We'll start off by seeing how V8 serialization works in JavaScript, and how to base64 encode binary data to make it easy to move around. Then we'll see how V8 serialization works in Python and we'll try moving some serialized values between Python and Javascript.
+
+To complete this tutorial you will need Node.js 18+ or Deno 1.42.0+ and Python 3.9+. If you have Docker you can follow the tutorial in a throwaway container to make sure you have up-to-date versions, and and not leave any mess on your computer afterwards.
+
+## Serializing with JavaScript
+
+First we'll serialize some data from JavaScript to see how it works. We'll move on to Python after getting a feel for the JavaScript side.
+
+Start an interactive JavaScript prompt by running `node` without any arguments, or `deno repl`:
+
+::: {.panel-tabset}
+
+## Node.js
+
+```
+$ node
+Welcome to Node.js v18.20.4.
+Type ".help" for more information.
+>
+```
+## Node.js (via Docker)
+
+```
+$ docker container run --rm -it node:22-alpine
+Welcome to Node.js v22.7.0.
+Type ".help" for more information.
+>
+```
+
+## Deno
+
+```
+$ deno repl
+Deno 1.42.0
+exit using ctrl+d, ctrl+c, or close()
+>
+```
+
+## Deno (via Docker)
+
+```
+$ docker container run --rm -it denoland/deno:debian-1.46.3 repl
+Deno 1.46.3
+exit using ctrl+d, ctrl+c, or close()
+>
+```
+
+:::
+
+Follow along in your interactive prompt. Start by importing the v8 module.
+
+```javascript
+> let v8 = await import('node:v8')
+```
+
+You can pass most JavaScript types to `v8.serialize()` and it'll turn them into bytes as a `Buffer`:
+
+```javascript
+> v8.serialize("Hello World")
+<Buffer ff 0f 22 0b 48 65 6c 6c 6f 20 57 6f 72 6c 64>
+```
+
+If you call `v8.deserialize()` on the `Buffer` you'll get the original object back:
+
+```javascript
+> v8.deserialize(v8.serialize('Hello World'))
+'Hello World'
+```
+
+Try this with a more complex object:
+
+```javascript
+> let profile
+> profile = {
+...   name: "Bob",
+...   favourite_number: BigInt(2)**BigInt(128),
+...   registration_date: new Date("2024-01-02T00:00:00.000Z"),
+...   groups: new Set(['moderators', 'editors']),
+...   missing: undefined
+... }
+{
+  name: 'Bob',
+  favourite_number: 340282366920938463463374607431768211456n,
+  registration_date: 2024-01-02T00:00:00.000Z,
+  groups: Set(2) { 'moderators', 'editors' },
+  missing: undefined
+}
+> v8.deserialize(v8.serialize(profile))
+{
+  name: 'Bob',
+  favourite_number: 340282366920938463463374607431768211456n,
+  registration_date: 2024-01-02T00:00:00.000Z,
+  groups: Set(2) { 'moderators', 'editors' },
+  missing: undefined
+}
+```
+
+Everything comes back as it went in! Try it with `JSON.serialize()` and see what happens:
+
+```javascript
+> JSON.stringify(profile)
+Uncaught TypeError: Do not know how to serialize a BigInt
+    at JSON.stringify (<anonymous>)
+```
+
+Oops, that's not very useful.
+
+Now that we can serialize and deserialize in JavaScript, let's try to take this profile value from JavaScript to Python.
+
+That `Buffer` is going to be a bit fiddly to get into Python. But we can use [base64] encoding to turn the binary `Buffer` into a string we can copy and paste easily:
+
+[base64]: https://en.wikipedia.org/wiki/Base64
+
+```javascript
+> v8.serialize("Hello World!").toString('base64')
+'/w8iDEhlbGxvIFdvcmxkIQ=='
+```
+
+In JavaScript we can turn that base64 string back into an object by making a `Buffer` from it before deserializing like before:
+
+```javascript
+> Buffer.from('/w8iDEhlbGxvIFdvcmxkIQ==', 'base64')
+<Buffer ff 0f 22 0c 48 65 6c 6c 6f 20 57 6f 72 6c 64 21>
+```
+
+There's the buffer we need. We can do it one go:
+
+```javascript
+> v8.deserialize(Buffer.from('/w8iDEhlbGxvIFdvcmxkIQ==', 'base64'))
+'Hello World!'
+```
+
+OK, let's try it with Python.
+
+## Serializing with Python
+
+We need to install `v8serialize` and then start an interactive Python prompt.
+
+::: {.callout-tip collapse="true"}
+## Tip: Enhanced Python interactive prompts
+
+Python has several enhanced interactive prompts which you can install to get a better experience than the default one. The examples here will use the default, but try:
+
+```
+$ pip install ipython
+$ ipython
+Python 3.12.6 (main, Sep 12 2024, 22:40:30) [GCC 12.2.0]
+Type 'copyright', 'credits' or 'license' for more information
+IPython 8.27.0 -- An enhanced Interactive Python. Type '?' for help.
+
+In [1]:
+```
+
+You'll get tab-completion and syntax highlighting.
+
+:::
+
+::: {.panel-tabset}
+
+## Python
+
+First install the `v8serialize` package with pip (or whichever package manager you normally use):
+
+```
+$ pip install v8serialize
+Collecting v8serialize
+  Downloading v8serialize-0.1.0-py3-none-any.whl.metadata (1.3 kB)
+Collecting packaging>=14.5 (from v8serialize)
+  Downloading packaging-24.1-py3-none-any.whl.metadata (3.2 kB)
+Downloading v8serialize-0.1.0-py3-none-any.whl (79 kB)
+Downloading packaging-24.1-py3-none-any.whl (53 kB)
+Installing collected packages: packaging, v8serialize
+Successfully installed packaging-24.1 v8serialize-0.1.0
+```
+
+Then start an interactive Python prompt:
+
+```
+$ python
+Python 3.12.6 (main, Sep 12 2024, 22:40:30) [GCC 12.2.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>>
+```
+## Python (via Docker)
+
+Start the python container with the command `bash` (or `sh`) to get a shell, then install the `v8serialize` package with pip:
+
+```
+$ docker container run --rm -it python:3.12-slim bash
+root@982b36053c48:/# pip install v8serialize
+Collecting v8serialize
+  Downloading v8serialize-0.1.0-py3-none-any.whl.metadata (1.3 kB)
+Collecting packaging>=14.5 (from v8serialize)
+  Downloading packaging-24.1-py3-none-any.whl.metadata (3.2 kB)
+Downloading v8serialize-0.1.0-py3-none-any.whl (79 kB)
+Downloading packaging-24.1-py3-none-any.whl (53 kB)
+Installing collected packages: packaging, v8serialize
+Successfully installed packaging-24.1 v8serialize-0.1.0
+```
+
+Then start an interactive Python prompt:
+
+```
+root@982b36053c48:/# python
+Python 3.12.6 (main, Sep 12 2024, 22:40:30) [GCC 12.2.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>>
+```
+
+:::
+
+To start with, we'll use the Python `v8serialize` package to replicate what we did with `v8.serialize()` in JavaScript.
+
+Import the `loads()` and `dumps()` functions from `v8serialize` first.
+
+```python
+>>> from v8serialize import loads, dumps
+```
+
+::: {.callout-tip}
+If you get an error when importing, check that you ran `pip install v8serialize` before running `python`, and check that your Python version is 3.9 or higher.
+:::
+
+We can pass many Python types to `v8serialize.dumps()` and it will serialize them into bytes, like `v8.serialize()` did in JavaScript:
+
+```python
+>>> dumps('Hello World')
+b'\xff\x0fS\x0bHello World'
+```
+
+And `v8serialize.loads()` will turn these bytes back into a real value, like `v8.deserialize()`:
+
+```python
+>>> loads(dumps('Hello World'))
+'Hello World'
+```
+
+Let's manually re-create the profile object we had in JavaScript:
+
+```python
+>>> from datetime import datetime  # <1>
+>>> profile = {
+...     'name': 'Bob',
+...     'favourite_number': 2**128,
+...     'registration_date': datetime.fromisoformat('2024-01-02T00:00:00.000Z'),
+...     'groups': {'moderators', 'editors'},
+...     'missing': None,
+... }
+>>> loads(dumps(profile))
+JSMap({  # <2>
+  'name': 'Bob',
+  'favourite_number': 340282366920938463463374607431768211456,
+  'registration_date': datetime.datetime(2024, 1, 2, 0, 0),
+  'groups': JSSet([
+    'moderators',
+    'editors',
+  ]),
+  'missing': None,
+})
+```
+1. We need to import the `datetime` class to create the `'registration_date'`
+2. Your output won't be indented across multiple lines unless you have Python 3.12+
+
+That works, but notice how we got back `JSMap` as the outer object and `JSSet` for `'groups'`?
+
+That's because JavaScript's types like Object Map and Set don't behave quite like Python's dict and set, so v8serialize uses these `JS*` versions of types to mimic JavaScript's behaviour in Python.
+
+If we want to recreate what JavaScript did, we need the outer profile to be an Object, not a Map. We can do that by using the `JSObject` type to explicitly make profile an Object. We also need to use `JSUndefined` instead None for `'missing'` if we want to be pedantic!
+
+```python
+>>> from v8serialize.jstypes import JSObject, JSUndefined
+>>> profile = JSObject(
+...     name='Bob',
+...     favourite_number=2**128,
+...     registration_date=datetime.fromisoformat('2024-01-02T00:00:00.000Z'),
+...     groups={'moderators', 'editors'},
+...     missing=JSUndefined,
+... )
+>>> loads(dumps(profile))
+JSObject(
+  name='Bob',
+  favourite_number=340282366920938463463374607431768211456,
+  registration_date=datetime.datetime(2024, 1, 2, 0, 0),
+  groups=JSSet([
+    'moderators',
+    'editors',
+  ]),
+  missing=JSUndefined,
+)
+```
+
+That's a good match for what JavaScript did. We've not moved any data between JavaScript and Python yet though. Let's use base64 again from Python to get the serialized bytes into something we can copy and paste.
+
+```python
+>>> from base64 import b64decode, b64encode
+>>> b64encode(dumps('Hello World')).decode()  # <1>
+'/w9TC0hlbGxvIFdvcmxk'
+>>> loads(b64decode('/w9TC0hlbGxvIFdvcmxk'))
+'Hello World'
+```
+1. We have to `.decode()` the output of `b64encode()` to get a `str` from the `bytes` it returns. Try it without to see the difference if you like.
+
+
+## Exchanging serialized data
+
+Now we've seen how V8 serialization, deserialization and base64 encoding work in JavaScript and Python, we should be able to use these building blocks to serialize JavaScript values in one and deserialize them in the other.
+
+Back in your JavaScript prompt, serialize the `profile` we made before:
+
+```javascript
+> v8.serialize(profile).toString('base64')
+'/w9vIgRuYW1lIgNCb2IiC2ZhdmVfbnVtYmVyWjAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAiEXJlZ2lzdHJhdGlvbl9kYXRlRAAAAIV3zHhCIgZncm91cHMnIgptb2RlcmF0b3JzIgdlZGl0b3JzLAIiB21pc3NpbmdfewU='
+```
+
+Copy and paste the base64 output, and deserialize it in your Python prompt:
+
+```python
+>>> js_data = '/w9vIgRuYW1lIgNCb2IiC2ZhdmVfbnVtYmVyWjAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAiEXJlZ2lzdHJhdGlvbl9kYXRlRAAAAIV3zHhCIgZncm91cHMnIgptb2RlcmF0b3JzIgdlZGl0b3JzLAIiB21pc3NpbmdfewU='
+>>> bob = loads(b64decode(js_data))
+>>> bob
+JSObject(
+  name='Bob',
+  favourite_number=340282366920938463463374607431768211456,
+  registration_date=datetime.datetime(2024, 1, 2, 0, 0),
+  groups=JSSet([
+    'moderators',
+    'editors',
+  ]),
+  missing=JSUndefined,
+)
+```
+
+Good, that looks like what we saw when doing this within Python before. Let's make a change to Bob's profile and take it back to JavaScript.
+
+```python
+>>> bob['pets'] = [JSObject(name='Nipper', owner=bob)]
+>>> bob
+JSObject(
+  name='Bob',
+  favourite_number=340282366920938463463374607431768211456,
+  registration_date=datetime.datetime(2024, 1, 2, 0, 0),
+  groups=JSSet([
+    'moderators',
+    'editors',
+  ]),
+  missing=JSUndefined,
+  pets=[
+    JSObject(
+      name='Nipper',
+      owner=...,
+    ),
+  ],
+)
+```
+
+We've got a circular reference here, Bob's pet Nipper references Bob as its owner. Is this going to work? Let's see.
+
+```python
+>>> b64encode(dumps(bob)).decode()
+'/w9vUwRuYW1lUwNCb2JTC2ZhdmVfbnVtYmVyWiIAAAAAAAAAAAAAAAAAAAAAAVMRcmVnaXN0cmF0aW9uX2RhdGVEAAAAhXfMeEJTBmdyb3VwcydTCm1vZGVyYXRvcnNTB2VkaXRvcnMsAlMHbWlzc2luZ19TBHBldHNBAW9TBG5hbWVTBk5pcHBlclMFb3duZXJeAHsCJAABewY='
+```
+
+So far so good... Now let's deserialize the data in JavaScript.
+
+```javascript
+> let py_data = '/w9vUwRuYW1lUwNCb2JTC2ZhdmVfbnVtYmVyWiIAAAAAAAAAAAAAAAAAAAAAAVMRcmVnaXN0cmF0aW9uX2RhdGVEAAAAhXfMeEJTBmdyb3VwcydTCm1vZGVyYXRvcnNTB2VkaXRvcnMsAlMHbWlzc2luZ19TBHBldHNBAW9TBG5hbWVTBk5pcHBlclMFb3duZXJeAHsCJAABewY='
+undefined
+> let bob = v8.deserialize(Buffer.from(py_data, 'base64'))
+undefined
+> bob
+<ref *1> {
+  name: 'Bob',
+  favourite_number: 340282366920938463463374607431768211456n,
+  registration_date: 2024-01-02T00:00:00.000Z,
+  groups: Set(2) { 'moderators', 'editors' },
+  missing: undefined,
+  pets: [ { name: 'Nipper', owner: [Circular *1] } ]
+}
+> Object.is(bob, bob.pets[0].owner)
+true
+```
+
+It works! V8 serialization can handle object references like this without getting into an infinite loop. Let's finish up by taking Bob's profile back to Python to check it works in that direction too.
+
+```javascript
+> v8.serialize(bob).toString('base64')
+'/w9vIgRuYW1lIgNCb2IiC2ZhdmVfbnVtYmVyWjAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAiEXJlZ2lzdHJhdGlvbl9kYXRlRAAAAIV3zHhCIgZncm91cHMnIgptb2RlcmF0b3JzIgdlZGl0b3JzLAIiB21pc3NpbmdfIgRwZXRzYQFJAG8iBG5hbWUiBk5pcHBlciIFb3duZXJeAHsCQAEBewY='
+```
+
+Load it up in Python:
+
+```python
+>>> js_data_circular = '/w9vIgRuYW1lIgNCb2IiC2ZhdmVfbnVtYmVyWjAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAiEXJlZ2lzdHJhdGlvbl9kYXRlRAAAAIV3zHhCIgZncm91cHMnIgptb2RlcmF0b3JzIgdlZGl0b3JzLAIiB21pc3NpbmdfIgRwZXRzYQFJAG8iBG5hbWUiBk5pcHBlciIFb3duZXJeAHsCQAEBewY='
+>>> bob2 = loads(b64decode(js_data_circular))
+>>> bob2
+JSObject(
+  name='Bob',
+  favourite_number=340282366920938463463374607431768211456,
+  registration_date=datetime.datetime(2024, 1, 2, 0, 0),
+  groups=JSSet([
+    'moderators',
+    'editors',
+  ]),
+  missing=JSUndefined,
+  pets=JSArray([
+    JSObject(
+      name='Nipper',
+      owner=...,
+    ),
+  ]),
+)
+>>> bob2['pets'][0]['owner'] is bob2
+True
+```
+
+It worked going from JavaScript to Python as well.
+
+## Closing
+
+We've seen how V8 serialization works in JavaScript and in Python with v8serialize. And we've been able to move JavaScript values between the two languages by base64 encoding the serialized binary data.

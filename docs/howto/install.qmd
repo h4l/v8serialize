@@ -1,0 +1,13 @@
+---
+title: "How to install v8serialize"
+---
+
+v8serialize is [published on PyPI as `v8serialize`][v8serialize-pypi] and supports Python 3.9 and above.
+
+To install with pip, run:
+
+```bash
+pip install v8serialize
+```
+
+[v8serialize-pypi]: https://pypi.org/project/v8serialize/
