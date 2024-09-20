@@ -56,11 +56,8 @@ def test_JSError_repr() -> None:
     # repr is recursion safe with cycles in cause
     jserror.cause = jserror
     assert (
-        repr(jserror)
-        == """\
-JSError('msg', name=<JSErrorName.UriError: 'UriError'>, stack='Boom', cause=\
-JSError('msg', name=<JSErrorName.UriError: 'UriError'>, stack='Boom', cause=...))\
-"""
+        repr(jserror) == "JSError("
+        "'msg', name=<JSErrorName.UriError: 'UriError'>, stack='Boom', cause=...)"
     )
 
 

@@ -26,7 +26,7 @@ class RecursiveReprMixin(Repr):
     fillvalue: str
     __repr_running: set[tuple[int, int]] = set()
 
-    def repr1_safe(self, x: object, level: int) -> str:
+    def repr1(self, x: object, level: int) -> str:
         if level <= 0:
             return self.fillvalue
         repr_running = self.__repr_running
@@ -35,7 +35,7 @@ class RecursiveReprMixin(Repr):
             return self.fillvalue
         repr_running.add(key)
         try:
-            result = self.repr1(x, level)
+            result = super().repr1(x, level)
         finally:
             repr_running.discard(key)
         return result
@@ -296,21 +296,21 @@ class JSRepr(RecursiveReprMixin, Repr):
 
     def repr_JSError(self, obj: JSError, level: int) -> str:
         args = [
-            self.repr1_safe(obj.message, level - 1),
+            self.repr1(obj.message, level - 1),
             (
                 None
                 if obj.name == JSErrorName.Error
-                else f"name={self.repr1_safe(obj.name, level - 1)}"
+                else f"name={self.repr1(obj.name, level - 1)}"
             ),
             (
                 None
                 if obj.stack is None
-                else f"stack={self.repr1_safe(obj.stack, level - 1)}"
+                else f"stack={self.repr1(obj.stack, level - 1)}"
             ),
             (
                 None
                 if obj.cause is None
-                else f"cause={self.repr1_safe(obj.cause, level - 1)}"
+                else f"cause={self.repr1(obj.cause, level - 1)}"
             ),
         ]
         return f"JSError({self._join((arg for arg in args if arg), level)})"
