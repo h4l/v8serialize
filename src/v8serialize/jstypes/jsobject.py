@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, overload
 
 from v8serialize._errors import NormalizedKeyError
 from v8serialize._pycompat.dataclasses import slots_if310
+from v8serialize._recursive_eq import recursive_eq
 from v8serialize.jstypes import _repr
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
 from v8serialize.jstypes.jsarrayproperties import (
@@ -32,7 +33,8 @@ MIN_SPARSE_ARRAY_SIZE = 16
 MIN_DENSE_ARRAY_USED_RATIO = 1 / 4
 
 
-@dataclass(init=False, **slots_if310())
+@recursive_eq
+@dataclass(init=False, **slots_if310(), eq=False)
 class JSObject(MutableMapping["str | int", "T"], ABC):
     """
     A Python equivalent of [JavaScript plain objects][JavaScript Object].
@@ -216,6 +218,34 @@ JavaScript/Reference/Global_Objects/Array
 
     def __repr__(self) -> str:
         return _repr.js_repr(self)
+
+    def __eq__(self, other: object) -> bool:
+        # The equality semantics for JSObject and JSArray is that JSObject is
+        # only equal to other JSObject (not to other JSArray or other Mapping).
+        # JSArray is only equal to other JSArray, not to JSObject or other
+        # Mappings or Sequences.
+        #
+        # My reasoning is that both Object and Array are somewhere between
+        # Sequence and Mapping, and although both behave almost identically,
+        # they have different conceptual purposes, so it doesn't make sense for
+        # an Object to equal an Array. To some extent it could make sense for an
+        # Object to equal other Mappings, and for Array to equal other
+        # Sequences, but allowing this opens up a bit of a can of worms in that
+        # Map and Object are clearly different in JavaScript, and a Sequence is
+        # not really a substitute for a JSArray, as a JSArray itself does not
+        # implement Sequence.
+        if other is self:
+            return True
+        if not isinstance(other, JSObject):
+            return NotImplemented
+        # JSArray instances are not equal to JSObject instances
+        if type(self) is not type(other):
+            # Opt out of choosing rather than False so that subclasses could do
+            # their own check if they want.
+            return NotImplemented
+        if len(self) != len(other):
+            return False
+        return (self.array, self._properties) == (other.array, other._properties)
 
     if TYPE_CHECKING:
         # Our Mapping key type is str | int. MyPy doesn't allow calling methods

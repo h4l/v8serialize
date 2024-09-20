@@ -4,6 +4,7 @@ from types import MappingProxyType
 
 import pytest
 
+from v8serialize.jstypes.jsarray import JSArray
 from v8serialize.jstypes.jsarrayproperties import JSHole
 from v8serialize.jstypes.jsobject import JSObject
 
@@ -85,6 +86,69 @@ def test_write_methods_accept_float_keys_for_compatibility_with_v8_serialized_da
         "-1": "!",
         "-0": "!!",
     }
+
+
+def test__eq() -> None:
+    assert JSObject() == JSObject()
+    assert JSObject(**{"0": 1}, a=1, b=2) == JSObject(**{"0": 1}, a=1, b=2)
+    assert JSObject(a=1, b=2) == JSObject(a=1, b=2)
+
+    assert JSObject() != {}
+    assert JSObject(**{"0": 1}, a=1, b=2) != {0: 1, "a": 1, "b": 2}
+    assert JSObject(a=1, b=2) != dict(a=1, b=2)
+
+    # Objects are not equal to equivalent arrays, like dicts are not equal to lists
+    assert JSObject() != JSArray()
+    assert JSObject(**{"0": 1}) != JSArray([1])
+    assert JSObject(a=1) != JSArray(a=1)
+
+
+def test__eq__cycle_direct() -> None:
+    # Objects that contain reference cycles with the same identity structure are
+    # equal. See test__recursive_eq.py.
+    x = JSObject[object](a=1)
+    x["b"] = x
+    y = JSObject[object](a=1)
+    y["b"] = y
+
+    assert x == y
+
+
+def test__eq__cycle_direct_unequal() -> None:
+    x = JSObject[object](a=1)
+    x["b"] = x
+
+    # Same shape as l, but identity is different as r and _r repeat alternately
+    y_ = JSObject[object](a=1)
+    y = JSObject[object](a=1)
+    y_["b"] = y
+    y["b"] = y_
+
+    assert x != y
+
+
+def test__eq__cycle_indirect() -> None:
+    # Objects that contain reference cycles with the same identity structure are
+    # equal. See test__recursive_eq.py.
+    x = JSObject(a=1, b=(x_b := JSObject()))
+    x_b["c"] = x
+    y = JSObject(a=1, b=(y_b := JSObject()))
+    y_b["c"] = y
+
+    assert x == y
+
+
+def test__eq__cycle_indirect_unequal() -> None:
+    x = JSObject(a=1, b=(x_b := JSObject()))
+    x_b["c"] = x
+
+    # Same shape as l, but identity is different as r and _r repeat alternately
+    y_ = JSObject(a=1, b=(y__b := JSObject()))
+    y = JSObject(a=1, b=(y_b := JSObject()))
+    y__b["c"] = y
+    y_b["c"] = y_
+
+    assert x != y
 
 
 def test_abc_registration() -> None:

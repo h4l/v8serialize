@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, overload
 
-from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize.jstypes import _repr
 from v8serialize.jstypes.jsarrayproperties import JSHoleType
 from v8serialize.jstypes.jsobject import JSObject
@@ -30,7 +28,6 @@ def _supports_iterable(
     return callable(getattr(o, "__iter__", None))
 
 
-@dataclass(init=False, **slots_if310())
 class JSArray(JSObject["T"]):
     """
     A Python equivalent of a [JavaScript Array].
