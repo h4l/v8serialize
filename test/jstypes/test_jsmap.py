@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from math import isnan
-from test.strategies import values_and_objects as mk_values_and_objects
 
 from hypothesis import given
 from hypothesis import strategies as st
 
+from test.strategies import values_and_objects as mk_values_and_objects
 from v8serialize.jstypes._equality import same_value_zero
 from v8serialize.jstypes._v8 import V8SharedObjectReference, V8SharedValueId
 from v8serialize.jstypes.jsmap import JSMap
@@ -66,6 +66,32 @@ def test_eq_with_unhashable_keys() -> None:
 def test_eq_with_other_type() -> None:
     assert JSMap().__eq__(object()) is NotImplemented
     assert not (JSMap() == object())
+
+
+def test_eq_with_cycles() -> None:
+    x = JSMap({})
+    x[x] = x
+    y = JSMap({})
+    y[y] = y
+    assert x == y
+
+    # different equality pattern
+    x = JSMap({})
+    x[x] = x
+    y_ = JSMap({})
+    y = JSMap({})
+    y[y_] = y_
+    y_[y] = y
+    assert x != y
+
+
+def test_eq_with_cycles_indirect() -> None:
+    # indirect
+    x = JSMap({0: JSMap()})
+    x[0][x] = x
+    y = JSMap[int, JSMap]({0: JSMap()})
+    y[0][y] = y
+    assert x == y
 
 
 def test_jsmap_nan() -> None:
