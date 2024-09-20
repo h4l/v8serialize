@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, AbstractSet, overload
 
 from v8serialize._pycompat.dataclasses import slots_if310
+from v8serialize._recursive_eq import recursive_eq
 from v8serialize.jstypes import _repr
 from v8serialize.jstypes._equality import JSSameValueZero, same_value_zero
 
@@ -21,6 +22,7 @@ else:
 U = TypeVar("U")
 
 
+@recursive_eq
 @dataclass(**slots_if310())
 class JSSet(MutableSet[T], metaclass=ABCMeta):
     """

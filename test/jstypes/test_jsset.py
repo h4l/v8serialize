@@ -61,6 +61,30 @@ def test_eq_with_other_type() -> None:
     assert not (JSSet() == object())
 
 
+def test_eq_with_cycles() -> None:
+    x = JSSet([])
+    x.add(x)
+    y = JSSet([])
+    y.add(y)
+    assert x == y
+
+    # different equality pattern
+    x = JSSet([])
+    x.add(x)
+    y_ = JSSet([])
+    y = JSSet([])
+    y.add(y_)
+    y_.add(y)
+    assert x != y
+
+    # indirect
+    x = JSSet([inner_x := JSSet()])
+    inner_x.add(x)
+    y = JSSet([inner_y := JSSet()])
+    inner_y.add(y)
+    assert x == y
+
+
 def test_nan() -> None:
     s = JSSet[float]()
     nan = float("nan")
