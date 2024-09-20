@@ -24,6 +24,7 @@ website:
       style: floating
       contents:
         - howto/install.qmd
+        - howto/use_at_a_glance.qmd
     - id: explanation
       title: "Explanation"
       style: floating

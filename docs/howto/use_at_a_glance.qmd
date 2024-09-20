@@ -1,0 +1,50 @@
+---
+title: "How to use at a glance"
+number-sections: true
+---
+
+For more details, see [the tutorials](../tutorials/js_to_py.qmd).
+
+## Serialize with Python
+```{python}
+from base64 import b64encode
+from v8serialize import dumps
+from v8serialize.jstypes import JSObject
+
+serialized = dumps(JSObject(message="Hello World"))
+b64encode(serialized).decode()
+```
+
+## Deserialize with Python
+```{python}
+from base64 import b64decode
+from v8serialize import loads
+
+serialized = b64decode("/w9vUwdtZXNzYWdlUwtIZWxsbyBXb3JsZHsB")
+loads(serialized)
+```
+
+
+## Serialize with Node.js / Deno
+
+```javascript
+import * as v8 from 'node:v8';
+
+const buffer = v8.serialize({message: 'Hello World'});
+console.log(buffer.toString('base64'));
+```
+```
+/w9vIgdtZXNzYWdlIgtIZWxsbyBXb3JsZHsB
+```
+
+## Deserialize with Node.js / Deno
+
+```javascript
+import * as v8 from 'node:v8';
+
+const buffer = Buffer.from('/w9vIgdtZXNzYWdlIgtIZWxsbyBXb3JsZHsB', 'base64');
+console.log(v8.deserialize(buffer));
+```
+```
+{ message: 'Hello World' }
+```
