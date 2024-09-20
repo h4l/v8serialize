@@ -9,6 +9,7 @@ from v8serialize.jstypes._repr import JSRepr as JSRepr
 from v8serialize.jstypes._repr import (
     JSReprSettingsNotRestored as JSReprSettingsNotRestored,
 )
+from v8serialize.jstypes._repr import default_js_repr as default_js_repr
 from v8serialize.jstypes._repr import js_repr_settings as js_repr_settings
 from v8serialize.jstypes.jsarray import JSArray as JSArray
 from v8serialize.jstypes.jsarrayproperties import JSHole as JSHole
