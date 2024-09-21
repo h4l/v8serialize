@@ -1309,5 +1309,31 @@ class Decoder:
 def loads(
     data: ReadableBinary | Buffer, *, tag_mappers: Iterable[AnyTagMapper] | None = None
 ) -> object:
-    """Deserialize a JavaScript value encoded in V8 serialization format."""
+    """Deserialize a JavaScript value encoded in V8 serialization format.
+
+    Parameters
+    ----------
+
+    data
+        The bytes to deserialize as a bytes-like object such as `bytes`,
+        `bytearray`, `memoryview`.
+    tag_mappers
+        An ordered series of tag mappers, which are responsible for creating
+        Python values to represent the JavaScript values found in the `data`.
+
+    Returns
+    -------
+    :
+        The first value in the `data`, as deserialized by the `tag_mappers`.
+        Using the default `tag_mappers`, this will be a type from
+        `v8serialize.jstypes`, such as `JSObject` to represent a JavaScript
+        Object.
+
+    Examples
+    --------
+
+    >>> from v8serialize import dumps, loads
+    >>> loads(dumps({'Hello': 'World'}))
+    JSMap({'Hello': 'World'})
+    """
     return Decoder(tag_mappers=tag_mappers).decodes(data)
