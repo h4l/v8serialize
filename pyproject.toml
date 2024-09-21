@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "v8serialize"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 description = "Read & write JavaScript values from Python with the V8 serialization format."
 authors = ["Hal Blackburn <hwtb2@cam.ac.uk>"]
 license = "MIT"
