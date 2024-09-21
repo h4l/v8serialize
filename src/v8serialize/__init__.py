@@ -7,6 +7,9 @@ from v8serialize._errors import (
 )
 from v8serialize._errors import V8CodecError as V8CodecError
 from v8serialize.constants import SerializationFeature as SerializationFeature
+from v8serialize.decode import AnyTagMapper as AnyTagMapper
+from v8serialize.decode import DeserializeTagFn as DeserializeTagFn
+from v8serialize.decode import TagMapperObject as TagMapperObject
 from v8serialize.decode import default_tag_mappers as default_tag_mappers
 from v8serialize.decode import loads as loads
 from v8serialize.encode import EncodeV8CodecError as EncodeV8CodecError
