@@ -1,0 +1,38 @@
+name: Publish docs to GitHub Pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, quarto-doc]
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GIT_AUTHOR_NAME: "GitHub Actions"
+      GIT_AUTHOR_EMAIL:
+        "${{ github.repository_owner }}@users.noreply.github.com"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: "Fetch gh-pages"
+        run: git fetch origin gh-pages
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: "Install project dependencies"
+        run: |
+          pip install poetry
+          poetry install
+
+      - name: "Build & Publish"
+        run: |
+          poetry run scripts/ci-publish-docs.sh
