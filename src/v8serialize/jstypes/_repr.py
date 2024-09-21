@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, ContextManager, Final, Generator, overloa
 
 from v8serialize.constants import JSErrorName
 from v8serialize.jstypes.jsarrayproperties import SparseArrayProperties
+from v8serialize.jstypes.jsbuffers import JSArrayBuffer
 
 if TYPE_CHECKING:
     from v8serialize.jstypes.jsarray import JSArray
@@ -314,6 +315,89 @@ class JSRepr(RecursiveReprMixin, Repr):
             ),
         ]
         return f"JSError({self._join((arg for arg in args if arg), level)})"
+
+    def repr_JSArrayBuffer(self, obj: JSArrayBuffer, level: int) -> str:
+        obj_data = obj._data
+        needs_readonly: bool
+        obj_data_repr: str
+        try:
+            with memoryview(obj_data) as mv:
+                needs_max_byte_length = mv.nbytes != obj.max_byte_length
+                needs_readonly = mv.readonly
+                # bytearray() can be repr'd as bytes because the constructor
+                # copies bytes to a bytearray by default.
+                if isinstance(obj_data, bytearray):
+                    obj_data_repr = self.repr_bytes(
+                        bytes(memoryview(obj_data)[: self.maxstring]),
+                        truncated=len(obj_data) > self.maxstring,
+                    )
+                else:
+                    obj_data_repr = self.repr1(obj_data, level)
+        except ValueError:
+            obj_data_repr = self.repr1(obj_data, level)
+            needs_max_byte_length = True
+            needs_readonly = False
+
+        arg_pieces = [obj_data_repr]
+        if needs_max_byte_length:
+            arg_pieces.append(f"max_byte_length={obj.max_byte_length!r}")
+        if needs_readonly:
+            arg_pieces.append("readonly=True")
+
+        joined_args = (
+            self._join((a for a in arg_pieces if a), level)
+            if len(arg_pieces) != 1
+            else arg_pieces[0]
+        )
+        return f"{type(obj).__name__}({joined_args})"
+
+    def repr_memoryview(self, obj: memoryview, level: int) -> str:
+        try:
+            byte_length = obj.nbytes
+
+            content_mv = obj.cast("B")[: self.maxstring]
+            truncated = content_mv.nbytes < byte_length
+            content_repr = (
+                self.repr_bytes(bytes(content_mv), truncated=truncated)
+                if obj.readonly
+                else self.repr_bytearray(bytearray(content_mv), truncated=truncated)
+            )
+
+            repr_ = f"memoryview({content_repr})"
+
+            if obj.format != "B" or obj.ndim != 1:
+                if obj.ndim != 1:
+                    repr_ = f"{repr_}.cast({obj.format!r}, {obj.shape!r})"
+                else:
+                    repr_ = f"{repr_}.cast({obj.format!r})"
+            return repr_
+        except ValueError:  # memoryview is released and thus unreadable
+            return repr(obj)
+
+    def repr_bytearray(
+        self, obj: bytearray, level: int = 1, truncated: bool | None = None
+    ) -> str:
+        content_repr = self.repr_bytes(
+            bytes(memoryview(obj)[: self.maxstring]),
+            level,
+            truncated=truncated or len(obj) > self.maxstring,
+        )
+        return f"bytearray({content_repr})"
+
+    def repr_bytes(
+        self, obj: bytes, level: int = 1, *, truncated: bool | None = None
+    ) -> str:
+        if truncated is None and len(obj) > self.maxstring:
+            truncated = True
+            obj = obj[: self.maxstring]
+
+        repr_ = repr(obj)
+        if not truncated:
+            return repr_
+        # include a unicode ellipsis which is (intentionally) a syntax error,
+        # which will prevent accidentally copying a truncated byte repr without
+        # realising it's truncated.
+        return f"{repr_[:-1]}…{repr_[-1:]}"
 
 
 def _contains_single_piece(pieces: list[str]) -> bool:

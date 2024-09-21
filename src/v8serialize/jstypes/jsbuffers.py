@@ -34,6 +34,7 @@ from v8serialize._values import (
     TransferId,
 )
 from v8serialize.constants import ArrayBufferViewTag
+from v8serialize.jstypes import _repr
 
 if TYPE_CHECKING:
     from typing_extensions import Buffer, Self, TypeAlias, TypeVar
@@ -230,11 +231,14 @@ Reference/Global_Objects/ArrayBuffer
 
     def close(self) -> None:
         """Release the buffer's data if it's a [`memoryview`](`typememoryview`)."""
-        if isinstance(self.data, memoryview):
-            self.data.release()
+        if isinstance(self._data, memoryview):
+            self._data.release()
 
     def __buffer__(self, flags: int | BufferFlags) -> memoryview:
         return get_buffer(self._data, flags)[: self.max_byte_length]
+
+    def __repr__(self) -> str:
+        return _repr.js_repr(self)
 
 
 @BaseJSArrayBuffer.register

@@ -7,9 +7,9 @@ import sys
 from array import array
 from dataclasses import FrozenInstanceError
 from typing import TYPE_CHECKING
-from typing_extensions import Literal
 
 import pytest
+from typing_extensions import Literal
 
 from v8serialize._pycompat.re import RegexFlag
 from v8serialize.constants import ArrayBufferViewTag
@@ -219,6 +219,29 @@ def test_JSArrayBuffer_init__caller_can_close_memoryview() -> None:
 
 
 @pytest.mark.parametrize(
+    "view,expected_repr",
+    [
+        (JSArrayBuffer(b""), "JSArrayBuffer(b'')"),
+        (
+            JSArrayBuffer(b"", max_byte_length=4),
+            "JSArrayBuffer(b'', max_byte_length=4)",
+        ),
+        (JSArrayBuffer(b"", readonly=True), "JSArrayBuffer(b'', readonly=True)"),
+        (
+            JSArrayBuffer(memoryview(b"abcd")[:2], readonly=True),
+            "JSArrayBuffer(b'ab', readonly=True)",
+        ),
+        (
+            JSArrayBuffer(memoryview(bytearray(b"abcd"))[:2], copy_data=False),
+            "JSArrayBuffer(memoryview(bytearray(b'ab')))",
+        ),
+    ],
+)
+def test_JSArrayBuffer__repr(view: JSArrayBuffer, expected_repr: str) -> None:
+    match_wildcard(expected_repr, repr(view), assert_match=True)
+
+
+@pytest.mark.parametrize(
     "ab_type", [JSArrayBuffer, JSSharedArrayBuffer, JSArrayBufferTransfer]
 )
 def test_subtype_registration(ab_type: type) -> None:
@@ -394,14 +417,12 @@ def test_JSArrayBufferView__hash() -> None:
         (JSUint32Array(memoryview(b"")), "JSUint32Array(<memory at ...>)"),
         (
             JSDataView(JSArrayBuffer(b"abcd")),
-            # TODO: make the JSArrayBuffer repr match __init__
-            "JSDataView(JSArrayBuffer(_data=bytearray(b'abcd'), "
-            "max_byte_length=4, resizable=False))",
+            "JSDataView(JSArrayBuffer(b'abcd'))",
         ),
     ],
 )
 def test_JSArrayBufferView__repr(view: JSArrayBufferView, expected_repr: str) -> None:
-    assert match_wildcard(expected_repr, repr(view))
+    match_wildcard(expected_repr, repr(view), assert_match=True)
 
 
 def match_wildcard(
@@ -411,11 +432,22 @@ def match_wildcard(
     wildcard_pattern: str = ".+",
     full_match: bool = True,
     flags: RegexFlag = RegexFlag.NOFLAG,
+    assert_match: bool = False,
 ) -> re.Match[str] | None:
     regex = wildcard_pattern.join(re.escape(p) for p in pattern.split(wildcard))
     if full_match:
         regex = f"^{regex}$"
-    return re.search(regex, subject, flags=flags)
+    result = re.search(regex, subject, flags=flags)
+
+    if result or not assert_match:
+        return result
+
+    if wildcard not in pattern:
+        assert pattern == subject
+    raise AssertionError(
+        f"wildcard match failed: re.search({regex!r}, {subject!r}, flags={flags!r}) "
+        "is None"
+    )
 
 
 def test_BackportJSFloat16Array__get_buffer() -> None:

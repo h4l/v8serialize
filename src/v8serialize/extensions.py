@@ -50,8 +50,7 @@ class NodeJsArrayBufferViewHostObjectHandler:
     ...   host_object_deserializer=NodeJsArrayBufferViewHostObjectHandler()
     ... )]
     >>> loads(b64decode('/w9cAQMBAgM='), decode_steps=decode_steps)
-    JSUint8Array(JSArrayBuffer(_data=bytearray(b'\\x01\\x02\\x03'), \
-max_byte_length=3, resizable=False))
+    JSUint8Array(JSArrayBuffer(b'\\x01\\x02\\x03'))
     """  # noqa: D301
 
     def deserialize_host_object(
