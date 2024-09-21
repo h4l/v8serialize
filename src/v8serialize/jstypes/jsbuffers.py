@@ -864,26 +864,26 @@ class ArrayBufferViewStructFormat(ViewFormat, Enum):
     def _missing_(arg: object) -> ArrayBufferViewStructFormat | None:
         # Allow looking up values by ArrayBufferViewTag enum value
         for value in ArrayBufferViewStructFormat:
-            if value.view_tag is arg:
+            if value.view_tag is arg or value.view_type.data_format == arg:
                 return value
         return None
 
     if TYPE_CHECKING:
 
         def __init__(
-            self, value: ArrayBufferViewTag | ArrayBufferViewStructFormat
+            self, value: ArrayBufferViewTag | DataFormat | ArrayBufferViewStructFormat
         ) -> None: ...
 
 
 def create_view(
     buffer: JSArrayBufferT,
-    format: ArrayBufferViewTag | ArrayBufferViewStructFormat,
+    format: ArrayBufferViewTag | DataFormat | ArrayBufferViewStructFormat,
     *,
     byte_offset: int = 0,
     byte_length: int | None = None,
     readonly: Literal[True] | None = None,
 ) -> JSTypedArray | JSDataView:
-    if isinstance(format, ArrayBufferViewTag):
+    if isinstance(format, (ArrayBufferViewTag, DataFormat)):
         format = ArrayBufferViewStructFormat(format)
     return format.view_type.from_bytes(
         buffer,
