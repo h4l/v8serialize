@@ -1,0 +1,2123 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>javascript_buffers – v8serialize</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="../site_libs/quarto-contrib/iconify-2.1.0/iconify-icon.min.js"></script>
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">v8serialize</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-tutorials" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Tutorials</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-tutorials">    
+        <li>
+    <a class="dropdown-item" href="../tutorials/js_to_py.html">
+ <span class="dropdown-text">Pass JavaScript values to and from Python</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-how-to" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">How-To</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-how-to">    
+        <li>
+    <a class="dropdown-item" href="../howto/install.html">
+ <span class="dropdown-text">How to install v8serialize</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../howto/use_at_a_glance.html">
+ <span class="dropdown-text">How to use at a glance</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link active" href="../reference/index.html" aria-current="page"> 
+<span class="menu-text">Reference</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-explanation" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Explanation</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-explanation">    
+        <li>
+    <a class="dropdown-item" href="../explanation/v8_serialization_format.html">
+ <span class="dropdown-text">Introduction to the V8 serialization format</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/h4l/v8serialize/"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://pypi.org/project/v8serialize/"> 
+<span class="menu-text"><iconify-icon role="img" inline="" icon="file-icons:pypi" aria-label="Icon pypi from file-icons Iconify.design set." title="Icon pypi from file-icons Iconify.design set."></iconify-icon></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../reference/javascript_buffers.html">JavaScript types</a></li><li class="breadcrumb-item"><a href="../reference/javascript_buffers.html">ArrayBuffer, TypedArray, DataView</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Reference</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">V8 Serialization format</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/encoding_decoding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Encoding &amp; Decoding</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/customised_encoding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Customized Encoding</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/customized_decoding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Customized Decoding</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/exceptions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Exceptions</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/types_protocols.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Types &amp; Protocols</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">JavaScript types</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_buffers.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">ArrayBuffer, TypedArray, DataView</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_date.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Date</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_error.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Error</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_map_set.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Map &amp; Set</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_object.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Object &amp; Array</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_primitives.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Primitives</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_regexp.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">RegExp</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_utils.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Utilities</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Constants &amp; Enums</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/api_constants.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">API Constants</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_constants.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">JavaScript Constants</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/v8_constants.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">V8 Serialization Format Constants</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+ <span class="menu-text">HostObject Extensions</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/extensions_nodejs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Node.JS Buffers</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#arraybuffer-typedarray-dataview" id="toc-arraybuffer-typedarray-dataview" class="nav-link active" data-scroll-target="#arraybuffer-typedarray-dataview">ArrayBuffer, TypedArray, DataView</a></li>
+  <li><a href="#v8serialize.jstypes.JSArrayBuffer" id="toc-v8serialize.jstypes.JSArrayBuffer" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSArrayBuffer">jstypes.JSArrayBuffer</a>
+  <ul class="collapse">
+  <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a></li>
+  <li><a href="#attributes" id="toc-attributes" class="nav-link" data-scroll-target="#attributes">Attributes</a></li>
+  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods">Methods</a>
+  <ul class="collapse">
+  <li><a href="#v8serialize.jstypes.JSArrayBuffer.close" id="toc-v8serialize.jstypes.JSArrayBuffer.close" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSArrayBuffer.close">close</a></li>
+  <li><a href="#v8serialize.jstypes.JSArrayBuffer.resize" id="toc-v8serialize.jstypes.JSArrayBuffer.resize" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSArrayBuffer.resize">resize</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#v8serialize.jstypes.create_view" id="toc-v8serialize.jstypes.create_view" class="nav-link" data-scroll-target="#v8serialize.jstypes.create_view">jstypes.create_view</a>
+  <ul class="collapse">
+  <li><a href="#returns" id="toc-returns" class="nav-link" data-scroll-target="#returns">Returns</a></li>
+  <li><a href="#examples" id="toc-examples" class="nav-link" data-scroll-target="#examples">Examples</a></li>
+  </ul></li>
+  <li><a href="#v8serialize.jstypes.JSTypedArray" id="toc-v8serialize.jstypes.JSTypedArray" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSTypedArray">jstypes.JSTypedArray</a>
+  <ul class="collapse">
+  <li><a href="#see-also" id="toc-see-also" class="nav-link" data-scroll-target="#see-also">See Also</a></li>
+  <li><a href="#attributes-1" id="toc-attributes-1" class="nav-link" data-scroll-target="#attributes-1">Attributes</a></li>
+  <li><a href="#methods-1" id="toc-methods-1" class="nav-link" data-scroll-target="#methods-1">Methods</a>
+  <ul class="collapse">
+  <li><a href="#v8serialize.jstypes.JSTypedArray.from_bytes" id="toc-v8serialize.jstypes.JSTypedArray.from_bytes" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSTypedArray.from_bytes">from_bytes</a></li>
+  <li><a href="#v8serialize.jstypes.JSTypedArray.get_buffer" id="toc-v8serialize.jstypes.JSTypedArray.get_buffer" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSTypedArray.get_buffer">get_buffer</a></li>
+  <li><a href="#v8serialize.jstypes.JSTypedArray.get_buffer_as_memoryview" id="toc-v8serialize.jstypes.JSTypedArray.get_buffer_as_memoryview" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSTypedArray.get_buffer_as_memoryview">get_buffer_as_memoryview</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#v8serialize.jstypes.JSDataView" id="toc-v8serialize.jstypes.JSDataView" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSDataView">jstypes.JSDataView</a>
+  <ul class="collapse">
+  <li><a href="#examples-2" id="toc-examples-2" class="nav-link" data-scroll-target="#examples-2">Examples</a></li>
+  <li><a href="#attributes-2" id="toc-attributes-2" class="nav-link" data-scroll-target="#attributes-2">Attributes</a></li>
+  <li><a href="#methods-2" id="toc-methods-2" class="nav-link" data-scroll-target="#methods-2">Methods</a>
+  <ul class="collapse">
+  <li><a href="#v8serialize.jstypes.JSDataView.from_bytes" id="toc-v8serialize.jstypes.JSDataView.from_bytes" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSDataView.from_bytes">from_bytes</a></li>
+  <li><a href="#v8serialize.jstypes.JSDataView.get_buffer" id="toc-v8serialize.jstypes.JSDataView.get_buffer" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSDataView.get_buffer">get_buffer</a></li>
+  <li><a href="#v8serialize.jstypes.JSDataView.get_buffer_as_memoryview" id="toc-v8serialize.jstypes.JSDataView.get_buffer_as_memoryview" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSDataView.get_buffer_as_memoryview">get_buffer_as_memoryview</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer" id="toc-v8serialize.jstypes.DataViewBuffer" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer">jstypes.DataViewBuffer</a>
+  <ul class="collapse">
+  <li><a href="#see-also-3" id="toc-see-also-3" class="nav-link" data-scroll-target="#see-also-3">See Also</a></li>
+  <li><a href="#attributes-3" id="toc-attributes-3" class="nav-link" data-scroll-target="#attributes-3">Attributes</a></li>
+  <li><a href="#methods-3" id="toc-methods-3" class="nav-link" data-scroll-target="#methods-3">Methods</a>
+  <ul class="collapse">
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.get_bigint64" id="toc-v8serialize.jstypes.DataViewBuffer.get_bigint64" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.get_bigint64">get_bigint64</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.get_biguint64" id="toc-v8serialize.jstypes.DataViewBuffer.get_biguint64" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.get_biguint64">get_biguint64</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.get_float16" id="toc-v8serialize.jstypes.DataViewBuffer.get_float16" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.get_float16">get_float16</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.get_float32" id="toc-v8serialize.jstypes.DataViewBuffer.get_float32" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.get_float32">get_float32</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.get_float64" id="toc-v8serialize.jstypes.DataViewBuffer.get_float64" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.get_float64">get_float64</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.get_int16" id="toc-v8serialize.jstypes.DataViewBuffer.get_int16" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.get_int16">get_int16</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.get_int32" id="toc-v8serialize.jstypes.DataViewBuffer.get_int32" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.get_int32">get_int32</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.get_int8" id="toc-v8serialize.jstypes.DataViewBuffer.get_int8" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.get_int8">get_int8</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.get_uint16" id="toc-v8serialize.jstypes.DataViewBuffer.get_uint16" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.get_uint16">get_uint16</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.get_uint32" id="toc-v8serialize.jstypes.DataViewBuffer.get_uint32" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.get_uint32">get_uint32</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.get_uint8" id="toc-v8serialize.jstypes.DataViewBuffer.get_uint8" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.get_uint8">get_uint8</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.read" id="toc-v8serialize.jstypes.DataViewBuffer.read" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.read">read</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.set_bigint64" id="toc-v8serialize.jstypes.DataViewBuffer.set_bigint64" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.set_bigint64">set_bigint64</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.set_biguint64" id="toc-v8serialize.jstypes.DataViewBuffer.set_biguint64" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.set_biguint64">set_biguint64</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.set_float16" id="toc-v8serialize.jstypes.DataViewBuffer.set_float16" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.set_float16">set_float16</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.set_float32" id="toc-v8serialize.jstypes.DataViewBuffer.set_float32" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.set_float32">set_float32</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.set_float64" id="toc-v8serialize.jstypes.DataViewBuffer.set_float64" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.set_float64">set_float64</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.set_int16" id="toc-v8serialize.jstypes.DataViewBuffer.set_int16" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.set_int16">set_int16</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.set_int32" id="toc-v8serialize.jstypes.DataViewBuffer.set_int32" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.set_int32">set_int32</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.set_int8" id="toc-v8serialize.jstypes.DataViewBuffer.set_int8" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.set_int8">set_int8</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.set_uint16" id="toc-v8serialize.jstypes.DataViewBuffer.set_uint16" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.set_uint16">set_uint16</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.set_uint32" id="toc-v8serialize.jstypes.DataViewBuffer.set_uint32" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.set_uint32">set_uint32</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.set_uint8" id="toc-v8serialize.jstypes.DataViewBuffer.set_uint8" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.set_uint8">set_uint8</a></li>
+  <li><a href="#v8serialize.jstypes.DataViewBuffer.write" id="toc-v8serialize.jstypes.DataViewBuffer.write" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataViewBuffer.write">write</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#v8serialize.jstypes.DataFormat" id="toc-v8serialize.jstypes.DataFormat" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataFormat">jstypes.DataFormat</a>
+  <ul class="collapse">
+  <li><a href="#attributes-4" id="toc-attributes-4" class="nav-link" data-scroll-target="#attributes-4">Attributes</a></li>
+  <li><a href="#methods-4" id="toc-methods-4" class="nav-link" data-scroll-target="#methods-4">Methods</a>
+  <ul class="collapse">
+  <li><a href="#v8serialize.jstypes.DataFormat.resolve" id="toc-v8serialize.jstypes.DataFormat.resolve" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataFormat.resolve">resolve</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#v8serialize.jstypes.DataType" id="toc-v8serialize.jstypes.DataType" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataType">jstypes.DataType</a>
+  <ul class="collapse">
+  <li><a href="#attributes-5" id="toc-attributes-5" class="nav-link" data-scroll-target="#attributes-5">Attributes</a></li>
+  </ul></li>
+  <li><a href="#v8serialize.jstypes.ArrayBufferViewStructFormat" id="toc-v8serialize.jstypes.ArrayBufferViewStructFormat" class="nav-link" data-scroll-target="#v8serialize.jstypes.ArrayBufferViewStructFormat">jstypes.ArrayBufferViewStructFormat</a>
+  <ul class="collapse">
+  <li><a href="#examples-4" id="toc-examples-4" class="nav-link" data-scroll-target="#examples-4">Examples</a></li>
+  <li><a href="#attributes-6" id="toc-attributes-6" class="nav-link" data-scroll-target="#attributes-6">Attributes</a></li>
+  </ul></li>
+  <li><a href="#v8serialize.jstypes.JSArrayBufferError" id="toc-v8serialize.jstypes.JSArrayBufferError" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSArrayBufferError">jstypes.JSArrayBufferError</a></li>
+  <li><a href="#v8serialize.jstypes.BoundsJSArrayBufferError" id="toc-v8serialize.jstypes.BoundsJSArrayBufferError" class="nav-link" data-scroll-target="#v8serialize.jstypes.BoundsJSArrayBufferError">jstypes.BoundsJSArrayBufferError</a>
+  <ul class="collapse">
+  <li><a href="#attributes-7" id="toc-attributes-7" class="nav-link" data-scroll-target="#attributes-7">Attributes</a></li>
+  </ul></li>
+  <li><a href="#v8serialize.jstypes.ByteLengthJSArrayBufferError" id="toc-v8serialize.jstypes.ByteLengthJSArrayBufferError" class="nav-link" data-scroll-target="#v8serialize.jstypes.ByteLengthJSArrayBufferError">jstypes.ByteLengthJSArrayBufferError</a>
+  <ul class="collapse">
+  <li><a href="#attributes-8" id="toc-attributes-8" class="nav-link" data-scroll-target="#attributes-8">Attributes</a></li>
+  </ul></li>
+  <li><a href="#v8serialize.jstypes.ItemSizeJSArrayBufferError" id="toc-v8serialize.jstypes.ItemSizeJSArrayBufferError" class="nav-link" data-scroll-target="#v8serialize.jstypes.ItemSizeJSArrayBufferError">jstypes.ItemSizeJSArrayBufferError</a>
+  <ul class="collapse">
+  <li><a href="#attributes-9" id="toc-attributes-9" class="nav-link" data-scroll-target="#attributes-9">Attributes</a></li>
+  </ul></li>
+  <li><a href="#v8serialize.jstypes.JSInt8Array" id="toc-v8serialize.jstypes.JSInt8Array" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSInt8Array">jstypes.JSInt8Array</a></li>
+  <li><a href="#v8serialize.jstypes.JSUint8Array" id="toc-v8serialize.jstypes.JSUint8Array" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSUint8Array">jstypes.JSUint8Array</a></li>
+  <li><a href="#v8serialize.jstypes.JSUint8ClampedArray" id="toc-v8serialize.jstypes.JSUint8ClampedArray" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSUint8ClampedArray">jstypes.JSUint8ClampedArray</a></li>
+  <li><a href="#v8serialize.jstypes.JSInt16Array" id="toc-v8serialize.jstypes.JSInt16Array" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSInt16Array">jstypes.JSInt16Array</a></li>
+  <li><a href="#v8serialize.jstypes.JSUint16Array" id="toc-v8serialize.jstypes.JSUint16Array" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSUint16Array">jstypes.JSUint16Array</a></li>
+  <li><a href="#v8serialize.jstypes.JSInt32Array" id="toc-v8serialize.jstypes.JSInt32Array" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSInt32Array">jstypes.JSInt32Array</a></li>
+  <li><a href="#v8serialize.jstypes.JSUint32Array" id="toc-v8serialize.jstypes.JSUint32Array" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSUint32Array">jstypes.JSUint32Array</a></li>
+  <li><a href="#v8serialize.jstypes.JSBigInt64Array" id="toc-v8serialize.jstypes.JSBigInt64Array" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSBigInt64Array">jstypes.JSBigInt64Array</a></li>
+  <li><a href="#v8serialize.jstypes.JSBigUint64Array" id="toc-v8serialize.jstypes.JSBigUint64Array" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSBigUint64Array">jstypes.JSBigUint64Array</a></li>
+  <li><a href="#v8serialize.jstypes.JSFloat16Array" id="toc-v8serialize.jstypes.JSFloat16Array" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSFloat16Array">jstypes.JSFloat16Array</a></li>
+  <li><a href="#v8serialize.jstypes.JSFloat32Array" id="toc-v8serialize.jstypes.JSFloat32Array" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSFloat32Array">jstypes.JSFloat32Array</a></li>
+  <li><a href="#v8serialize.jstypes.JSFloat64Array" id="toc-v8serialize.jstypes.JSFloat64Array" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSFloat64Array">jstypes.JSFloat64Array</a></li>
+  <li><a href="#v8serialize.jstypes.JSSharedArrayBuffer" id="toc-v8serialize.jstypes.JSSharedArrayBuffer" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSSharedArrayBuffer">jstypes.JSSharedArrayBuffer</a>
+  <ul class="collapse">
+  <li><a href="#attributes-10" id="toc-attributes-10" class="nav-link" data-scroll-target="#attributes-10">Attributes</a></li>
+  </ul></li>
+  <li><a href="#v8serialize.jstypes.JSArrayBufferTransfer" id="toc-v8serialize.jstypes.JSArrayBufferTransfer" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSArrayBufferTransfer">jstypes.JSArrayBufferTransfer</a>
+  <ul class="collapse">
+  <li><a href="#attributes-11" id="toc-attributes-11" class="nav-link" data-scroll-target="#attributes-11">Attributes</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/h4l/v8serialize/edit/main/reference/javascript_buffers.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/h4l/v8serialize/blob/main/reference/javascript_buffers.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li><li><a href="https://github.com/h4l/v8serialize/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+
+
+<section id="arraybuffer-typedarray-dataview" class="level1">
+<h1>ArrayBuffer, TypedArray, DataView</h1>
+<p>Python equivalents of JavaScript’s binary data buffer types.</p>
+</section>
+<section id="v8serialize.jstypes.JSArrayBuffer" class="level1">
+<h1>jstypes.JSArrayBuffer</h1>
+<p><code>jstypes.JSArrayBuffer(self, data=None, byte_length=None, *, max_byte_length=None, resizable=None, copy_data=None, readonly=None)</code></p>
+<p>Python equivalent of <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer">JavaScript’s ArrayBuffer</a>.</p>
+<ul>
+<li>This is a <a href="" title="`typecontextmanager`">context manager</a> which returns itself and calls <code>close()</code> on exit.</li>
+<li>This is a <a href="" title="`collections.abc.Buffer`">Buffer</a> which exposes its <code>data</code> as a memoryview.</li>
+</ul>
+<section id="parameters" class="level2">
+<h2 class="anchored" data-anchor-id="parameters">Parameters</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>data</code></td>
+<td><code>AnyBuffer</code> | None | <a href="https://docs.python.org/3/library/functions.html#int">int</a></td>
+<td>Binary data to populate the buffer with. Default: null bytes of <code>byte_length</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td><code>byte_length</code></td>
+<td><a href="https://docs.python.org/3/library/functions.html#int">int</a> | None</td>
+<td>The number of bytes the buffer will be created with. Default: length of <code>data</code> or 0.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td><code>max_byte_length</code></td>
+<td><a href="https://docs.python.org/3/library/functions.html#int">int</a> | None</td>
+<td>The maximum length the buffer can be resized to. The buffer will not be resizable if this isn’t set. Default: the initial length of the buffer.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td><code>resizable</code></td>
+<td><a href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</td>
+<td>Make the buffer resizable, starting at its maximum length. Default: <code>True</code> if a <code>max_byte_length</code> is set.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td><code>copy_data</code></td>
+<td><a href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</td>
+<td>Whether to copy the <code>data</code> parameter, or wrap it as is. Default: <code>True</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td><code>readonly</code></td>
+<td><a href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</td>
+<td>Whether to allow the buffer data to be modified. Default: <code>False</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="attributes" class="level2">
+<h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSArrayBuffer.data">data</a></td>
+<td>The buffer’s binary data.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.JSArrayBuffer.max_byte_length">max_byte_length</a></td>
+<td>The maximum size that <code>resize()</code> can expand this buffer to.</td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSArrayBuffer.resizable">resizable</a></td>
+<td>Whether this buffer can be resized with <code>resize()</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="methods" class="level2">
+<h2 class="anchored" data-anchor-id="methods">Methods</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSArrayBuffer.close">close</a></td>
+<td>Release the buffer’s data if it’s a <code>memoryview</code>.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.JSArrayBuffer.resize">resize</a></td>
+<td>Resize the buffer, within the <code>max_byte_length</code> limit.</td>
+</tr>
+</tbody>
+</table>
+<section id="v8serialize.jstypes.JSArrayBuffer.close" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSArrayBuffer.close">close</h3>
+<p><code>jstypes.JSArrayBuffer.close()</code></p>
+<p>Release the buffer’s data if it’s a <code>memoryview</code>.</p>
+</section>
+<section id="v8serialize.jstypes.JSArrayBuffer.resize" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSArrayBuffer.resize">resize</h3>
+<p><code>jstypes.JSArrayBuffer.resize(byte_length)</code></p>
+<p>Resize the buffer, within the <code>max_byte_length</code> limit.</p>
+</section>
+</section>
+</section>
+<section id="v8serialize.jstypes.create_view" class="level1">
+<h1>jstypes.create_view</h1>
+<p><code>jstypes.create_view(buffer, format, *, byte_offset=0, byte_length=None, readonly=None)</code></p>
+<p>Create a view over a data buffer, enforcing byte boundaries as JavaScript does.</p>
+<p>This creates an instance of the appropriate view type for the <code>format</code>.</p>
+<section id="returns" class="level2">
+<h2 class="anchored" data-anchor-id="returns">Returns</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 28%">
+<col style="width: 71%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>DataView | TypedArray:</td>
+<td>An instance of <code>DataView</code> or <code>TypedArray</code> wrapping <code>buffer</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="examples" class="level2">
+<h2 class="anchored" data-anchor-id="examples">Examples</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize.constants <span class="im">import</span> ArrayBufferViewTag</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> create_view(<span class="st">b''</span>, <span class="bu">format</span><span class="op">=</span>ArrayBufferViewTag.kUint32Array)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>JSUint32Array(<span class="st">b''</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> uint64 <span class="op">=</span> DataFormat.resolve(data_type<span class="op">=</span>DataType.UnsignedInt, byte_length<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> create_view(<span class="st">b''</span>, <span class="bu">format</span><span class="op">=</span>uint64)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>JSBigUint64Array(<span class="st">b''</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="v8serialize.jstypes.JSTypedArray" class="level1">
+<h1>jstypes.JSTypedArray</h1>
+<p><code>jstypes.JSTypedArray(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+<p>Python equivalent of <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray">JavaScript’s TypedArray</a>.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>As in JavaScript, this is an abstract type which cannot be instantiated.</p>
+</div>
+</div>
+<section id="see-also" class="level2">
+<h2 class="anchored" data-anchor-id="see-also">See Also</h2>
+<dl>
+<dt><a href="../reference/javascript_buffers.html#v8serialize.jstypes.create_view"><code>create_view()</code></a></dt>
+<dd>
+Create a (subtype) instance of <code>JSTypedArray</code>.
+</dd>
+<dt><code>JS*Array</code> types</dt>
+<dd>
+This module contains many subtypes for specific data formats, e.g.&nbsp;<a href="../reference/javascript_buffers.html#v8serialize.jstypes.JSUint8Array"><code>JSUint8Array</code></a>.
+</dd>
+</dl>
+</section>
+<section id="attributes-1" class="level2">
+<h2 class="anchored" data-anchor-id="attributes-1">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSTypedArray.backing_buffer">backing_buffer</a></td>
+<td>The byte buffer this view exposes a range of.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.JSTypedArray.byte_length">byte_length</a></td>
+<td>The number of bytes accessible through this view.</td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSTypedArray.byte_offset">byte_offset</a></td>
+<td>The view’s position in the backing_buffer.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.JSTypedArray.data_format">data_format</a></td>
+<td>The <a href="../reference/javascript_buffers.html#v8serialize.jstypes.DataFormat"><code>DataFormat</code></a> for this view’s data type.</td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSTypedArray.element_type">element_type</a></td>
+<td>The Python type of this view’s individual indexes.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.JSTypedArray.is_backing_buffer_resizable">is_backing_buffer_resizable</a></td>
+<td>Whether <code>.backing_buffer</code> can change its byte length.</td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSTypedArray.is_in_range">is_in_range</a></td>
+<td>Whether this view’s entire range exists in the <code>.backing_buffer</code>.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.JSTypedArray.is_length_tracking">is_length_tracking</a></td>
+<td>Whether this view changes length to match a resizable <code>.backing_buffer</code>.</td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSTypedArray.item_length">item_length</a></td>
+<td>The number of items in the view’s backing_buffer range.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.JSTypedArray.item_offset">item_offset</a></td>
+<td>The start of the view’s backing_buffer range.</td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSTypedArray.readonly">readonly</a></td>
+<td>Whether the view must be readonly.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.JSTypedArray.view_tag">view_tag</a></td>
+<td>The <a href="../reference/v8_constants.html#v8serialize.constants.ArrayBufferViewTag"><code>ArrayBufferViewTag</code></a> this view is for.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="methods-1" class="level2">
+<h2 class="anchored" data-anchor-id="methods-1">Methods</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSTypedArray.from_bytes">from_bytes</a></td>
+<td>Create a view, validating byte offsets as JavaScript does.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.JSTypedArray.get_buffer">get_buffer</a></td>
+<td>Get a context manager that provides this view’s region as a <code>memoryview</code>.</td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSTypedArray.get_buffer_as_memoryview">get_buffer_as_memoryview</a></td>
+<td>Access the view’s region of <code>.backing_buffer</code> as a <code>memoryview</code>.</td>
+</tr>
+</tbody>
+</table>
+<section id="v8serialize.jstypes.JSTypedArray.from_bytes" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSTypedArray.from_bytes">from_bytes</h3>
+<p><code>jstypes.JSTypedArray.from_bytes(backing_buffer, *, byte_offset=0, byte_length=None, readonly=None)</code></p>
+<p>Create a view, validating byte offsets as JavaScript does.</p>
+<section id="see-also-1" class="level4">
+<h4 class="anchored" data-anchor-id="see-also-1">See Also</h4>
+<dl>
+<dt><a href="../reference/javascript_buffers.html#v8serialize.jstypes.create_view"><code>create_view()</code></a></dt>
+<dd>
+Create a view without specifying the view class.
+</dd>
+</dl>
+</section>
+</section>
+<section id="v8serialize.jstypes.JSTypedArray.get_buffer" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSTypedArray.get_buffer">get_buffer</h3>
+<p><code>jstypes.JSTypedArray.get_buffer(readonly=None)</code></p>
+<p>Get a context manager that provides this view’s region as a <code>memoryview</code>.</p>
+<section id="examples-1" class="level4">
+<h4 class="anchored" data-anchor-id="examples-1">Examples</h4>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">with</span> JSUint8Array.from_bytes(<span class="st">b'</span><span class="ch">\xFF\x80</span><span class="st">'</span>).get_buffer() <span class="im">as</span> mv:</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>...     <span class="cf">assert</span> <span class="bu">isinstance</span>(mv, <span class="bu">memoryview</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>...     <span class="bu">print</span>(mv[<span class="dv">0</span>], mv[<span class="dv">1</span>])</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="dv">255</span> <span class="dv">128</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="v8serialize.jstypes.JSTypedArray.get_buffer_as_memoryview" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSTypedArray.get_buffer_as_memoryview">get_buffer_as_memoryview</h3>
+<p><code>jstypes.JSTypedArray.get_buffer_as_memoryview(readonly=None)</code></p>
+<p>Access the view’s region of <code>.backing_buffer</code> as a <code>memoryview</code>.</p>
+<p>The returned <code>memoryview</code>:</p>
+<ul>
+<li>Will be <strong>empty</strong> if the view is not in range.</li>
+<li>Is always 1-dimensional and contains uint8 items (format <code>"B"</code>).</li>
+</ul>
+<section id="parameters-1" class="level4">
+<h4 class="anchored" data-anchor-id="parameters-1">Parameters</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>readonly</code></td>
+<td><a href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[True] | None</td>
+<td>If True, the returned <code>memoryview</code> will be read-only (even if this view itself is not read-only).</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+</section>
+<section id="v8serialize.jstypes.JSDataView" class="level1">
+<h1>jstypes.JSDataView</h1>
+<p><code>jstypes.JSDataView(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+<pre><code>Python equivalent of [JavaScript's DataView].
+
+[JavaScript's DataView]: https://developer.mozilla.org/en-US/docs/Web/\</code></pre>
+<p>JavaScript/Reference/Global_Objects/DataView</p>
+<section id="examples-2" class="level2">
+<h2 class="anchored" data-anchor-id="examples-2">Examples</h2>
+<pre><code>&gt;&gt;&gt; dv = JSDataView(bytearray(3))
+&gt;&gt;&gt; with dv.get_buffer() as buf:
+...     buf.set_uint8(0, 1)
+...     buf.set_uint8(1, 2)
+...     print("256 + 2 =", buf.get_uint16(0))  # big-endian by default
+...     print("256 * 2 + 1 =", buf.get_uint16(0, little_endian=True))
+256 + 2 = 258
+256 * 2 + 1 = 513
+&gt;&gt;&gt; dv.backing_buffer
+bytearray(b'\x01\x02\x00')</code></pre>
+</section>
+<section id="attributes-2" class="level2">
+<h2 class="anchored" data-anchor-id="attributes-2">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSDataView.backing_buffer">backing_buffer</a></td>
+<td>The byte buffer this view exposes a range of.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.JSDataView.byte_length">byte_length</a></td>
+<td>The number of bytes accessible through this view.</td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSDataView.byte_offset">byte_offset</a></td>
+<td>The view’s position in the backing_buffer.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.JSDataView.data_format">data_format</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSDataView.is_backing_buffer_resizable">is_backing_buffer_resizable</a></td>
+<td>Whether <code>.backing_buffer</code> can change its byte length.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.JSDataView.is_in_range">is_in_range</a></td>
+<td>Whether this view’s entire range exists in the <code>.backing_buffer</code>.</td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSDataView.is_length_tracking">is_length_tracking</a></td>
+<td>Whether this view changes length to match a resizable <code>.backing_buffer</code>.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.JSDataView.item_length">item_length</a></td>
+<td>The number of items in the view’s backing_buffer range.</td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSDataView.item_offset">item_offset</a></td>
+<td>The start of the view’s backing_buffer range.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.JSDataView.readonly">readonly</a></td>
+<td>Whether the view must be readonly.</td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSDataView.view_tag">view_tag</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="methods-2" class="level2">
+<h2 class="anchored" data-anchor-id="methods-2">Methods</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSDataView.from_bytes">from_bytes</a></td>
+<td>Create a view, validating byte offsets as JavaScript does.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.JSDataView.get_buffer">get_buffer</a></td>
+<td>Access the view’s region of <code>.backing_buffer</code> as a <a href="../reference/javascript_buffers.html#v8serialize.jstypes.DataViewBuffer"><code>DataViewBuffer</code></a>.</td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSDataView.get_buffer_as_memoryview">get_buffer_as_memoryview</a></td>
+<td>Access the view’s region of <code>.backing_buffer</code> as a <code>memoryview</code>.</td>
+</tr>
+</tbody>
+</table>
+<section id="v8serialize.jstypes.JSDataView.from_bytes" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSDataView.from_bytes">from_bytes</h3>
+<p><code>jstypes.JSDataView.from_bytes(backing_buffer, *, byte_offset=0, byte_length=None, readonly=None)</code></p>
+<p>Create a view, validating byte offsets as JavaScript does.</p>
+<section id="see-also-2" class="level4">
+<h4 class="anchored" data-anchor-id="see-also-2">See Also</h4>
+<dl>
+<dt><a href="../reference/javascript_buffers.html#v8serialize.jstypes.create_view"><code>create_view()</code></a></dt>
+<dd>
+Create a view without specifying the view class.
+</dd>
+</dl>
+</section>
+</section>
+<section id="v8serialize.jstypes.JSDataView.get_buffer" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSDataView.get_buffer">get_buffer</h3>
+<p><code>jstypes.JSDataView.get_buffer(readonly=None)</code></p>
+<p>Access the view’s region of <code>.backing_buffer</code> as a <a href="../reference/javascript_buffers.html#v8serialize.jstypes.DataViewBuffer"><code>DataViewBuffer</code></a>.</p>
+</section>
+<section id="v8serialize.jstypes.JSDataView.get_buffer_as_memoryview" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSDataView.get_buffer_as_memoryview">get_buffer_as_memoryview</h3>
+<p><code>jstypes.JSDataView.get_buffer_as_memoryview(readonly=None)</code></p>
+<p>Access the view’s region of <code>.backing_buffer</code> as a <code>memoryview</code>.</p>
+<p>The returned <code>memoryview</code>:</p>
+<ul>
+<li>Will be <strong>empty</strong> if the view is not in range.</li>
+<li>Is always 1-dimensional and contains uint8 items (format <code>"B"</code>).</li>
+</ul>
+<section id="parameters-2" class="level4">
+<h4 class="anchored" data-anchor-id="parameters-2">Parameters</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>readonly</code></td>
+<td><a href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[True] | None</td>
+<td>If True, the returned <code>memoryview</code> will be read-only (even if this view itself is not read-only).</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer" class="level1">
+<h1>jstypes.DataViewBuffer</h1>
+<p><code>jstypes.DataViewBuffer(self, buffer)</code></p>
+<p>Provides methods to read/write data types in a <a href="../reference/javascript_buffers.html#v8serialize.jstypes.JSDataView"><code>JSDataView</code></a>.</p>
+<p>This is return type of <a href="../reference/javascript_buffers.html#v8serialize.jstypes.JSDataView.get_buffer"><code>JSDataView.get_buffer()</code></a>. It provides all the methods to read/write binary data as variable-width int/float data types that <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">JavaScript’s DataView</a> provides.</p>
+<ul>
+<li>This is a <a href="" title="`typecontextmanager`">context manager</a> which returns itself and releases <code>.buffer</code> on exit.</li>
+<li>This is a <a href="" title="`collections.abc.Buffer`">Buffer</a> which exposes its <code>.buffer</code> as a memoryview.</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The <code>get_*</code>/<code>set_*</code> methods read &amp; write values as big-endian unless the <code>little_endian=True</code> argument is used. Most computers are have little-endian native byte order, and the V8 serialization format itself is defined as using the system’s native byte order, and <code>v8serialize</code> assumes it’s running on a little-endian system.</p>
+</div>
+</div>
+<section id="see-also-3" class="level2">
+<h2 class="anchored" data-anchor-id="see-also-3">See Also</h2>
+<dl>
+<dt><a href="https://docs.python.org/3/library/struct.html#module-struct">Python’s <code>struct</code> module</a></dt>
+<dd>
+This is the builtin way to read/write binary data with Python.
+</dd>
+<dt><a href="https://numpy.org/doc/stable/user/basics.rec.html">NumPy Structured Arrays</a></dt>
+<dd>
+NumPy provides Structured Arrays which can read/write structured binary data in bulk.
+</dd>
+</dl>
+</section>
+<section id="attributes-3" class="level2">
+<h2 class="anchored" data-anchor-id="attributes-3">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.buffer">buffer</a></td>
+<td>The <code>memoryview</code> this view is operating on.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="methods-3" class="level2">
+<h2 class="anchored" data-anchor-id="methods-3">Methods</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.get_bigint64">get_bigint64</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.get_biguint64">get_biguint64</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.get_float16">get_float16</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.get_float32">get_float32</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.get_float64">get_float64</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.get_int16">get_int16</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.get_int32">get_int32</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.get_int8">get_int8</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.get_uint16">get_uint16</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.get_uint32">get_uint32</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.get_uint8">get_uint8</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.read">read</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.set_bigint64">set_bigint64</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.set_biguint64">set_biguint64</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.set_float16">set_float16</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.set_float32">set_float32</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.set_float64">set_float64</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.set_int16">set_int16</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.set_int32">set_int32</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.set_int8">set_int8</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.set_uint16">set_uint16</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.set_uint32">set_uint32</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.set_uint8">set_uint8</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.DataViewBuffer.write">write</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<section id="v8serialize.jstypes.DataViewBuffer.get_bigint64" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_bigint64">get_bigint64</h3>
+<p><code>jstypes.DataViewBuffer.get_bigint64(byte_offset, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.get_biguint64" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_biguint64">get_biguint64</h3>
+<p><code>jstypes.DataViewBuffer.get_biguint64(byte_offset, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.get_float16" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_float16">get_float16</h3>
+<p><code>jstypes.DataViewBuffer.get_float16(byte_offset, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.get_float32" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_float32">get_float32</h3>
+<p><code>jstypes.DataViewBuffer.get_float32(byte_offset, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.get_float64" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_float64">get_float64</h3>
+<p><code>jstypes.DataViewBuffer.get_float64(byte_offset, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.get_int16" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_int16">get_int16</h3>
+<p><code>jstypes.DataViewBuffer.get_int16(byte_offset, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.get_int32" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_int32">get_int32</h3>
+<p><code>jstypes.DataViewBuffer.get_int32(byte_offset, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.get_int8" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_int8">get_int8</h3>
+<p><code>jstypes.DataViewBuffer.get_int8(byte_offset)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.get_uint16" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_uint16">get_uint16</h3>
+<p><code>jstypes.DataViewBuffer.get_uint16(byte_offset, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.get_uint32" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_uint32">get_uint32</h3>
+<p><code>jstypes.DataViewBuffer.get_uint32(byte_offset, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.get_uint8" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_uint8">get_uint8</h3>
+<p><code>jstypes.DataViewBuffer.get_uint8(byte_offset)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.read" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.read">read</h3>
+<p><code>jstypes.DataViewBuffer.read(struct_format, byte_offset)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.set_bigint64" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_bigint64">set_bigint64</h3>
+<p><code>jstypes.DataViewBuffer.set_bigint64(byte_offset, value, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.set_biguint64" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_biguint64">set_biguint64</h3>
+<p><code>jstypes.DataViewBuffer.set_biguint64(byte_offset, value, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.set_float16" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_float16">set_float16</h3>
+<p><code>jstypes.DataViewBuffer.set_float16(byte_offset, value, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.set_float32" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_float32">set_float32</h3>
+<p><code>jstypes.DataViewBuffer.set_float32(byte_offset, value, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.set_float64" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_float64">set_float64</h3>
+<p><code>jstypes.DataViewBuffer.set_float64(byte_offset, value, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.set_int16" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_int16">set_int16</h3>
+<p><code>jstypes.DataViewBuffer.set_int16(byte_offset, value, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.set_int32" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_int32">set_int32</h3>
+<p><code>jstypes.DataViewBuffer.set_int32(byte_offset, value, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.set_int8" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_int8">set_int8</h3>
+<p><code>jstypes.DataViewBuffer.set_int8(byte_offset, value)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.set_uint16" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_uint16">set_uint16</h3>
+<p><code>jstypes.DataViewBuffer.set_uint16(byte_offset, value, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.set_uint32" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_uint32">set_uint32</h3>
+<p><code>jstypes.DataViewBuffer.set_uint32(byte_offset, value, little_endian=False)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.set_uint8" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_uint8">set_uint8</h3>
+<p><code>jstypes.DataViewBuffer.set_uint8(byte_offset, value)</code></p>
+</section>
+<section id="v8serialize.jstypes.DataViewBuffer.write" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.write">write</h3>
+<p><code>jstypes.DataViewBuffer.write(struct_format, byte_offset, *values)</code></p>
+</section>
+</section>
+</section>
+<section id="v8serialize.jstypes.DataFormat" class="level1">
+<h1>jstypes.DataFormat</h1>
+<p><code>jstypes.DataFormat(self, byte_length, data_type, format)</code></p>
+<p>A <a href="https://docs.python.org/3/library/struct.html#module-struct">struct format</a> for a specific data type and precision.</p>
+<section id="attributes-4" class="level2">
+<h2 class="anchored" data-anchor-id="attributes-4">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataFormat.byte_length">byte_length</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.DataFormat.data_type">data_type</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataFormat.format">format</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="methods-4" class="level2">
+<h2 class="anchored" data-anchor-id="methods-4">Methods</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataFormat.resolve">resolve</a></td>
+<td>Find the struct format on this platform with a given size and data type.</td>
+</tr>
+</tbody>
+</table>
+<section id="v8serialize.jstypes.DataFormat.resolve" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataFormat.resolve">resolve</h3>
+<p><code>jstypes.DataFormat.resolve(data_type, byte_length)</code></p>
+<p>Find the struct format on this platform with a given size and data type.</p>
+<section id="parameters-3" class="level4">
+<h4 class="anchored" data-anchor-id="parameters-3">Parameters</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>data_type</code></td>
+<td><a href="../reference/javascript_buffers.html#v8serialize.jstypes.DataType">DataType</a></td>
+<td>The data type to resolve.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td><code>byte_length</code></td>
+<td><a href="https://docs.python.org/3/library/functions.html#int">int</a></td>
+<td>The required precision in bytes (<span class="math inline">\(bits/8\)</span>, e.g.&nbsp;32 bits is 4 bytes).</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-1" class="level4">
+<h4 class="anchored" data-anchor-id="returns-1">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A <code>DataFormat</code> matching the parameters.</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises" class="level4">
+<h4 class="anchored" data-anchor-id="raises">Raises</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></td>
+<td>If the platform does not support a data type with the requested parameters.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="examples-3" class="level4">
+<h4 class="anchored" data-anchor-id="examples-3">Examples</h4>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> DataFormat.resolve(data_type<span class="op">=</span>DataType.UnsignedInt, byte_length<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>DataFormat(byte_length<span class="op">=</span><span class="dv">4</span>, data_type<span class="op">=</span>DataType.UnsignedInt, <span class="bu">format</span><span class="op">=</span><span class="st">'I'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+</section>
+</section>
+<section id="v8serialize.jstypes.DataType" class="level1">
+<h1>jstypes.DataType</h1>
+<p><code>jstypes.DataType()</code></p>
+<p>An enum of the data types used in JavaScript buffers.</p>
+<section id="attributes-5" class="level2">
+<h2 class="anchored" data-anchor-id="attributes-5">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataType.Bytes">Bytes</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.DataType.Float">Float</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataType.SignedInt">SignedInt</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.DataType.UnsignedInt">UnsignedInt</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataType.python_type">python_type</a></td>
+<td>The Python type that represents this data type.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.DataType.struct_formats">struct_formats</a></td>
+<td>The struct module format characters for this <code>DataType</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="v8serialize.jstypes.ArrayBufferViewStructFormat" class="level1">
+<h1>jstypes.ArrayBufferViewStructFormat</h1>
+<p><code>jstypes.ArrayBufferViewStructFormat(self, value)</code></p>
+<p>An enum of the TypedArray and DataView types.</p>
+<p>This is used to name view types, and resolve the view type for an <a href="../reference/v8_constants.html#v8serialize.constants.ArrayBufferViewTag"><code>ArrayBufferViewTag</code></a> value.</p>
+<section id="examples-4" class="level2">
+<h2 class="anchored" data-anchor-id="examples-4">Examples</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize.constants <span class="im">import</span> ArrayBufferViewTag</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Resolve a view type from a <code>ArrayBufferViewTag</code>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> ArrayBufferViewStructFormat(ArrayBufferViewTag.kUint32Array).view_type</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;</span><span class="kw">class</span> <span class="st">'v8serialize.jstypes.jsbuffers.JSUint32Array'</span><span class="op">&gt;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Resolve a view type from data type and precision:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> uint64 <span class="op">=</span> DataFormat.resolve(data_type<span class="op">=</span>DataType.UnsignedInt, byte_length<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> ArrayBufferViewStructFormat(uint64).view_type</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;</span><span class="kw">class</span> <span class="st">'v8serialize.jstypes.jsbuffers.JSBigUint64Array'</span><span class="op">&gt;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="attributes-6" class="level2">
+<h2 class="anchored" data-anchor-id="attributes-6">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.ArrayBufferViewStructFormat.BigInt64Array">BigInt64Array</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.ArrayBufferViewStructFormat.BigUint64Array">BigUint64Array</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.ArrayBufferViewStructFormat.DataView">DataView</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.ArrayBufferViewStructFormat.Float16Array">Float16Array</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.ArrayBufferViewStructFormat.Float32Array">Float32Array</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.ArrayBufferViewStructFormat.Float64Array">Float64Array</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.ArrayBufferViewStructFormat.Int16Array">Int16Array</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.ArrayBufferViewStructFormat.Int32Array">Int32Array</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.ArrayBufferViewStructFormat.Int8Array">Int8Array</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.ArrayBufferViewStructFormat.Uint16Array">Uint16Array</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.ArrayBufferViewStructFormat.Uint32Array">Uint32Array</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.ArrayBufferViewStructFormat.Uint8Array">Uint8Array</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.ArrayBufferViewStructFormat.Uint8ClampedArray">Uint8ClampedArray</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="v8serialize.jstypes.JSArrayBufferError" class="level1">
+<h1>jstypes.JSArrayBufferError</h1>
+<p><code>jstypes.JSArrayBufferError(self)</code></p>
+<p>The parent type of exceptions raised by the JavaScript buffer types.</p>
+</section>
+<section id="v8serialize.jstypes.BoundsJSArrayBufferError" class="level1">
+<h1>jstypes.BoundsJSArrayBufferError</h1>
+<p><code>jstypes.BoundsJSArrayBufferError(self, message, byte_offset, byte_length, buffer_byte_length)</code></p>
+<p>Raised when a byte offset is out of bounds.</p>
+<section id="attributes-7" class="level2">
+<h2 class="anchored" data-anchor-id="attributes-7">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.BoundsJSArrayBufferError.buffer_byte_length">buffer_byte_length</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.BoundsJSArrayBufferError.byte_length">byte_length</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.BoundsJSArrayBufferError.byte_offset">byte_offset</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="v8serialize.jstypes.ByteLengthJSArrayBufferError" class="level1">
+<h1>jstypes.ByteLengthJSArrayBufferError</h1>
+<p><code>jstypes.ByteLengthJSArrayBufferError(self, message, *, byte_length, max_byte_length)</code></p>
+<p>Raised when a byte length is out of bounds.</p>
+<section id="attributes-8" class="level2">
+<h2 class="anchored" data-anchor-id="attributes-8">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.ByteLengthJSArrayBufferError.byte_length">byte_length</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.ByteLengthJSArrayBufferError.max_byte_length">max_byte_length</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="v8serialize.jstypes.ItemSizeJSArrayBufferError" class="level1">
+<h1>jstypes.ItemSizeJSArrayBufferError</h1>
+<p><code>jstypes.ItemSizeJSArrayBufferError(self, message, *, itemsize, byte_offset, byte_length)</code></p>
+<p>Raised when a byte offset or length is not divisible by itemsize.</p>
+<section id="attributes-9" class="level2">
+<h2 class="anchored" data-anchor-id="attributes-9">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.ItemSizeJSArrayBufferError.byte_length">byte_length</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.jstypes.ItemSizeJSArrayBufferError.byte_offset">byte_offset</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.ItemSizeJSArrayBufferError.itemsize">itemsize</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="v8serialize.jstypes.JSInt8Array" class="level1">
+<h1>jstypes.JSInt8Array</h1>
+<p><code>jstypes.JSInt8Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+</section>
+<section id="v8serialize.jstypes.JSUint8Array" class="level1">
+<h1>jstypes.JSUint8Array</h1>
+<p><code>jstypes.JSUint8Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+</section>
+<section id="v8serialize.jstypes.JSUint8ClampedArray" class="level1">
+<h1>jstypes.JSUint8ClampedArray</h1>
+<p><code>jstypes.JSUint8ClampedArray(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+</section>
+<section id="v8serialize.jstypes.JSInt16Array" class="level1">
+<h1>jstypes.JSInt16Array</h1>
+<p><code>jstypes.JSInt16Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+</section>
+<section id="v8serialize.jstypes.JSUint16Array" class="level1">
+<h1>jstypes.JSUint16Array</h1>
+<p><code>jstypes.JSUint16Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+</section>
+<section id="v8serialize.jstypes.JSInt32Array" class="level1">
+<h1>jstypes.JSInt32Array</h1>
+<p><code>jstypes.JSInt32Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+</section>
+<section id="v8serialize.jstypes.JSUint32Array" class="level1">
+<h1>jstypes.JSUint32Array</h1>
+<p><code>jstypes.JSUint32Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+</section>
+<section id="v8serialize.jstypes.JSBigInt64Array" class="level1">
+<h1>jstypes.JSBigInt64Array</h1>
+<p><code>jstypes.JSBigInt64Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+</section>
+<section id="v8serialize.jstypes.JSBigUint64Array" class="level1">
+<h1>jstypes.JSBigUint64Array</h1>
+<p><code>jstypes.JSBigUint64Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+</section>
+<section id="v8serialize.jstypes.JSFloat16Array" class="level1">
+<h1>jstypes.JSFloat16Array</h1>
+<p><code>jstypes.JSFloat16Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+</section>
+<section id="v8serialize.jstypes.JSFloat32Array" class="level1">
+<h1>jstypes.JSFloat32Array</h1>
+<p><code>jstypes.JSFloat32Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+</section>
+<section id="v8serialize.jstypes.JSFloat64Array" class="level1">
+<h1>jstypes.JSFloat64Array</h1>
+<p><code>jstypes.JSFloat64Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+</section>
+<section id="v8serialize.jstypes.JSSharedArrayBuffer" class="level1">
+<h1>jstypes.JSSharedArrayBuffer</h1>
+<p><code>jstypes.JSSharedArrayBuffer(self, buffer_id)</code></p>
+<p>Python equivalent of <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer">JavaScript’s SharedArrayBuffer</a>.</p>
+<p>This type exists for completeness, and to allow these values to be round-tripped back to V8 if they ever do occur.</p>
+<p>Much like <a href="../reference/javascript_buffers.html#v8serialize.jstypes.JSArrayBufferTransfer"><code>JSArrayBufferTransfer</code></a>, this type should not occur in practice. It currently does nothing other than hold an integer <code>buffer_id</code>. V8 does not seem to allow SharedArrayBuffer objects to be serialized by Node.JS’s <a href="https://nodejs.org/api/v8.html#serialization-api"><code>v8.serialize()</code></a> API.</p>
+<section id="attributes-10" class="level2">
+<h2 class="anchored" data-anchor-id="attributes-10">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSSharedArrayBuffer.buffer_id">buffer_id</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="v8serialize.jstypes.JSArrayBufferTransfer" class="level1">
+<h1>jstypes.JSArrayBufferTransfer</h1>
+<p><code>jstypes.JSArrayBufferTransfer(self, transfer_id)</code></p>
+<p>A non-standard V8 type representing an ArrayBuffer being <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer#transferring_arraybuffers">transferred</a>.</p>
+<p>This type exists for completeness, but should not occur in data serialized by JavaScript runtimes using APIs like Node.JS’s <a href="https://nodejs.org/api/v8.html#serialization-api"><code>v8.serialize()</code></a>. Transferring ArrayBuffers is an internal activity in V8 and it’s not possible to access this type from JavaScript code running in V8, so it can’t be serialized from JavaScript code.</p>
+<section id="attributes-11" class="level2">
+<h2 class="anchored" data-anchor-id="attributes-11">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.JSArrayBufferTransfer.transfer_id">transfer_id</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/h4l/v8serialize/edit/main/reference/javascript_buffers.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/h4l/v8serialize/blob/main/reference/javascript_buffers.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li><li><a href="https://github.com/h4l/v8serialize/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>

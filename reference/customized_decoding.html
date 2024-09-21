@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>customized_decoding – v8serialize</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="../site_libs/quarto-contrib/iconify-2.1.0/iconify-icon.min.js"></script>
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">v8serialize</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-tutorials" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Tutorials</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-tutorials">    
+        <li>
+    <a class="dropdown-item" href="../tutorials/js_to_py.html">
+ <span class="dropdown-text">Pass JavaScript values to and from Python</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-how-to" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">How-To</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-how-to">    
+        <li>
+    <a class="dropdown-item" href="../howto/install.html">
+ <span class="dropdown-text">How to install v8serialize</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../howto/use_at_a_glance.html">
+ <span class="dropdown-text">How to use at a glance</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link active" href="../reference/index.html" aria-current="page"> 
+<span class="menu-text">Reference</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-explanation" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Explanation</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-explanation">    
+        <li>
+    <a class="dropdown-item" href="../explanation/v8_serialization_format.html">
+ <span class="dropdown-text">Introduction to the V8 serialization format</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/h4l/v8serialize/"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://pypi.org/project/v8serialize/"> 
+<span class="menu-text"><iconify-icon role="img" inline="" icon="file-icons:pypi" aria-label="Icon pypi from file-icons Iconify.design set." title="Icon pypi from file-icons Iconify.design set."></iconify-icon></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../reference/encoding_decoding.html">V8 Serialization format</a></li><li class="breadcrumb-item"><a href="../reference/customized_decoding.html">Customized Decoding</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Reference</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">V8 Serialization format</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/encoding_decoding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Encoding &amp; Decoding</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/customised_encoding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Customized Encoding</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/customized_decoding.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Customized Decoding</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/exceptions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Exceptions</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/types_protocols.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Types &amp; Protocols</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">JavaScript types</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_buffers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ArrayBuffer, TypedArray, DataView</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_date.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Date</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_error.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Error</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_map_set.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Map &amp; Set</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_object.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Object &amp; Array</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_primitives.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Primitives</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_regexp.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">RegExp</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_utils.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Utilities</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Constants &amp; Enums</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/api_constants.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">API Constants</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/javascript_constants.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">JavaScript Constants</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/v8_constants.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">V8 Serialization Format Constants</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+ <span class="menu-text">HostObject Extensions</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/extensions_nodejs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Node.JS Buffers</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#customized-decoding" id="toc-customized-decoding" class="nav-link active" data-scroll-target="#customized-decoding">Customized Decoding</a></li>
+  <li><a href="#v8serialize.default_decode_steps" id="toc-v8serialize.default_decode_steps" class="nav-link" data-scroll-target="#v8serialize.default_decode_steps">default_decode_steps</a></li>
+  <li><a href="#v8serialize.decode.TagReader" id="toc-v8serialize.decode.TagReader" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader">decode.TagReader</a>
+  <ul class="collapse">
+  <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a></li>
+  <li><a href="#attributes" id="toc-attributes" class="nav-link" data-scroll-target="#attributes">Attributes</a></li>
+  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods">Methods</a>
+  <ul class="collapse">
+  <li><a href="#v8serialize.decode.TagReader.decode" id="toc-v8serialize.decode.TagReader.decode" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.decode">decode</a></li>
+  <li><a href="#v8serialize.decode.TagReader.deserialize_constant" id="toc-v8serialize.decode.TagReader.deserialize_constant" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.deserialize_constant">deserialize_constant</a></li>
+  <li><a href="#v8serialize.decode.TagReader.deserialize_host_object" id="toc-v8serialize.decode.TagReader.deserialize_host_object" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.deserialize_host_object">deserialize_host_object</a></li>
+  <li><a href="#v8serialize.decode.TagReader.deserialize_js_array_buffer" id="toc-v8serialize.decode.TagReader.deserialize_js_array_buffer" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.deserialize_js_array_buffer">deserialize_js_array_buffer</a></li>
+  <li><a href="#v8serialize.decode.TagReader.deserialize_js_array_buffer_view" id="toc-v8serialize.decode.TagReader.deserialize_js_array_buffer_view" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.deserialize_js_array_buffer_view">deserialize_js_array_buffer_view</a></li>
+  <li><a href="#v8serialize.decode.TagReader.deserialize_js_array_dense" id="toc-v8serialize.decode.TagReader.deserialize_js_array_dense" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.deserialize_js_array_dense">deserialize_js_array_dense</a></li>
+  <li><a href="#v8serialize.decode.TagReader.deserialize_js_array_sparse" id="toc-v8serialize.decode.TagReader.deserialize_js_array_sparse" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.deserialize_js_array_sparse">deserialize_js_array_sparse</a></li>
+  <li><a href="#v8serialize.decode.TagReader.deserialize_js_date" id="toc-v8serialize.decode.TagReader.deserialize_js_date" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.deserialize_js_date">deserialize_js_date</a></li>
+  <li><a href="#v8serialize.decode.TagReader.deserialize_js_error" id="toc-v8serialize.decode.TagReader.deserialize_js_error" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.deserialize_js_error">deserialize_js_error</a></li>
+  <li><a href="#v8serialize.decode.TagReader.deserialize_js_object" id="toc-v8serialize.decode.TagReader.deserialize_js_object" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.deserialize_js_object">deserialize_js_object</a></li>
+  <li><a href="#v8serialize.decode.TagReader.deserialize_js_primitive_object" id="toc-v8serialize.decode.TagReader.deserialize_js_primitive_object" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.deserialize_js_primitive_object">deserialize_js_primitive_object</a></li>
+  <li><a href="#v8serialize.decode.TagReader.deserialize_js_regexp" id="toc-v8serialize.decode.TagReader.deserialize_js_regexp" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.deserialize_js_regexp">deserialize_js_regexp</a></li>
+  <li><a href="#v8serialize.decode.TagReader.deserialize_jsmap" id="toc-v8serialize.decode.TagReader.deserialize_jsmap" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.deserialize_jsmap">deserialize_jsmap</a></li>
+  <li><a href="#v8serialize.decode.TagReader.deserialize_jsset" id="toc-v8serialize.decode.TagReader.deserialize_jsset" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.deserialize_jsset">deserialize_jsset</a></li>
+  <li><a href="#v8serialize.decode.TagReader.deserialize_object_reference" id="toc-v8serialize.decode.TagReader.deserialize_object_reference" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.deserialize_object_reference">deserialize_object_reference</a></li>
+  <li><a href="#v8serialize.decode.TagReader.deserialize_unsupported_wasm" id="toc-v8serialize.decode.TagReader.deserialize_unsupported_wasm" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.deserialize_unsupported_wasm">deserialize_unsupported_wasm</a></li>
+  <li><a href="#v8serialize.decode.TagReader.deserialize_v8_shared_object_reference" id="toc-v8serialize.decode.TagReader.deserialize_v8_shared_object_reference" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.deserialize_v8_shared_object_reference">deserialize_v8_shared_object_reference</a></li>
+  <li><a href="#v8serialize.decode.TagReader.register_tag_readers" id="toc-v8serialize.decode.TagReader.register_tag_readers" class="nav-link" data-scroll-target="#v8serialize.decode.TagReader.register_tag_readers">register_tag_readers</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#v8serialize.decode.DefaultDecodeContext" id="toc-v8serialize.decode.DefaultDecodeContext" class="nav-link" data-scroll-target="#v8serialize.decode.DefaultDecodeContext">decode.DefaultDecodeContext</a>
+  <ul class="collapse">
+  <li><a href="#attributes-1" id="toc-attributes-1" class="nav-link" data-scroll-target="#attributes-1">Attributes</a></li>
+  <li><a href="#methods-1" id="toc-methods-1" class="nav-link" data-scroll-target="#methods-1">Methods</a>
+  <ul class="collapse">
+  <li><a href="#v8serialize.decode.DefaultDecodeContext.decode_object" id="toc-v8serialize.decode.DefaultDecodeContext.decode_object" class="nav-link" data-scroll-target="#v8serialize.decode.DefaultDecodeContext.decode_object">decode_object</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream" id="toc-v8serialize.decode.ReadableTagStream" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream">decode.ReadableTagStream</a>
+  <ul class="collapse">
+  <li><a href="#attributes-2" id="toc-attributes-2" class="nav-link" data-scroll-target="#attributes-2">Attributes</a></li>
+  <li><a href="#methods-2" id="toc-methods-2" class="nav-link" data-scroll-target="#methods-2">Methods</a>
+  <ul class="collapse">
+  <li><a href="#v8serialize.decode.ReadableTagStream.ensure_capacity" id="toc-v8serialize.decode.ReadableTagStream.ensure_capacity" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.ensure_capacity">ensure_capacity</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.peak_tag" id="toc-v8serialize.decode.ReadableTagStream.peak_tag" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.peak_tag">peak_tag</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_bigint" id="toc-v8serialize.decode.ReadableTagStream.read_bigint" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_bigint">read_bigint</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_bytes" id="toc-v8serialize.decode.ReadableTagStream.read_bytes" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_bytes">read_bytes</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_double" id="toc-v8serialize.decode.ReadableTagStream.read_double" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_double">read_double</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_error_tag" id="toc-v8serialize.decode.ReadableTagStream.read_error_tag" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_error_tag">read_error_tag</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_header" id="toc-v8serialize.decode.ReadableTagStream.read_header" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_header">read_header</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_host_object" id="toc-v8serialize.decode.ReadableTagStream.read_host_object" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_host_object">read_host_object</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_int32" id="toc-v8serialize.decode.ReadableTagStream.read_int32" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_int32">read_int32</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_js_array_buffer" id="toc-v8serialize.decode.ReadableTagStream.read_js_array_buffer" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_js_array_buffer">read_js_array_buffer</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_js_array_buffer_view" id="toc-v8serialize.decode.ReadableTagStream.read_js_array_buffer_view" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_js_array_buffer_view">read_js_array_buffer_view</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_js_array_dense" id="toc-v8serialize.decode.ReadableTagStream.read_js_array_dense" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_js_array_dense">read_js_array_dense</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_js_array_sparse" id="toc-v8serialize.decode.ReadableTagStream.read_js_array_sparse" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_js_array_sparse">read_js_array_sparse</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_js_date" id="toc-v8serialize.decode.ReadableTagStream.read_js_date" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_js_date">read_js_date</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_js_error" id="toc-v8serialize.decode.ReadableTagStream.read_js_error" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_js_error">read_js_error</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_js_object" id="toc-v8serialize.decode.ReadableTagStream.read_js_object" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_js_object">read_js_object</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_js_primitive_object" id="toc-v8serialize.decode.ReadableTagStream.read_js_primitive_object" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_js_primitive_object">read_js_primitive_object</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_js_regexp" id="toc-v8serialize.decode.ReadableTagStream.read_js_regexp" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_js_regexp">read_js_regexp</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_jsmap" id="toc-v8serialize.decode.ReadableTagStream.read_jsmap" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_jsmap">read_jsmap</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_jsset" id="toc-v8serialize.decode.ReadableTagStream.read_jsset" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_jsset">read_jsset</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_object_reference" id="toc-v8serialize.decode.ReadableTagStream.read_object_reference" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_object_reference">read_object_reference</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_padding" id="toc-v8serialize.decode.ReadableTagStream.read_padding" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_padding">read_padding</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_string_onebyte" id="toc-v8serialize.decode.ReadableTagStream.read_string_onebyte" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_string_onebyte">read_string_onebyte</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_string_twobyte" id="toc-v8serialize.decode.ReadableTagStream.read_string_twobyte" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_string_twobyte">read_string_twobyte</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_string_utf8" id="toc-v8serialize.decode.ReadableTagStream.read_string_utf8" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_string_utf8">read_string_utf8</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_tag" id="toc-v8serialize.decode.ReadableTagStream.read_tag" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_tag">read_tag</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_uint32" id="toc-v8serialize.decode.ReadableTagStream.read_uint32" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_uint32">read_uint32</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_v8_shared_object_reference" id="toc-v8serialize.decode.ReadableTagStream.read_v8_shared_object_reference" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_v8_shared_object_reference">read_v8_shared_object_reference</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_varint" id="toc-v8serialize.decode.ReadableTagStream.read_varint" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_varint">read_varint</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.read_zigzag" id="toc-v8serialize.decode.ReadableTagStream.read_zigzag" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.read_zigzag">read_zigzag</a></li>
+  <li><a href="#v8serialize.decode.ReadableTagStream.throw" id="toc-v8serialize.decode.ReadableTagStream.throw" class="nav-link" data-scroll-target="#v8serialize.decode.ReadableTagStream.throw">throw</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#v8serialize.decode.ArrayReadResult" id="toc-v8serialize.decode.ArrayReadResult" class="nav-link" data-scroll-target="#v8serialize.decode.ArrayReadResult">decode.ArrayReadResult</a>
+  <ul class="collapse">
+  <li><a href="#attributes-3" id="toc-attributes-3" class="nav-link" data-scroll-target="#attributes-3">Attributes</a></li>
+  </ul></li>
+  <li><a href="#v8serialize.decode.ReferencedObject" id="toc-v8serialize.decode.ReferencedObject" class="nav-link" data-scroll-target="#v8serialize.decode.ReferencedObject">decode.ReferencedObject</a>
+  <ul class="collapse">
+  <li><a href="#attributes-4" id="toc-attributes-4" class="nav-link" data-scroll-target="#attributes-4">Attributes</a></li>
+  </ul></li>
+  <li><a href="#v8serialize.decode.TagReaderRegistry" id="toc-v8serialize.decode.TagReaderRegistry" class="nav-link" data-scroll-target="#v8serialize.decode.TagReaderRegistry">decode.TagReaderRegistry</a>
+  <ul class="collapse">
+  <li><a href="#attributes-5" id="toc-attributes-5" class="nav-link" data-scroll-target="#attributes-5">Attributes</a></li>
+  <li><a href="#methods-3" id="toc-methods-3" class="nav-link" data-scroll-target="#methods-3">Methods</a>
+  <ul class="collapse">
+  <li><a href="#v8serialize.decode.TagReaderRegistry.match" id="toc-v8serialize.decode.TagReaderRegistry.match" class="nav-link" data-scroll-target="#v8serialize.decode.TagReaderRegistry.match">match</a></li>
+  <li><a href="#v8serialize.decode.TagReaderRegistry.register" id="toc-v8serialize.decode.TagReaderRegistry.register" class="nav-link" data-scroll-target="#v8serialize.decode.TagReaderRegistry.register">register</a></li>
+  <li><a href="#v8serialize.decode.TagReaderRegistry.register_all" id="toc-v8serialize.decode.TagReaderRegistry.register_all" class="nav-link" data-scroll-target="#v8serialize.decode.TagReaderRegistry.register_all">register_all</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#v8serialize.decode.read_stream" id="toc-v8serialize.decode.read_stream" class="nav-link" data-scroll-target="#v8serialize.decode.read_stream">decode.read_stream</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/h4l/v8serialize/edit/main/reference/customized_decoding.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/h4l/v8serialize/blob/main/reference/customized_decoding.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li><li><a href="https://github.com/h4l/v8serialize/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+
+
+<section id="customized-decoding" class="level1">
+<h1>Customized Decoding</h1>
+<p>The <code>v8serialize.decode</code> module reads V8-serialized data.</p>
+</section>
+<section id="v8serialize.default_decode_steps" class="level1">
+<h1>default_decode_steps</h1>
+<p><code>default_decode_steps</code></p>
+<p>The default sequence of decode steps used to map <code>SerializationTag</code>s to Python objects.</p>
+<p>This is an instance of <code>TagReader</code> with no options changed from the defaults.</p>
+<p>JavaScript types are deserialized as the <code>v8serialize.jstypes.JS*</code> types, unless a built-in Python type can represent the value precisely, such as strings and numbers.</p>
+</section>
+<section id="v8serialize.decode.TagReader" class="level1">
+<h1>decode.TagReader</h1>
+<p><code>decode.TagReader(self, tag_readers=None, jsmap_type=None, jsset_type=None, js_object_type=None, js_array_type=None, js_constants=None, host_object_deserializer=None, js_error_builder=None, default_timezone=None)</code></p>
+<p>Controls how V8 serialization data is converted to Python values when deserializing.</p>
+<p>Customise the way JavaScript values are represented in Python by creating a <code>TagReader</code> instance with non-default options, and passing it to the <code>decode_steps</code> option of <code>v8serialize.loads()</code> or <code>v8serialize.Decoder()</code></p>
+<section id="parameters" class="level2">
+<h2 class="anchored" data-anchor-id="parameters">Parameters</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>tag_readers</code></td>
+<td><a href="../reference/customized_decoding.html#v8serialize.decode.TagReaderRegistry">TagReaderRegistry</a> | None</td>
+<td>Override the tag reader functions implied by other arguments. Default: no overrides.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td><code>jsmap_type</code></td>
+<td><a href="../reference/types_protocols.html#v8serialize.decode.JSMapType">JSMapType</a> | None</td>
+<td>A function returning an empty <code>dict</code> to represent Map. Default: <a href="../reference/javascript_map_set.html#v8serialize.jstypes.JSMap">JSMap</a>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td><code>jsset_type</code></td>
+<td><a href="../reference/types_protocols.html#v8serialize.decode.JSSetType">JSSetType</a> | None</td>
+<td>A function returning an empty <code>set</code> to represent Set. Default: <a href="../reference/javascript_map_set.html#v8serialize.jstypes.JSSet">JSSet</a>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td><code>js_object_type</code></td>
+<td><a href="../reference/types_protocols.html#v8serialize.decode.JSObjectType">JSObjectType</a> | None</td>
+<td>A function returning an empty <code>dict</code> to represent Object. Default: <a href="../reference/javascript_object.html#v8serialize.jstypes.JSObject">JSObject</a>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td><code>js_array_type</code></td>
+<td><a href="../reference/types_protocols.html#v8serialize.decode.JSArrayType">JSArrayType</a> | None</td>
+<td>A function returning an empty <code>dict</code> to represent Array. Default: <a href="../reference/javascript_object.html#v8serialize.jstypes.JSArray">JSArray</a>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td><code>js_constants</code></td>
+<td><a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a>[<a href="../reference/v8_constants.html#v8serialize.constants.ConstantTags">ConstantTags</a>, <a href="https://docs.python.org/3/library/functions.html#object">object</a>] | None</td>
+<td>A dict mapping tags from <a href="../reference/v8_constants.html#v8serialize.constants.JS_CONSTANT_TAGS">JS_CONSTANT_TAGS</a> to the values to represent them as. Default: see <a href="../reference/v8_constants.html#v8serialize.constants.JS_CONSTANT_TAGS">JS_CONSTANT_TAGS</a>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td><code>host_object_deserializer</code></td>
+<td><a href="../reference/types_protocols.html#v8serialize.decode.HostObjectDeserializer">HostObjectDeserializer</a>[<a href="https://docs.python.org/3/library/functions.html#object">object</a>] | None</td>
+<td>A <a href="../reference/types_protocols.html#v8serialize.decode.HostObjectDeserializer">HostObjectDeserializer</a> to load <a href="../reference/v8_constants.html#v8serialize.constants.SerializationTag.kHostObject">HostObject</a> extension tags. Default: see <a href="../reference/encoding_decoding.html#v8serialize.loads">desc</a>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td><code>js_error_builder</code></td>
+<td><a href="../reference/types_protocols.html#v8serialize.decode.JSErrorBuilder">JSErrorBuilder</a>[<a href="https://docs.python.org/3/library/functions.html#object">object</a>] | None</td>
+<td>A JSErrorBuilder to create Error representations. Default: <a href="../reference/javascript_error.html#v8serialize.jstypes.JSError.builder">JSError.builder</a></td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td><code>default_timezone</code></td>
+<td><a href="https://docs.python.org/3/library/datetime.html#datetime.tzinfo">tzinfo</a> | None</td>
+<td>The timezone to use when creating <a href="https://docs.python.org/3/library/datetime.html#datetime.datetime">datetime</a> to represent Date. Default: datetimes have no timezone.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="attributes" class="level2">
+<h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.decode.TagReader.default_timezone">default_timezone</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.TagReader.host_object_deserializer">host_object_deserializer</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.TagReader.js_array_type">js_array_type</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.TagReader.js_constants">js_constants</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.TagReader.js_error_builder">js_error_builder</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.TagReader.js_object_type">js_object_type</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.TagReader.jsmap_type">jsmap_type</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.TagReader.jsset_type">jsset_type</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.TagReader.tag_readers">tag_readers</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="methods" class="level2">
+<h2 class="anchored" data-anchor-id="methods">Methods</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.decode.TagReader.decode">decode</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.TagReader.deserialize_constant">deserialize_constant</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.TagReader.deserialize_host_object">deserialize_host_object</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.TagReader.deserialize_js_array_buffer">deserialize_js_array_buffer</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.TagReader.deserialize_js_array_buffer_view">deserialize_js_array_buffer_view</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.TagReader.deserialize_js_array_dense">deserialize_js_array_dense</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.TagReader.deserialize_js_array_sparse">deserialize_js_array_sparse</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.TagReader.deserialize_js_date">deserialize_js_date</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.TagReader.deserialize_js_error">deserialize_js_error</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.TagReader.deserialize_js_object">deserialize_js_object</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.TagReader.deserialize_js_primitive_object">deserialize_js_primitive_object</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.TagReader.deserialize_js_regexp">deserialize_js_regexp</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.TagReader.deserialize_jsmap">deserialize_jsmap</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.TagReader.deserialize_jsset">deserialize_jsset</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.TagReader.deserialize_object_reference">deserialize_object_reference</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.TagReader.deserialize_unsupported_wasm">deserialize_unsupported_wasm</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.TagReader.deserialize_v8_shared_object_reference">deserialize_v8_shared_object_reference</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.TagReader.register_tag_readers">register_tag_readers</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<section id="v8serialize.decode.TagReader.decode" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.decode">decode</h3>
+<p><code>decode.TagReader.decode(tag, /, ctx, next)</code></p>
+</section>
+<section id="v8serialize.decode.TagReader.deserialize_constant" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_constant">deserialize_constant</h3>
+<p><code>decode.TagReader.deserialize_constant(tag, ctx)</code></p>
+</section>
+<section id="v8serialize.decode.TagReader.deserialize_host_object" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_host_object">deserialize_host_object</h3>
+<p><code>decode.TagReader.deserialize_host_object(tag, ctx)</code></p>
+</section>
+<section id="v8serialize.decode.TagReader.deserialize_js_array_buffer" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_array_buffer">deserialize_js_array_buffer</h3>
+<p><code>decode.TagReader.deserialize_js_array_buffer(tag, ctx)</code></p>
+</section>
+<section id="v8serialize.decode.TagReader.deserialize_js_array_buffer_view" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_array_buffer_view">deserialize_js_array_buffer_view</h3>
+<p><code>decode.TagReader.deserialize_js_array_buffer_view(tag, ctx)</code></p>
+</section>
+<section id="v8serialize.decode.TagReader.deserialize_js_array_dense" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_array_dense">deserialize_js_array_dense</h3>
+<p><code>decode.TagReader.deserialize_js_array_dense(tag, ctx)</code></p>
+</section>
+<section id="v8serialize.decode.TagReader.deserialize_js_array_sparse" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_array_sparse">deserialize_js_array_sparse</h3>
+<p><code>decode.TagReader.deserialize_js_array_sparse(tag, ctx)</code></p>
+</section>
+<section id="v8serialize.decode.TagReader.deserialize_js_date" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_date">deserialize_js_date</h3>
+<p><code>decode.TagReader.deserialize_js_date(tag, ctx)</code></p>
+</section>
+<section id="v8serialize.decode.TagReader.deserialize_js_error" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_error">deserialize_js_error</h3>
+<p><code>decode.TagReader.deserialize_js_error(tag, ctx)</code></p>
+</section>
+<section id="v8serialize.decode.TagReader.deserialize_js_object" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_object">deserialize_js_object</h3>
+<p><code>decode.TagReader.deserialize_js_object(tag, ctx)</code></p>
+</section>
+<section id="v8serialize.decode.TagReader.deserialize_js_primitive_object" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_primitive_object">deserialize_js_primitive_object</h3>
+<p><code>decode.TagReader.deserialize_js_primitive_object(tag, ctx)</code></p>
+</section>
+<section id="v8serialize.decode.TagReader.deserialize_js_regexp" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_regexp">deserialize_js_regexp</h3>
+<p><code>decode.TagReader.deserialize_js_regexp(tag, ctx)</code></p>
+</section>
+<section id="v8serialize.decode.TagReader.deserialize_jsmap" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_jsmap">deserialize_jsmap</h3>
+<p><code>decode.TagReader.deserialize_jsmap(tag, ctx)</code></p>
+</section>
+<section id="v8serialize.decode.TagReader.deserialize_jsset" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_jsset">deserialize_jsset</h3>
+<p><code>decode.TagReader.deserialize_jsset(tag, ctx)</code></p>
+</section>
+<section id="v8serialize.decode.TagReader.deserialize_object_reference" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_object_reference">deserialize_object_reference</h3>
+<p><code>decode.TagReader.deserialize_object_reference(tag, ctx)</code></p>
+</section>
+<section id="v8serialize.decode.TagReader.deserialize_unsupported_wasm" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_unsupported_wasm">deserialize_unsupported_wasm</h3>
+<p><code>decode.TagReader.deserialize_unsupported_wasm(tag, ctx)</code></p>
+</section>
+<section id="v8serialize.decode.TagReader.deserialize_v8_shared_object_reference" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_v8_shared_object_reference">deserialize_v8_shared_object_reference</h3>
+<p><code>decode.TagReader.deserialize_v8_shared_object_reference(tag, ctx)</code></p>
+</section>
+<section id="v8serialize.decode.TagReader.register_tag_readers" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.register_tag_readers">register_tag_readers</h3>
+<p><code>decode.TagReader.register_tag_readers(tag_readers)</code></p>
+</section>
+</section>
+</section>
+<section id="v8serialize.decode.DefaultDecodeContext" class="level1">
+<h1>decode.DefaultDecodeContext</h1>
+<p><code>decode.DefaultDecodeContext(self, *, data=None, stream=None, decode_steps=None)</code></p>
+<p>The default implementation of <a href="../reference/types_protocols.html#v8serialize.decode.DecodeContext"><code>DecodeContext</code></a>.</p>
+<section id="attributes-1" class="level2">
+<h2 class="anchored" data-anchor-id="attributes-1">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.decode.DefaultDecodeContext.decode_steps">decode_steps</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.DefaultDecodeContext.stream">stream</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="methods-1" class="level2">
+<h2 class="anchored" data-anchor-id="methods-1">Methods</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.decode.DefaultDecodeContext.decode_object">decode_object</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<section id="v8serialize.decode.DefaultDecodeContext.decode_object" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.DefaultDecodeContext.decode_object">decode_object</h3>
+<p><code>decode.DefaultDecodeContext.decode_object(tag=None)</code></p>
+</section>
+</section>
+</section>
+<section id="v8serialize.decode.ReadableTagStream" class="level1">
+<h1>decode.ReadableTagStream</h1>
+<p><code>decode.ReadableTagStream(self, data, pos=0, objects=SerializedObjectLog(), version=kLatestVersion)</code></p>
+<section id="attributes-2" class="level2">
+<h2 class="anchored" data-anchor-id="attributes-2">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.data">data</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReadableTagStream.eof">eof</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.objects">objects</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReadableTagStream.pos">pos</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.version">version</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="methods-2" class="level2">
+<h2 class="anchored" data-anchor-id="methods-2">Methods</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.ensure_capacity">ensure_capacity</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReadableTagStream.peak_tag">peak_tag</a></td>
+<td>Get the current position as a SerializationTag without advancing position.</td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_bigint">read_bigint</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_bytes">read_bytes</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_double">read_double</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_error_tag">read_error_tag</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_header">read_header</a></td>
+<td>Read the V8 serialization stream header and verify it’s a supported version.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_host_object">read_host_object</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_int32">read_int32</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_js_array_buffer">read_js_array_buffer</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_js_array_buffer_view">read_js_array_buffer_view</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_js_array_dense">read_js_array_dense</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_js_array_sparse">read_js_array_sparse</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_js_date">read_js_date</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_js_error">read_js_error</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_js_object">read_js_object</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_js_primitive_object">read_js_primitive_object</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_js_regexp">read_js_regexp</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_jsmap">read_jsmap</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_jsset">read_jsset</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_object_reference">read_object_reference</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_padding">read_padding</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_string_onebyte">read_string_onebyte</a></td>
+<td>Decode a OneByteString, which is latin1-encoded text.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_string_twobyte">read_string_twobyte</a></td>
+<td>Decode a TwoByteString, which is UTF-16-encoded text.</td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_string_utf8">read_string_utf8</a></td>
+<td>Decode a Utf8String, which is UTF8-encoded text.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_tag">read_tag</a></td>
+<td>Read the tag at the current position.</td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_uint32">read_uint32</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_v8_shared_object_reference">read_v8_shared_object_reference</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_varint">read_varint</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReadableTagStream.read_zigzag">read_zigzag</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReadableTagStream.throw">throw</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<section id="v8serialize.decode.ReadableTagStream.ensure_capacity" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.ensure_capacity">ensure_capacity</h3>
+<p><code>decode.ReadableTagStream.ensure_capacity(count)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.peak_tag" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.peak_tag">peak_tag</h3>
+<p><code>decode.ReadableTagStream.peak_tag()</code></p>
+<p>Get the current position as a SerializationTag without advancing position.</p>
+<section id="returns" class="level4">
+<h4 class="anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="../reference/v8_constants.html#v8serialize.constants.SerializationTag">SerializationTag</a> | None</td>
+<td>The SerializationTag if the current byte corresponds to one, otherwise None.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_bigint" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_bigint">read_bigint</h3>
+<p><code>decode.ReadableTagStream.read_bigint(tag=False)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_bytes" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_bytes">read_bytes</h3>
+<p><code>decode.ReadableTagStream.read_bytes(count)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_double" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_double">read_double</h3>
+<p><code>decode.ReadableTagStream.read_double(tag=False)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_error_tag" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_error_tag">read_error_tag</h3>
+<p><code>decode.ReadableTagStream.read_error_tag()</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_header" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_header">read_header</h3>
+<p><code>decode.ReadableTagStream.read_header()</code></p>
+<p>Read the V8 serialization stream header and verify it’s a supported version.</p>
+<p><span class="citation" data-cites="return">@return</span> the header’s version number.</p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_host_object" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_host_object">read_host_object</h3>
+<p><code>decode.ReadableTagStream.read_host_object(deserializer, tag=False)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_int32" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_int32">read_int32</h3>
+<p><code>decode.ReadableTagStream.read_int32(tag=False)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_js_array_buffer" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_js_array_buffer">read_js_array_buffer</h3>
+<p><code>decode.ReadableTagStream.read_js_array_buffer(array_buffer, shared_array_buffer, array_buffer_transfer, tag=None)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_js_array_buffer_view" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_js_array_buffer_view">read_js_array_buffer_view</h3>
+<p><code>decode.ReadableTagStream.read_js_array_buffer_view(backing_buffer, *, array_buffer_view, tag=False)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_js_array_dense" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_js_array_dense">read_js_array_dense</h3>
+<p><code>decode.ReadableTagStream.read_js_array_dense(ctx, *, identity, tag=False)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_js_array_sparse" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_js_array_sparse">read_js_array_sparse</h3>
+<p><code>decode.ReadableTagStream.read_js_array_sparse(ctx, *, identity, tag=False)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_js_date" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_js_date">read_js_date</h3>
+<p><code>decode.ReadableTagStream.read_js_date(tz=None, tag=False)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_js_error" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_js_error">read_js_error</h3>
+<p><code>decode.ReadableTagStream.read_js_error(ctx, *, error=None, tag=False)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_js_object" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_js_object">read_js_object</h3>
+<p><code>decode.ReadableTagStream.read_js_object(ctx, *, identity, tag=False)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_js_primitive_object" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_js_primitive_object">read_js_primitive_object</h3>
+<p><code>decode.ReadableTagStream.read_js_primitive_object(tag=None)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_js_regexp" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_js_regexp">read_js_regexp</h3>
+<p><code>decode.ReadableTagStream.read_js_regexp(ctx, *, tag=False)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_jsmap" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_jsmap">read_jsmap</h3>
+<p><code>decode.ReadableTagStream.read_jsmap(ctx, *, identity, tag=False)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_jsset" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_jsset">read_jsset</h3>
+<p><code>decode.ReadableTagStream.read_jsset(ctx, *, identity, tag=False)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_object_reference" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_object_reference">read_object_reference</h3>
+<p><code>decode.ReadableTagStream.read_object_reference(tag=False)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_padding" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_padding">read_padding</h3>
+<p><code>decode.ReadableTagStream.read_padding()</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_string_onebyte" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_string_onebyte">read_string_onebyte</h3>
+<p><code>decode.ReadableTagStream.read_string_onebyte(tag=False)</code></p>
+<p>Decode a OneByteString, which is latin1-encoded text.</p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_string_twobyte" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_string_twobyte">read_string_twobyte</h3>
+<p><code>decode.ReadableTagStream.read_string_twobyte(tag=False)</code></p>
+<p>Decode a TwoByteString, which is UTF-16-encoded text.</p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_string_utf8" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_string_utf8">read_string_utf8</h3>
+<p><code>decode.ReadableTagStream.read_string_utf8(tag=False)</code></p>
+<p>Decode a Utf8String, which is UTF8-encoded text.</p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_tag" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_tag">read_tag</h3>
+<p><code>decode.ReadableTagStream.read_tag(tag=None, *, consume=True)</code></p>
+<p>Read the tag at the current position.</p>
+<p>Padding tags are read and ignored until a non-padding tag is found. If <code>consume</code> is False, the current <code>self.pos</code> remains on the tag after returning rather than moving to the next byte. (Padding is always consumed regardless.)</p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_uint32" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_uint32">read_uint32</h3>
+<p><code>decode.ReadableTagStream.read_uint32(tag=False)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_v8_shared_object_reference" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_v8_shared_object_reference">read_v8_shared_object_reference</h3>
+<p><code>decode.ReadableTagStream.read_v8_shared_object_reference(tag=False)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_varint" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_varint">read_varint</h3>
+<p><code>decode.ReadableTagStream.read_varint(max_bits=None)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.read_zigzag" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.read_zigzag">read_zigzag</h3>
+<p><code>decode.ReadableTagStream.read_zigzag(max_bits=None)</code></p>
+</section>
+<section id="v8serialize.decode.ReadableTagStream.throw" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.ReadableTagStream.throw">throw</h3>
+<p><code>decode.ReadableTagStream.throw(message, *, cause=None)</code></p>
+</section>
+</section>
+</section>
+<section id="v8serialize.decode.ArrayReadResult" class="level1">
+<h1>decode.ArrayReadResult</h1>
+<p><code>decode.ArrayReadResult()</code></p>
+<p>The data being deserialized from a dense or sparse array.</p>
+<section id="attributes-3" class="level2">
+<h2 class="anchored" data-anchor-id="attributes-3">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ArrayReadResult.items">items</a></td>
+<td>The array and object properties.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ArrayReadResult.length">length</a></td>
+<td>The length of the array being deserialized.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="v8serialize.decode.ReferencedObject" class="level1">
+<h1>decode.ReferencedObject</h1>
+<p><code>decode.ReferencedObject()</code></p>
+<section id="attributes-4" class="level2">
+<h2 class="anchored" data-anchor-id="attributes-4">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.decode.ReferencedObject.object">object</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.ReferencedObject.serialized_id">serialized_id</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="v8serialize.decode.TagReaderRegistry" class="level1">
+<h1>decode.TagReaderRegistry</h1>
+<p><code>decode.TagReaderRegistry(self, entries=None)</code></p>
+<p>A registry of <code>SerializationTag</code>s and the functions that can read them.</p>
+<p><code>TagReader</code> uses this to dispatch decode calls to an appropriate function.</p>
+<section id="attributes-5" class="level2">
+<h2 class="anchored" data-anchor-id="attributes-5">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.decode.TagReaderRegistry.index">index</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="methods-3" class="level2">
+<h2 class="anchored" data-anchor-id="methods-3">Methods</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.decode.TagReaderRegistry.match">match</a></td>
+<td>Get the <code>TagReaderFn</code> function registered for a tag, or <code>None</code>.</td>
+</tr>
+<tr class="even">
+<td><a href="#v8serialize.decode.TagReaderRegistry.register">register</a></td>
+<td>Associate a function with a tag, so that <code>match()</code> will return it.</td>
+</tr>
+<tr class="odd">
+<td><a href="#v8serialize.decode.TagReaderRegistry.register_all">register_all</a></td>
+<td>Copy the registrations of another registry into this one.</td>
+</tr>
+</tbody>
+</table>
+<section id="v8serialize.decode.TagReaderRegistry.match" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReaderRegistry.match">match</h3>
+<p><code>decode.TagReaderRegistry.match(tag)</code></p>
+<p>Get the <code>TagReaderFn</code> function registered for a tag, or <code>None</code>.</p>
+</section>
+<section id="v8serialize.decode.TagReaderRegistry.register" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReaderRegistry.register">register</h3>
+<p><code>decode.TagReaderRegistry.register(tag, tag_reader)</code></p>
+<p>Associate a function with a tag, so that <code>match()</code> will return it.</p>
+</section>
+<section id="v8serialize.decode.TagReaderRegistry.register_all" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.decode.TagReaderRegistry.register_all">register_all</h3>
+<p><code>decode.TagReaderRegistry.register_all(registry)</code></p>
+<p>Copy the registrations of another registry into this one.</p>
+<p>Existing registrations that also occur in <code>registry</code> are overwritten.</p>
+</section>
+</section>
+</section>
+<section id="v8serialize.decode.read_stream" class="level1">
+<h1>decode.read_stream</h1>
+<p><code>decode.read_stream(rts_fn)</code></p>
+<p>Create a <code>TagReaderFn</code> that calls a <code>read_xxx</code> function on the stream.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/h4l/v8serialize/edit/main/reference/customized_decoding.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/h4l/v8serialize/blob/main/reference/customized_decoding.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li><li><a href="https://github.com/h4l/v8serialize/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>

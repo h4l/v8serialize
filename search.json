@@ -1,0 +1,2041 @@
+[
+  {
+    "objectID": "tutorials/js_to_py.html",
+    "href": "tutorials/js_to_py.html",
+    "title": "Pass JavaScript values to and from Python",
+    "section": "",
+    "text": "In this tutorial we will pass JavaScript values between separate Python and Node.js programs using the V8 serialization format. We’ll start off by seeing how V8 serialization works in JavaScript, and how to base64 encode binary data to make it easy to move around. Then we’ll see how V8 serialization works in Python and we’ll try moving some serialized values between Python and Javascript.\nTo complete this tutorial you will need Node.js 18+ or Deno 1.42.0+ and Python 3.9+. If you have Docker you can follow the tutorial in a throwaway container to make sure you have up-to-date versions, and and not leave any mess on your computer afterwards.",
+    "crumbs": [
+      "Pass JavaScript values to and from Python"
+    ]
+  },
+  {
+    "objectID": "tutorials/js_to_py.html#serializing-with-javascript",
+    "href": "tutorials/js_to_py.html#serializing-with-javascript",
+    "title": "Pass JavaScript values to and from Python",
+    "section": "1 Serializing with JavaScript",
+    "text": "1 Serializing with JavaScript\nFirst we’ll serialize some data from JavaScript to see how it works. We’ll move on to Python after getting a feel for the JavaScript side.\nStart an interactive JavaScript prompt by running node without any arguments, or deno repl:\n\nNode.jsNode.js (via Docker)DenoDeno (via Docker)\n\n\n$ node\nWelcome to Node.js v18.20.4.\nType \".help\" for more information.\n&gt;\n\n\n$ docker container run --rm -it node:22-alpine\nWelcome to Node.js v22.7.0.\nType \".help\" for more information.\n&gt;\n\n\n$ deno repl\nDeno 1.42.0\nexit using ctrl+d, ctrl+c, or close()\n&gt;\n\n\n$ docker container run --rm -it denoland/deno:debian-1.46.3 repl\nDeno 1.46.3\nexit using ctrl+d, ctrl+c, or close()\n&gt;\n\n\n\nFollow along in your interactive prompt. Start by importing the v8 module.\n&gt; let v8 = await import('node:v8')\nYou can pass most JavaScript types to v8.serialize() and it’ll turn them into bytes as a Buffer:\n&gt; v8.serialize(\"Hello World\")\n&lt;Buffer ff 0f 22 0b 48 65 6c 6c 6f 20 57 6f 72 6c 64&gt;\nIf you call v8.deserialize() on the Buffer you’ll get the original object back:\n&gt; v8.deserialize(v8.serialize('Hello World'))\n'Hello World'\nTry this with a more complex object:\n&gt; let profile\n&gt; profile = {\n...   name: \"Bob\",\n...   favourite_number: BigInt(2)**BigInt(128),\n...   registration_date: new Date(\"2024-01-02T00:00:00.000Z\"),\n...   groups: new Set(['moderators', 'editors']),\n...   missing: undefined\n... }\n{\n  name: 'Bob',\n  favourite_number: 340282366920938463463374607431768211456n,\n  registration_date: 2024-01-02T00:00:00.000Z,\n  groups: Set(2) { 'moderators', 'editors' },\n  missing: undefined\n}\n&gt; v8.deserialize(v8.serialize(profile))\n{\n  name: 'Bob',\n  favourite_number: 340282366920938463463374607431768211456n,\n  registration_date: 2024-01-02T00:00:00.000Z,\n  groups: Set(2) { 'moderators', 'editors' },\n  missing: undefined\n}\nEverything comes back as it went in! Try it with JSON.serialize() and see what happens:\n&gt; JSON.stringify(profile)\nUncaught TypeError: Do not know how to serialize a BigInt\n    at JSON.stringify (&lt;anonymous&gt;)\nOops, that’s not very useful.\nNow that we can serialize and deserialize in JavaScript, let’s try to take this profile value from JavaScript to Python.\nThat Buffer is going to be a bit fiddly to get into Python. But we can use base64 encoding to turn the binary Buffer into a string we can copy and paste easily:\n&gt; v8.serialize(\"Hello World!\").toString('base64')\n'/w8iDEhlbGxvIFdvcmxkIQ=='\nIn JavaScript we can turn that base64 string back into an object by making a Buffer from it before deserializing like before:\n&gt; Buffer.from('/w8iDEhlbGxvIFdvcmxkIQ==', 'base64')\n&lt;Buffer ff 0f 22 0c 48 65 6c 6c 6f 20 57 6f 72 6c 64 21&gt;\nThere’s the buffer we need. We can do it one go:\n&gt; v8.deserialize(Buffer.from('/w8iDEhlbGxvIFdvcmxkIQ==', 'base64'))\n'Hello World!'\nOK, let’s try it with Python.",
+    "crumbs": [
+      "Pass JavaScript values to and from Python"
+    ]
+  },
+  {
+    "objectID": "tutorials/js_to_py.html#serializing-with-python",
+    "href": "tutorials/js_to_py.html#serializing-with-python",
+    "title": "Pass JavaScript values to and from Python",
+    "section": "2 Serializing with Python",
+    "text": "2 Serializing with Python\nWe need to install v8serialize and then start an interactive Python prompt.\n\n\n\n\n\n\nTip: Enhanced Python interactive prompts\n\n\n\n\n\nPython has several enhanced interactive prompts which you can install to get a better experience than the default one. The examples here will use the default, but try:\n$ pip install ipython\n$ ipython\nPython 3.12.6 (main, Sep 12 2024, 22:40:30) [GCC 12.2.0]\nType 'copyright', 'credits' or 'license' for more information\nIPython 8.27.0 -- An enhanced Interactive Python. Type '?' for help.\n\nIn [1]:\nYou’ll get tab-completion and syntax highlighting.\n\n\n\n\nPythonPython (via Docker)\n\n\nFirst install the v8serialize package with pip (or whichever package manager you normally use):\n$ pip install v8serialize\nCollecting v8serialize\n  Downloading v8serialize-0.1.0-py3-none-any.whl.metadata (1.3 kB)\nCollecting packaging&gt;=14.5 (from v8serialize)\n  Downloading packaging-24.1-py3-none-any.whl.metadata (3.2 kB)\nDownloading v8serialize-0.1.0-py3-none-any.whl (79 kB)\nDownloading packaging-24.1-py3-none-any.whl (53 kB)\nInstalling collected packages: packaging, v8serialize\nSuccessfully installed packaging-24.1 v8serialize-0.1.0\nThen start an interactive Python prompt:\n$ python\nPython 3.12.6 (main, Sep 12 2024, 22:40:30) [GCC 12.2.0] on linux\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n&gt;&gt;&gt;\n\n\nStart the python container with the command bash (or sh) to get a shell, then install the v8serialize package with pip:\n$ docker container run --rm -it python:3.12-slim bash\nroot@982b36053c48:/# pip install v8serialize\nCollecting v8serialize\n  Downloading v8serialize-0.1.0-py3-none-any.whl.metadata (1.3 kB)\nCollecting packaging&gt;=14.5 (from v8serialize)\n  Downloading packaging-24.1-py3-none-any.whl.metadata (3.2 kB)\nDownloading v8serialize-0.1.0-py3-none-any.whl (79 kB)\nDownloading packaging-24.1-py3-none-any.whl (53 kB)\nInstalling collected packages: packaging, v8serialize\nSuccessfully installed packaging-24.1 v8serialize-0.1.0\nThen start an interactive Python prompt:\nroot@982b36053c48:/# python\nPython 3.12.6 (main, Sep 12 2024, 22:40:30) [GCC 12.2.0] on linux\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n&gt;&gt;&gt;\n\n\n\nTo start with, we’ll use the Python v8serialize package to replicate what we did with v8.serialize() in JavaScript.\nImport the loads() and dumps() functions from v8serialize first.\n&gt;&gt;&gt; from v8serialize import loads, dumps\n\n\n\n\n\n\nTip\n\n\n\nIf you get an error when importing, check that you ran pip install v8serialize before running python, and check that your Python version is 3.9 or higher.\n\n\nWe can pass many Python types to v8serialize.dumps() and it will serialize them into bytes, like v8.serialize() did in JavaScript:\n&gt;&gt;&gt; dumps('Hello World')\nb'\\xff\\x0fS\\x0bHello World'\nAnd v8serialize.loads() will turn these bytes back into a real value, like v8.deserialize():\n&gt;&gt;&gt; loads(dumps('Hello World'))\n'Hello World'\nLet’s manually re-create the profile object we had in JavaScript:\n1&gt;&gt;&gt; from datetime import datetime\n&gt;&gt;&gt; profile = {\n...     'name': 'Bob',\n...     'favourite_number': 2**128,\n...     'registration_date': datetime.fromisoformat('2024-01-02T00:00:00.000Z'),\n...     'groups': {'moderators', 'editors'},\n...     'missing': None,\n... }\n&gt;&gt;&gt; loads(dumps(profile))\n2JSMap({\n  'name': 'Bob',\n  'favourite_number': 340282366920938463463374607431768211456,\n  'registration_date': datetime.datetime(2024, 1, 2, 0, 0),\n  'groups': JSSet([\n    'moderators',\n    'editors',\n  ]),\n  'missing': None,\n})\n\n1\n\nWe need to import the datetime class to create the 'registration_date'\n\n2\n\nYour output won’t be indented across multiple lines unless you have Python 3.12+\n\n\nThat works, but notice how we got back JSMap as the outer object and JSSet for 'groups'?\nThat’s because JavaScript’s types like Object Map and Set don’t behave quite like Python’s dict and set, so v8serialize uses these JS* versions of types to mimic JavaScript’s behaviour in Python.\nIf we want to recreate what JavaScript did, we need the outer profile to be an Object, not a Map. We can do that by using the JSObject type to explicitly make profile an Object. We also need to use JSUndefined instead None for 'missing' if we want to be pedantic!\n&gt;&gt;&gt; from v8serialize.jstypes import JSObject, JSUndefined\n&gt;&gt;&gt; profile = JSObject(\n...     name='Bob',\n...     favourite_number=2**128,\n...     registration_date=datetime.fromisoformat('2024-01-02T00:00:00.000Z'),\n...     groups={'moderators', 'editors'},\n...     missing=JSUndefined,\n... )\n&gt;&gt;&gt; loads(dumps(profile))\nJSObject(\n  name='Bob',\n  favourite_number=340282366920938463463374607431768211456,\n  registration_date=datetime.datetime(2024, 1, 2, 0, 0),\n  groups=JSSet([\n    'moderators',\n    'editors',\n  ]),\n  missing=JSUndefined,\n)\nThat’s a good match for what JavaScript did. We’ve not moved any data between JavaScript and Python yet though. Let’s use base64 again from Python to get the serialized bytes into something we can copy and paste.\n&gt;&gt;&gt; from base64 import b64decode, b64encode\n1&gt;&gt;&gt; b64encode(dumps('Hello World')).decode()\n'/w9TC0hlbGxvIFdvcmxk'\n&gt;&gt;&gt; loads(b64decode('/w9TC0hlbGxvIFdvcmxk'))\n'Hello World'\n\n1\n\nWe have to .decode() the output of b64encode() to get a str from the bytes it returns. Try it without to see the difference if you like.",
+    "crumbs": [
+      "Pass JavaScript values to and from Python"
+    ]
+  },
+  {
+    "objectID": "tutorials/js_to_py.html#exchanging-serialized-data",
+    "href": "tutorials/js_to_py.html#exchanging-serialized-data",
+    "title": "Pass JavaScript values to and from Python",
+    "section": "3 Exchanging serialized data",
+    "text": "3 Exchanging serialized data\nNow we’ve seen how V8 serialization, deserialization and base64 encoding work in JavaScript and Python, we should be able to use these building blocks to serialize JavaScript values in one and deserialize them in the other.\nBack in your JavaScript prompt, serialize the profile we made before:\n&gt; v8.serialize(profile).toString('base64')\n'/w9vIgRuYW1lIgNCb2IiC2ZhdmVfbnVtYmVyWjAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAiEXJlZ2lzdHJhdGlvbl9kYXRlRAAAAIV3zHhCIgZncm91cHMnIgptb2RlcmF0b3JzIgdlZGl0b3JzLAIiB21pc3NpbmdfewU='\nCopy and paste the base64 output, and deserialize it in your Python prompt:\n&gt;&gt;&gt; js_data = '/w9vIgRuYW1lIgNCb2IiC2ZhdmVfbnVtYmVyWjAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAiEXJlZ2lzdHJhdGlvbl9kYXRlRAAAAIV3zHhCIgZncm91cHMnIgptb2RlcmF0b3JzIgdlZGl0b3JzLAIiB21pc3NpbmdfewU='\n&gt;&gt;&gt; bob = loads(b64decode(js_data))\n&gt;&gt;&gt; bob\nJSObject(\n  name='Bob',\n  favourite_number=340282366920938463463374607431768211456,\n  registration_date=datetime.datetime(2024, 1, 2, 0, 0),\n  groups=JSSet([\n    'moderators',\n    'editors',\n  ]),\n  missing=JSUndefined,\n)\nGood, that looks like what we saw when doing this within Python before. Let’s make a change to Bob’s profile and take it back to JavaScript.\n&gt;&gt;&gt; bob['pets'] = [JSObject(name='Nipper', owner=bob)]\n&gt;&gt;&gt; bob\nJSObject(\n  name='Bob',\n  favourite_number=340282366920938463463374607431768211456,\n  registration_date=datetime.datetime(2024, 1, 2, 0, 0),\n  groups=JSSet([\n    'moderators',\n    'editors',\n  ]),\n  missing=JSUndefined,\n  pets=[\n    JSObject(\n      name='Nipper',\n      owner=...,\n    ),\n  ],\n)\nWe’ve got a circular reference here, Bob’s pet Nipper references Bob as its owner. Is this going to work? Let’s see.\n&gt;&gt;&gt; b64encode(dumps(bob)).decode()\n'/w9vUwRuYW1lUwNCb2JTC2ZhdmVfbnVtYmVyWiIAAAAAAAAAAAAAAAAAAAAAAVMRcmVnaXN0cmF0aW9uX2RhdGVEAAAAhXfMeEJTBmdyb3VwcydTCm1vZGVyYXRvcnNTB2VkaXRvcnMsAlMHbWlzc2luZ19TBHBldHNBAW9TBG5hbWVTBk5pcHBlclMFb3duZXJeAHsCJAABewY='\nSo far so good… Now let’s deserialize the data in JavaScript.\n&gt; let py_data = '/w9vUwRuYW1lUwNCb2JTC2ZhdmVfbnVtYmVyWiIAAAAAAAAAAAAAAAAAAAAAAVMRcmVnaXN0cmF0aW9uX2RhdGVEAAAAhXfMeEJTBmdyb3VwcydTCm1vZGVyYXRvcnNTB2VkaXRvcnMsAlMHbWlzc2luZ19TBHBldHNBAW9TBG5hbWVTBk5pcHBlclMFb3duZXJeAHsCJAABewY='\nundefined\n&gt; let bob = v8.deserialize(Buffer.from(py_data, 'base64'))\nundefined\n&gt; bob\n&lt;ref *1&gt; {\n  name: 'Bob',\n  favourite_number: 340282366920938463463374607431768211456n,\n  registration_date: 2024-01-02T00:00:00.000Z,\n  groups: Set(2) { 'moderators', 'editors' },\n  missing: undefined,\n  pets: [ { name: 'Nipper', owner: [Circular *1] } ]\n}\n&gt; Object.is(bob, bob.pets[0].owner)\ntrue\nIt works! V8 serialization can handle object references like this without getting into an infinite loop. Let’s finish up by taking Bob’s profile back to Python to check it works in that direction too.\n&gt; v8.serialize(bob).toString('base64')\n'/w9vIgRuYW1lIgNCb2IiC2ZhdmVfbnVtYmVyWjAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAiEXJlZ2lzdHJhdGlvbl9kYXRlRAAAAIV3zHhCIgZncm91cHMnIgptb2RlcmF0b3JzIgdlZGl0b3JzLAIiB21pc3NpbmdfIgRwZXRzYQFJAG8iBG5hbWUiBk5pcHBlciIFb3duZXJeAHsCQAEBewY='\nLoad it up in Python:\n&gt;&gt;&gt; js_data_circular = '/w9vIgRuYW1lIgNCb2IiC2ZhdmVfbnVtYmVyWjAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAiEXJlZ2lzdHJhdGlvbl9kYXRlRAAAAIV3zHhCIgZncm91cHMnIgptb2RlcmF0b3JzIgdlZGl0b3JzLAIiB21pc3NpbmdfIgRwZXRzYQFJAG8iBG5hbWUiBk5pcHBlciIFb3duZXJeAHsCQAEBewY='\n&gt;&gt;&gt; bob2 = loads(b64decode(js_data_circular))\n&gt;&gt;&gt; bob2\nJSObject(\n  name='Bob',\n  favourite_number=340282366920938463463374607431768211456,\n  registration_date=datetime.datetime(2024, 1, 2, 0, 0),\n  groups=JSSet([\n    'moderators',\n    'editors',\n  ]),\n  missing=JSUndefined,\n  pets=JSArray([\n    JSObject(\n      name='Nipper',\n      owner=...,\n    ),\n  ]),\n)\n&gt;&gt;&gt; bob2['pets'][0]['owner'] is bob2\nTrue\nIt worked going from JavaScript to Python as well.",
+    "crumbs": [
+      "Pass JavaScript values to and from Python"
+    ]
+  },
+  {
+    "objectID": "tutorials/js_to_py.html#closing",
+    "href": "tutorials/js_to_py.html#closing",
+    "title": "Pass JavaScript values to and from Python",
+    "section": "4 Closing",
+    "text": "4 Closing\nWe’ve seen how V8 serialization works in JavaScript and in Python with v8serialize. And we’ve been able to move JavaScript values between the two languages by base64 encoding the serialized binary data.",
+    "crumbs": [
+      "Pass JavaScript values to and from Python"
+    ]
+  },
+  {
+    "objectID": "howto/install.html",
+    "href": "howto/install.html",
+    "title": "How to install v8serialize",
+    "section": "",
+    "text": "v8serialize is published on PyPI as v8serialize and supports Python 3.9 and above.\nTo install with pip, run:\npip install v8serialize",
+    "crumbs": [
+      "How to install v8serialize"
+    ]
+  },
+  {
+    "objectID": "reference/extensions_nodejs.html",
+    "href": "reference/extensions_nodejs.html",
+    "title": "Node.JS Buffers",
+    "section": "",
+    "text": "Node.JS’s custom Buffer HostObjects.",
+    "crumbs": [
+      "Reference",
+      "HostObject Extensions",
+      "Node.JS Buffers"
+    ]
+  },
+  {
+    "objectID": "reference/extensions_nodejs.html#examples",
+    "href": "reference/extensions_nodejs.html#examples",
+    "title": "Node.JS Buffers",
+    "section": "Examples",
+    "text": "Examples\nSerialize a Buffer from Node.JS something like:\n$ node --version\nv22.4.0\n$ node -e 'console.log(\n    require(\"v8\").serialize(Uint8Array.from([1, 2, 3]))\n        .toString(\"base64\"))'\n/w9cAQMBAgM=\n&gt;&gt;&gt; from v8serialize import loads, TagReader\n&gt;&gt;&gt; from base64 import b64decode\n&gt;&gt;&gt; decode_steps = [TagReader(\n...   host_object_deserializer=NodeJsArrayBufferViewHostObjectHandler()\n... )]\n&gt;&gt;&gt; loads(b64decode('/w9cAQMBAgM='), decode_steps=decode_steps)\nJSUint8Array(JSArrayBuffer(b'\\x01\\x02\\x03'))",
+    "crumbs": [
+      "Reference",
+      "HostObject Extensions",
+      "Node.JS Buffers"
+    ]
+  },
+  {
+    "objectID": "reference/extensions_nodejs.html#methods",
+    "href": "reference/extensions_nodejs.html#methods",
+    "title": "Node.JS Buffers",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\ndeserialize_host_object\nRead a HostObject from the stream as a Node.JS ArrayBuffer/TypedArray.\n\n\nserialize_host_object\nSerialize JSDataView and JSTypedArray using Node.js’s custom HostObject format.\n\n\n\n\ndeserialize_host_object\nextensions.NodeJsArrayBufferViewHostObjectHandler.deserialize_host_object(stream)\nRead a HostObject from the stream as a Node.JS ArrayBuffer/TypedArray.\n\nReturns\n\n\n\nType\nDescription\n\n\n\n\nJSDataView | JSTypedArray\nThe buffer wrapped in a view.\n\n\n\n\n\nRaises\n\n\n\nType\nDescription\n\n\n\n\nNodeJsArrayBufferViewHostObjectHandlerDecodeError\nWhen the stream’s HostObject data is not a valid Node.JS Buffer.\n\n\n\n\n\n\nserialize_host_object\nextensions.NodeJsArrayBufferViewHostObjectHandler.serialize_host_object(stream, value)\nSerialize JSDataView and JSTypedArray using Node.js’s custom HostObject format.\n\nSee Also\nserialize_js_array_buffer_views_as_nodejs_host_object",
+    "crumbs": [
+      "Reference",
+      "HostObject Extensions",
+      "Node.JS Buffers"
+    ]
+  },
+  {
+    "objectID": "reference/extensions_nodejs.html#notes",
+    "href": "reference/extensions_nodejs.html#notes",
+    "title": "Node.JS Buffers",
+    "section": "Notes",
+    "text": "Notes\nThis is an Object Mapper (SerializeObjectFn) that can be used to encode JSDataView and JSTypedArray in the same custom HostObject format that Node.JS writes using the Node.JS v8.serialize() function.\nBecause Node.JS is capable of reading the normal encoding of JSArrayBuffer, JSDataView and JSTypedArray, this doesn’t need to be used to send data to Node.JS (unlike on the deserializing side, where NodeJsArrayBufferViewHostObjectHandler must be used to read Node.JS’s custom encoding).",
+    "crumbs": [
+      "Reference",
+      "HostObject Extensions",
+      "Node.JS Buffers"
+    ]
+  },
+  {
+    "objectID": "reference/exceptions.html",
+    "href": "reference/exceptions.html",
+    "title": "Exceptions",
+    "section": "",
+    "text": "Exceptions raised by v8serialize.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Exceptions"
+    ]
+  },
+  {
+    "objectID": "reference/exceptions.html#attributes",
+    "href": "reference/exceptions.html#attributes",
+    "title": "Exceptions",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nmessage",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Exceptions"
+    ]
+  },
+  {
+    "objectID": "reference/exceptions.html#attributes-1",
+    "href": "reference/exceptions.html#attributes-1",
+    "title": "Exceptions",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\ndata\n\n\n\nposition",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Exceptions"
+    ]
+  },
+  {
+    "objectID": "reference/exceptions.html#attributes-2",
+    "href": "reference/exceptions.html#attributes-2",
+    "title": "Exceptions",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nvalue",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Exceptions"
+    ]
+  },
+  {
+    "objectID": "reference/exceptions.html#attributes-3",
+    "href": "reference/exceptions.html#attributes-3",
+    "title": "Exceptions",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nfeature_required",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Exceptions"
+    ]
+  },
+  {
+    "objectID": "reference/exceptions.html#attributes-4",
+    "href": "reference/exceptions.html#attributes-4",
+    "title": "Exceptions",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\ntag",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Exceptions"
+    ]
+  },
+  {
+    "objectID": "reference/exceptions.html#attributes-5",
+    "href": "reference/exceptions.html#attributes-5",
+    "title": "Exceptions",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nobj\n\n\n\nserialized_id",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Exceptions"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_regexp.html",
+    "href": "reference/javascript_regexp.html",
+    "title": "RegExp",
+    "section": "",
+    "text": "Python equivalents of JavaScript RegExp type.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "RegExp"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_regexp.html#attributes",
+    "href": "reference/javascript_regexp.html#attributes",
+    "title": "RegExp",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nflags\n\n\n\nsource",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "RegExp"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_regexp.html#methods",
+    "href": "reference/javascript_regexp.html#methods",
+    "title": "RegExp",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nas_python_pattern\nNaively compile the JavaScript RegExp as a Python re.Pattern.\n\n\nfrom_python_pattern\nNaively create a JSRegExp with an un-translated Python re.Pattern.\n\n\n\n\nas_python_pattern\njstypes.JSRegExp.as_python_pattern(throw=True)\nNaively compile the JavaScript RegExp as a Python re.Pattern.\nThe pattern may fail to compile due to syntax incompatibility, or may compile but behave incorrectly due to differences between Python and JavaScript’s regular expression support.\n\n\nfrom_python_pattern\njstypes.JSRegExp.from_python_pattern(pattern, throw=True)\nNaively create a JSRegExp with an un-translated Python re.Pattern.\nAs with as_python_pattern() this can result in JSRegExp objects that won’t behave on the JavaScript side in the same way as in Python.\nThis can fail if the Python pattern has re.VERBOSE set, as there’s no equivalent JavaScript flag.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "RegExp"
+    ]
+  },
+  {
+    "objectID": "reference/customised_encoding.html",
+    "href": "reference/customised_encoding.html",
+    "title": "Customized Encoding",
+    "section": "",
+    "text": "The v8serialize.encode module writes V8-serialized data.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Encoding"
+    ]
+  },
+  {
+    "objectID": "reference/customised_encoding.html#notes",
+    "href": "reference/customised_encoding.html#notes",
+    "title": "Customized Encoding",
+    "section": "Notes",
+    "text": "Notes\nThis is an encode step that can be used as one of the encode_steps with dumps() or Encoder().",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Encoding"
+    ]
+  },
+  {
+    "objectID": "reference/customised_encoding.html#methods",
+    "href": "reference/customised_encoding.html#methods",
+    "title": "Customized Encoding",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nencode\n\n\n\nserialize_bool\n\n\n\nserialize_buffer\n\n\n\nserialize_buffer_view\n\n\n\nserialize_collection\n\n\n\nserialize_float\n\n\n\nserialize_hole\n\n\n\nserialize_int\n\n\n\nserialize_js_array\n\n\n\nserialize_js_array_buffer\n\n\n\nserialize_js_error\n\n\n\nserialize_js_object\n\n\n\nserialize_js_primitive_object\n\n\n\nserialize_js_regexp\n\n\n\nserialize_mapping\n\n\n\nserialize_none\n\n\n\nserialize_python_datetime\n\n\n\nserialize_python_exception\n\n\n\nserialize_python_regexp\n\n\n\nserialize_set\n\n\n\nserialize_str\n\n\n\nserialize_undefined\n\n\n\nserialize_v8_shared_object_reference\n\n\n\n\n\nencode\nencode.TagWriter.encode(value, /, ctx, next)\n\n\nserialize_bool\nencode.TagWriter.serialize_bool(value, /, ctx, next)\n\n\nserialize_buffer\nencode.TagWriter.serialize_buffer(value, /, ctx, next)\n\n\nserialize_buffer_view\nencode.TagWriter.serialize_buffer_view(value, /, ctx, next)\n\n\nserialize_collection\nencode.TagWriter.serialize_collection(value, /, ctx, next)\n\n\nserialize_float\nencode.TagWriter.serialize_float(value, /, ctx, next)\n\n\nserialize_hole\nencode.TagWriter.serialize_hole(value, /, ctx, next)\n\n\nserialize_int\nencode.TagWriter.serialize_int(value, /, ctx, next)\n\n\nserialize_js_array\nencode.TagWriter.serialize_js_array(value, /, ctx, next)\n\n\nserialize_js_array_buffer\nencode.TagWriter.serialize_js_array_buffer(value, /, ctx, next)\n\n\nserialize_js_error\nencode.TagWriter.serialize_js_error(value, /, ctx, next)\n\n\nserialize_js_object\nencode.TagWriter.serialize_js_object(value, /, ctx, next)\n\n\nserialize_js_primitive_object\nencode.TagWriter.serialize_js_primitive_object(value, /, ctx, next)\n\n\nserialize_js_regexp\nencode.TagWriter.serialize_js_regexp(value, /, ctx, next)\n\n\nserialize_mapping\nencode.TagWriter.serialize_mapping(value, /, ctx, next)\n\n\nserialize_none\nencode.TagWriter.serialize_none(value, /, ctx, next)\n\n\nserialize_python_datetime\nencode.TagWriter.serialize_python_datetime(value, /, ctx, next)\n\n\nserialize_python_exception\nencode.TagWriter.serialize_python_exception(value, /, ctx, next)\n\n\nserialize_python_regexp\nencode.TagWriter.serialize_python_regexp(value, /, ctx, next)\n\n\nserialize_set\nencode.TagWriter.serialize_set(value, /, ctx, next)\n\n\nserialize_str\nencode.TagWriter.serialize_str(value, /, ctx, next)\n\n\nserialize_undefined\nencode.TagWriter.serialize_undefined(value, /, ctx, next)\n\n\nserialize_v8_shared_object_reference\nencode.TagWriter.serialize_v8_shared_object_reference(value, /, ctx, next)",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Encoding"
+    ]
+  },
+  {
+    "objectID": "reference/customised_encoding.html#attributes",
+    "href": "reference/customised_encoding.html#attributes",
+    "title": "Customized Encoding",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nencode_steps\n\n\n\nstream",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Encoding"
+    ]
+  },
+  {
+    "objectID": "reference/customised_encoding.html#methods-1",
+    "href": "reference/customised_encoding.html#methods-1",
+    "title": "Customized Encoding",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\ndeduplicate\n\n\n\nencode_object\nSerialize a single Python value to the stream.\n\n\n\n\ndeduplicate\nencode.DefaultEncodeContext.deduplicate(value)\n\n\nencode_object\nencode.DefaultEncodeContext.encode_object(value)\nSerialize a single Python value to the stream.\nThe encode_steps convert the Python value to JavaScript representation, and the stream writes out V8 serialization format tagged data.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Encoding"
+    ]
+  },
+  {
+    "objectID": "reference/customised_encoding.html#attributes-1",
+    "href": "reference/customised_encoding.html#attributes-1",
+    "title": "Customized Encoding",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nallowed_tags\nWhen set, only tags allowed by the constraint may be written.\n\n\ndata\n\n\n\nfeatures\n\n\n\nobjects\n\n\n\npos",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Encoding"
+    ]
+  },
+  {
+    "objectID": "reference/customised_encoding.html#methods-2",
+    "href": "reference/customised_encoding.html#methods-2",
+    "title": "Customized Encoding",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nconstrain_tags\nPrevent writing tags to the stream which are not allowed in a given context.\n\n\nwrite_bigint\n\n\n\nwrite_constant\n\n\n\nwrite_double\n\n\n\nwrite_header\nWrite the V8 serialization stream header.\n\n\nwrite_host_object\n\n\n\nwrite_int32\n\n\n\nwrite_js_array_buffer\n\n\n\nwrite_js_array_buffer_view\n\n\n\nwrite_js_array_dense\n\n\n\nwrite_js_array_sparse\n\n\n\nwrite_js_date\n\n\n\nwrite_js_error\n\n\n\nwrite_js_object\n\n\n\nwrite_js_primitive_object\n\n\n\nwrite_js_regexp\n\n\n\nwrite_jsmap\n\n\n\nwrite_jsset\n\n\n\nwrite_object_reference\n\n\n\nwrite_string_onebyte\nEncode a OneByte string, which is latin1-encoded text.\n\n\nwrite_string_twobyte\n\n\n\nwrite_string_utf8\nEncode a Utf8String, which is UTF-8-encoded text.\n\n\nwrite_tag\n\n\n\nwrite_uint32\n\n\n\nwrite_v8_shared_object_reference\n\n\n\nwrite_varint\n\n\n\nwrite_zigzag\n\n\n\n\n\nconstrain_tags\nencode.WritableTagStream.constrain_tags(allowed_tags)\nPrevent writing tags to the stream which are not allowed in a given context.\nThis sets the allowed_tags property to prevent tags being written which are not valid in a given context.\n\nReturns\n\n\n\nType\nDescription\n\n\n\n\nTagConstraintRemover\nA context manager that removes the constraint it exits.\n\n\n\n\n\nNotes\nConstraints do not stack — an existing set of allowed_tags is replaced. This must only be used where atomic values are valid, not composite values consisting of unknown nested tags.\n\n\n\nwrite_bigint\nencode.WritableTagStream.write_bigint(value, *, tag=SerializationTag.kBigInt)\n\n\nwrite_constant\nencode.WritableTagStream.write_constant(constant)\n\n\nwrite_double\nencode.WritableTagStream.write_double(value, *, tag=SerializationTag.kDouble)\n\n\nwrite_header\nencode.WritableTagStream.write_header()\nWrite the V8 serialization stream header.\n\n\nwrite_host_object\nencode.WritableTagStream.write_host_object(value, *, serializer)\n\n\nwrite_int32\nencode.WritableTagStream.write_int32(value, *, tag=SerializationTag.kInt32)\n\n\nwrite_js_array_buffer\nencode.WritableTagStream.write_js_array_buffer(buffer, *, identity=None)\n\n\nwrite_js_array_buffer_view\nencode.WritableTagStream.write_js_array_buffer_view(buffer_view, *, identity=None)\n\n\nwrite_js_array_dense\nencode.WritableTagStream.write_js_array_dense(array, ctx, *, properties=None, identity=None)\n\n\nwrite_js_array_sparse\nencode.WritableTagStream.write_js_array_sparse(items, ctx, *, length, identity=None)\n\n\nwrite_js_date\nencode.WritableTagStream.write_js_date(value, *, identity=None)\n\n\nwrite_js_error\nencode.WritableTagStream.write_js_error(error, ctx, *, identity=None)\n\n\nwrite_js_object\nencode.WritableTagStream.write_js_object(items, ctx, *, identity=None)\n\n\nwrite_js_primitive_object\nencode.WritableTagStream.write_js_primitive_object(obj, *, identity=None)\n\n\nwrite_js_regexp\nencode.WritableTagStream.write_js_regexp(regexp, *, identity=None)\n\n\nwrite_jsmap\nencode.WritableTagStream.write_jsmap(items, ctx, *, identity=None)\n\n\nwrite_jsset\nencode.WritableTagStream.write_jsset(values, ctx, *, identity=None)\n\n\nwrite_object_reference\nencode.WritableTagStream.write_object_reference(obj=None, serialized_id=None)\n\n\nwrite_string_onebyte\nencode.WritableTagStream.write_string_onebyte(value, *, tag=SerializationTag.kOneByteString)\nEncode a OneByte string, which is latin1-encoded text.\n\n\nwrite_string_twobyte\nencode.WritableTagStream.write_string_twobyte(value, *, tag=SerializationTag.kTwoByteString)\n\n\nwrite_string_utf8\nencode.WritableTagStream.write_string_utf8(value, *, tag=SerializationTag.kUtf8String)\nEncode a Utf8String, which is UTF-8-encoded text.\nNote: We never encode Utf8String at runtime, but we use it to test the decoder. The V8 implementation only decodes Utf8String.\n\n\nwrite_tag\nencode.WritableTagStream.write_tag(tag)\n\n\nwrite_uint32\nencode.WritableTagStream.write_uint32(value, *, tag=SerializationTag.kUint32)\n\n\nwrite_v8_shared_object_reference\nencode.WritableTagStream.write_v8_shared_object_reference(value, *, identity=None)\n\n\nwrite_varint\nencode.WritableTagStream.write_varint(n)\n\n\nwrite_zigzag\nencode.WritableTagStream.write_zigzag(n)",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Encoding"
+    ]
+  },
+  {
+    "objectID": "reference/customised_encoding.html#attributes-2",
+    "href": "reference/customised_encoding.html#attributes-2",
+    "title": "Customized Encoding",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nstream",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Encoding"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_primitives.html",
+    "href": "reference/javascript_primitives.html",
+    "title": "Primitives",
+    "section": "",
+    "text": "Python equivalents of JavaScript primitives that don’t have a natural Python analogue.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Primitives"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_primitives.html#attributes",
+    "href": "reference/javascript_primitives.html#attributes",
+    "title": "Primitives",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\ntag\nThe type of primitive wrapped in this object.\n\n\nvalue\nThe primitive value.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Primitives"
+    ]
+  },
+  {
+    "objectID": "reference/v8serialize.SerializationFeature.Float16Array.html",
+    "href": "reference/v8serialize.SerializationFeature.Float16Array.html",
+    "title": "Float16Array",
+    "section": "",
+    "text": "Float16Array\nSerializationFeature.Float16Array\nSupport for encoding typed array views holding Float16 elements.\nAdded to v15 2024-03-03.\nVersions with v15 before this feature was introduced will not be able to decode data containing such arrays. This added the ArrayBufferViewTag.kFloat16Array constant."
+  },
+  {
+    "objectID": "reference/types_protocols.html",
+    "href": "reference/types_protocols.html",
+    "title": "Types & Protocols",
+    "section": "",
+    "text": "Type annotations & Protocols used throughout v8serialize.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#attributes",
+    "href": "reference/types_protocols.html#attributes",
+    "title": "Types & Protocols",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nserialize_host_object\nThe same as HostObjectSerializerFn.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#attributes-1",
+    "href": "reference/types_protocols.html#attributes-1",
+    "title": "Types & Protocols",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nstream\nThe WritableTagStream this context writes to.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#methods",
+    "href": "reference/types_protocols.html#methods",
+    "title": "Types & Protocols",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\ndeduplicate\nLook up and return a previously seen value equal to this value.\n\n\nencode_object\nEncode and write a single Python value to the stream.\n\n\n\n\ndeduplicate\nencode.EncodeContext.deduplicate(value)\nLook up and return a previously seen value equal to this value.\nIf value is not hashable or not found, it’s returned as-is.\n\n\nencode_object\nencode.EncodeContext.encode_object(value)\nEncode and write a single Python value to the stream.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#raises",
+    "href": "reference/types_protocols.html#raises",
+    "title": "Types & Protocols",
+    "section": "Raises",
+    "text": "Raises\n\n\n\nType\nDescription\n\n\n\n\nUnhandledValueEncodeV8SerializeError\nIf none of the following steps were able to handle a value.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#attributes-2",
+    "href": "reference/types_protocols.html#attributes-2",
+    "title": "Types & Protocols",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nencode\nThe same as EncodeStepFn.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#see-also",
+    "href": "reference/types_protocols.html#see-also",
+    "title": "Types & Protocols",
+    "section": "See Also",
+    "text": "See Also\ndefault_encode_steps",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#attributes-3",
+    "href": "reference/types_protocols.html#attributes-3",
+    "title": "Types & Protocols",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\ndeserialize_host_object\nThe same as HostObjectDeserializerFn.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#parameters",
+    "href": "reference/types_protocols.html#parameters",
+    "title": "Types & Protocols",
+    "section": "Parameters",
+    "text": "Parameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\ntag_readers\nTagReaderRegistry | None\nOverride the tag reader functions implied by other arguments. Default: no overrides.\nNone\n\n\njsmap_type\nJSMapType | None\nA function returning an empty dict to represent Map. Default: JSMap.\nNone\n\n\njsset_type\nJSSetType | None\nA function returning an empty set to represent Set. Default: JSSet.\nNone\n\n\njs_object_type\nJSObjectType | None\nA function returning an empty dict to represent Object. Default: JSObject.\nNone\n\n\njs_array_type\nJSArrayType | None\nA function returning an empty dict to represent Array. Default: JSArray.\nNone\n\n\njs_constants\nMapping[ConstantTags, object] | None\nA dict mapping tags from JS_CONSTANT_TAGS to the values to represent them as. Default: see JS_CONSTANT_TAGS.\nNone\n\n\nhost_object_deserializer\nHostObjectDeserializer[object] | None\nA HostObjectDeserializer to load HostObject extension tags. Default: see desc.\nNone\n\n\njs_error_builder\nJSErrorBuilder[object] | None\nA JSErrorBuilder to create Error representations. Default: JSError.builder\nNone\n\n\ndefault_timezone\ntzinfo | None\nThe timezone to use when creating datetime to represent Date. Default: datetimes have no timezone.\nNone",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#attributes-4",
+    "href": "reference/types_protocols.html#attributes-4",
+    "title": "Types & Protocols",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\ndefault_timezone\n\n\n\nhost_object_deserializer\n\n\n\njs_array_type\n\n\n\njs_constants\n\n\n\njs_error_builder\n\n\n\njs_object_type\n\n\n\njsmap_type\n\n\n\njsset_type\n\n\n\ntag_readers",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#methods-1",
+    "href": "reference/types_protocols.html#methods-1",
+    "title": "Types & Protocols",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\ndecode\n\n\n\ndeserialize_constant\n\n\n\ndeserialize_host_object\n\n\n\ndeserialize_js_array_buffer\n\n\n\ndeserialize_js_array_buffer_view\n\n\n\ndeserialize_js_array_dense\n\n\n\ndeserialize_js_array_sparse\n\n\n\ndeserialize_js_date\n\n\n\ndeserialize_js_error\n\n\n\ndeserialize_js_object\n\n\n\ndeserialize_js_primitive_object\n\n\n\ndeserialize_js_regexp\n\n\n\ndeserialize_jsmap\n\n\n\ndeserialize_jsset\n\n\n\ndeserialize_object_reference\n\n\n\ndeserialize_unsupported_wasm\n\n\n\ndeserialize_v8_shared_object_reference\n\n\n\nregister_tag_readers\n\n\n\n\n\ndecode\ndecode.TagReader.decode(tag, /, ctx, next)\n\n\ndeserialize_constant\ndecode.TagReader.deserialize_constant(tag, ctx)\n\n\ndeserialize_host_object\ndecode.TagReader.deserialize_host_object(tag, ctx)\n\n\ndeserialize_js_array_buffer\ndecode.TagReader.deserialize_js_array_buffer(tag, ctx)\n\n\ndeserialize_js_array_buffer_view\ndecode.TagReader.deserialize_js_array_buffer_view(tag, ctx)\n\n\ndeserialize_js_array_dense\ndecode.TagReader.deserialize_js_array_dense(tag, ctx)\n\n\ndeserialize_js_array_sparse\ndecode.TagReader.deserialize_js_array_sparse(tag, ctx)\n\n\ndeserialize_js_date\ndecode.TagReader.deserialize_js_date(tag, ctx)\n\n\ndeserialize_js_error\ndecode.TagReader.deserialize_js_error(tag, ctx)\n\n\ndeserialize_js_object\ndecode.TagReader.deserialize_js_object(tag, ctx)\n\n\ndeserialize_js_primitive_object\ndecode.TagReader.deserialize_js_primitive_object(tag, ctx)\n\n\ndeserialize_js_regexp\ndecode.TagReader.deserialize_js_regexp(tag, ctx)\n\n\ndeserialize_jsmap\ndecode.TagReader.deserialize_jsmap(tag, ctx)\n\n\ndeserialize_jsset\ndecode.TagReader.deserialize_jsset(tag, ctx)\n\n\ndeserialize_object_reference\ndecode.TagReader.deserialize_object_reference(tag, ctx)\n\n\ndeserialize_unsupported_wasm\ndecode.TagReader.deserialize_unsupported_wasm(tag, ctx)\n\n\ndeserialize_v8_shared_object_reference\ndecode.TagReader.deserialize_v8_shared_object_reference(tag, ctx)\n\n\nregister_tag_readers\ndecode.TagReader.register_tag_readers(tag_readers)",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#attributes-5",
+    "href": "reference/types_protocols.html#attributes-5",
+    "title": "Types & Protocols",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nstream\nThe ReadableTagStream this context reads from.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#methods-2",
+    "href": "reference/types_protocols.html#methods-2",
+    "title": "Types & Protocols",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\ndecode_object\nReturn a value by reading a tag’s data from this context’s stream.\n\n\n\n\ndecode_object\ndecode.DecodeContext.decode_object(tag=...)\nReturn a value by reading a tag’s data from this context’s stream.\nIf tag is None, the stream is positioned on a tag which must be read and advanced over. If tag is a SerializationTag, it is the tag that the stream is now positioned just after, and a tag must not be read from the stream again before handling the provided tag.\n\nReturns\n\n\n\nType\nDescription\n\n\n\n\nobject\nA value representing the tag.\n\n\n\n\n\nRaises\n\n\n\nType\nDescription\n\n\n\n\nUnhandledTagDecodeV8SerializeError\nIf it’s not possible to read the tag.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#returns-1",
+    "href": "reference/types_protocols.html#returns-1",
+    "title": "Types & Protocols",
+    "section": "Returns",
+    "text": "Returns\n\n\n\nType\nDescription\n\n\n\n\n\nThe value representing the tag the next decode step read.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#raises-2",
+    "href": "reference/types_protocols.html#raises-2",
+    "title": "Types & Protocols",
+    "section": "Raises",
+    "text": "Raises\n\n\n\nType\nDescription\n\n\n\n\nUnhandledTagDecodeV8SerializeError\nIf none of the following decode steps were able to read the tag.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#attributes-6",
+    "href": "reference/types_protocols.html#attributes-6",
+    "title": "Types & Protocols",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\ndecode\nThe same as DecodeStepFn.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#see-also-1",
+    "href": "reference/types_protocols.html#see-also-1",
+    "title": "Types & Protocols",
+    "section": "See Also",
+    "text": "See Also\ndefault_decode_steps",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#attributes-7",
+    "href": "reference/types_protocols.html#attributes-7",
+    "title": "Types & Protocols",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\ncause\n\n\n\nmessage\n\n\n\nname\n\n\n\nstack",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#methods-3",
+    "href": "reference/types_protocols.html#methods-3",
+    "title": "Types & Protocols",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nresize\nChange the length of the array.\n\n\n\n\nresize\nSparseMutableSequence.resize(length)\nChange the length of the array.\nElements are dropped if the length is reduced, or gaps are created at the end if the length is increased.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#attributes-8",
+    "href": "reference/types_protocols.html#attributes-8",
+    "title": "Types & Protocols",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nelements_used\nThe number of index positions that are not holes.\n\n\nhole_value\nThe empty value used by the sequence to represent holes.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/types_protocols.html#methods-4",
+    "href": "reference/types_protocols.html#methods-4",
+    "title": "Types & Protocols",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nelement_indexes\nIterate over the indexes in the sequence that are not holes.\n\n\nelements\nGet a live view of the index elements with existant values.\n\n\n\n\nelement_indexes\nSparseSequence.element_indexes(order=...)\nIterate over the indexes in the sequence that are not holes.\norder is Order.ASCENDING if not specified. Order.UNORDERED allows the implementation to use whichever order is most efficient.\n\n\nelements\nSparseSequence.elements(order=...)\nGet a live view of the index elements with existant values.\norder is Order.ASCENDING if not specified. Order.UNORDERED allows the implementation to use whichever order is most efficient.\nThis is analogous to the items() method of Mappings.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Types & Protocols"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_date.html",
+    "href": "reference/javascript_date.html",
+    "title": "Date",
+    "section": "",
+    "text": "Date\nPython equivalent of JavaScript’s Date is datetime.datetime.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Date"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_constants.html",
+    "href": "reference/javascript_constants.html",
+    "title": "JavaScript Constants",
+    "section": "",
+    "text": "Enums and constant values for JavaScript types.",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "JavaScript Constants"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_constants.html#attributes",
+    "href": "reference/javascript_constants.html#attributes",
+    "title": "JavaScript Constants",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nError\n\n\n\nEvalError\n\n\n\nRangeError\n\n\n\nReferenceError\n\n\n\nSyntaxError\n\n\n\nTypeError\n\n\n\nUriError\n\n\n\nerror_tag\nThe SerializationErrorTag that corresponds to this JSErrorName.",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "JavaScript Constants"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_constants.html#methods",
+    "href": "reference/javascript_constants.html#methods",
+    "title": "JavaScript Constants",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nfor_error_name\nGet the name that will be deserialized when a given name is serialized.\n\n\nfor_error_tag\nGet the JSErrorName that corresponds to a SerializationErrorTag value.\n\n\n\n\nfor_error_name\nJSErrorName.for_error_name(error_name)\nGet the name that will be deserialized when a given name is serialized.\nV8 will ignore unknown error names and substitute \"Error\". Only the members of the JSErrorName\n\nReturns\n\n\n\nType\nDescription\n\n\n\n\nJSErrorName\nThe JSErrorName enum member equal to error_name, or JSErrorName.Error if none match.\n\n\n\n\n\n\nfor_error_tag\nJSErrorName.for_error_tag(error_tag)\nGet the JSErrorName that corresponds to a SerializationErrorTag value.",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "JavaScript Constants"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_constants.html#notes",
+    "href": "reference/javascript_constants.html#notes",
+    "title": "JavaScript Constants",
+    "section": "Notes",
+    "text": "Notes\nDefined at src/regexp/regexp-flags.h in the V8 source code.",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "JavaScript Constants"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_constants.html#attributes-1",
+    "href": "reference/javascript_constants.html#attributes-1",
+    "title": "JavaScript Constants",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nDotAll\n\n\n\nGlobal\n\n\n\nHasIndices\n\n\n\nIgnoreCase\n\n\n\nLinear\n\n\n\nMultiline\n\n\n\nNoFlag\n\n\n\nSticky\n\n\n\nUnicode\n\n\n\nUnicodeSets\n\n\n\ncanonical\nThe flag’s value without any meaningless bits set.",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "JavaScript Constants"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_constants.html#methods-1",
+    "href": "reference/javascript_constants.html#methods-1",
+    "title": "JavaScript Constants",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nas_python_flags\nGet the Python re module flags that correspond to this value’s active flags.\n\n\nfrom_python_flags\nGet the JavaScript flags equivalent to Python re module flags.\n\n\n\n\nas_python_flags\nJSRegExpFlag.as_python_flags(throw=True)\nGet the Python re module flags that correspond to this value’s active flags.\nSome flags don’t have a direct equivalent, such as Linear. These result in there being no Python equivalent, so the result is None.\nSome flag don’t affect Python because they adjust the JavaScript matching API which isn’t used in Python. For example, HasIndices. These are ignored.\n\n\nfrom_python_flags\nJSRegExpFlag.from_python_flags(python_flags)\nGet the JavaScript flags equivalent to Python re module flags.",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "JavaScript Constants"
+    ]
+  },
+  {
+    "objectID": "reference/api_constants.html",
+    "href": "reference/api_constants.html",
+    "title": "API Constants",
+    "section": "",
+    "text": "Enums and constant values for loads()/dumps()",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "API Constants"
+    ]
+  },
+  {
+    "objectID": "reference/api_constants.html#examples",
+    "href": "reference/api_constants.html#examples",
+    "title": "API Constants",
+    "section": "Examples",
+    "text": "Examples\n&gt;&gt;&gt; SerializationFeature.MaxCompatibility.first_v8_version\n&lt;Version('10.0.29')&gt;\n&gt;&gt;&gt; version = SerializationFeature.CircularErrorCause.first_v8_version\n&gt;&gt;&gt; version\n&lt;Version('12.1.109')&gt;\n&gt;&gt;&gt; list(SerializationFeature.supported_by(v8_version=version))\n[&lt;SerializationFeature.RegExpUnicodeSets: 1&gt;, &lt;SerializationFeature.ResizableArrayBuffers: 2&gt;, &lt;SerializationFeature.CircularErrorCause: 4&gt;]",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "API Constants"
+    ]
+  },
+  {
+    "objectID": "reference/api_constants.html#attributes",
+    "href": "reference/api_constants.html#attributes",
+    "title": "API Constants",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nCircularErrorCause\nAllow Errors to self-reference in their cause.\n\n\nFloat16Array\nSupport for encoding typed array views holding Float16 elements.\n\n\nMaxCompatibility\nThe first version supporting V8 Serialization format version v15.\n\n\nRegExpUnicodeSets\nEnable writing RegExp with the UnicodeSets flag.\n\n\nResizableArrayBuffers\nEnable writing Resizable ArrayBuffers.\n\n\nfirst_v8_version\nThe V8 release that introduced this feature.",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "API Constants"
+    ]
+  },
+  {
+    "objectID": "reference/api_constants.html#methods",
+    "href": "reference/api_constants.html#methods",
+    "title": "API Constants",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nsupported_by\nGet the optional serialization features supported by a V8 version or newer.",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "API Constants"
+    ]
+  },
+  {
+    "objectID": "reference/api_constants.html#attributes-1",
+    "href": "reference/api_constants.html#attributes-1",
+    "title": "API Constants",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nUnreleased\nA value greater than all Version instances.",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "API Constants"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_object.html",
+    "href": "reference/javascript_object.html",
+    "title": "Object & Array",
+    "section": "",
+    "text": "Python equivalents of JavaScript’s Object & Array types.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Object & Array"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_object.html#parameters",
+    "href": "reference/javascript_object.html#parameters",
+    "title": "Object & Array",
+    "section": "Parameters",
+    "text": "Parameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\nproperties\nSupportsKeysAndGetItem[str | int, T] | Iterable[tuple[str | int, T]]\nThe items to populate the object with, either as a mapping to copy, or an iterable of (key, value) pairs.\n()\n\n\nkwarg_properties\nT\nAdditional key-values to populate the object with. These override any items from properties with the same key.\n{}",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Object & Array"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_object.html#notes",
+    "href": "reference/javascript_object.html#notes",
+    "title": "Object & Array",
+    "section": "Notes",
+    "text": "Notes\nThe behaviour JSObject implements aims to match that described by the ECMA-262 spec, so that details are not lost in translation when serializing between Python and JavaScript.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Object & Array"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_object.html#examples",
+    "href": "reference/javascript_object.html#examples",
+    "title": "Object & Array",
+    "section": "Examples",
+    "text": "Examples\n&gt;&gt;&gt; o = JSObject(name='Bob', likes_hats=False)\n&gt;&gt;&gt; o['name']\n'Bob'\n&gt;&gt;&gt; o['518'] = 'Teapot'\n&gt;&gt;&gt; o['404'] = 'Not Found'\nProperties are kept in order of creation, but array indexes (e.g. strings that are non-negative integers) always come first, in numeric order.\n&gt;&gt;&gt; o\nJSObject({404: 'Not Found', 518: 'Teapot'}, name='Bob', likes_hats=False)\n&gt;&gt;&gt; dict(o)\n{404: 'Not Found', 518: 'Teapot', 'name': 'Bob', 'likes_hats': False}",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Object & Array"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_object.html#attributes",
+    "href": "reference/javascript_object.html#attributes",
+    "title": "Object & Array",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\narray\nProperties with integer names.\n\n\nproperties\nProperties with string names.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Object & Array"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_object.html#methods",
+    "href": "reference/javascript_object.html#methods",
+    "title": "Object & Array",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nsetdefault\n\n\n\nupdate\n\n\n\n\n\nsetdefault\njstypes.JSObject.setdefault(key, default=None, /)\n\n\nupdate\njstypes.JSObject.update(*args, **kwargs)",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Object & Array"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_object.html#parameters-1",
+    "href": "reference/javascript_object.html#parameters-1",
+    "title": "Object & Array",
+    "section": "Parameters",
+    "text": "Parameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\nproperties\nSupportsKeysAndGetItem[str | int, T] | Iterable[T | JSHoleType]\nOrdered values to populate the array with, or a mapping of key-values to initialise either or both int array indexes and string properties.\n()\n\n\nkwarg_properties\nT\nAdditional key-values to populate either or both int array indexes and string properties. These override any items from properties with the same key.\n{}",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Object & Array"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_object.html#examples-1",
+    "href": "reference/javascript_object.html#examples-1",
+    "title": "Object & Array",
+    "section": "Examples",
+    "text": "Examples\n&gt;&gt;&gt; a = JSArray(['a', 'b'])\n&gt;&gt;&gt; a\nJSArray(['a', 'b'])\n&gt;&gt;&gt; a[0]\n'a'\nAs in JavaScript, JSArray works exactly like a JSObject — arrays can also have non-integer properties:\n&gt;&gt;&gt; a['foo'] = 'bar'\n&gt;&gt;&gt; a\nJSArray(['a', 'b'], foo='bar')\nJavaScript Object and Array treat string properties that are integers the same as using integers directly. JSMap does the same:\n&gt;&gt;&gt; a['2'] = 'c'\n&gt;&gt;&gt; a\nJSArray(['a', 'b', 'c'], foo='bar')\nThe .array property is a MutableSequence that contains only the integer-indexed array properties, whereas JSArray objects themselves are MutableMappings of all values:\n&gt;&gt;&gt; from typing import MutableSequence, MutableMapping\n&gt;&gt;&gt; isinstance(a.array, MutableSequence)\nTrue\n&gt;&gt;&gt; list(a.array)\n['a', 'b', 'c']\n&gt;&gt;&gt; isinstance(a, MutableSequence)\nFalse\n&gt;&gt;&gt; isinstance(a, MutableMapping)\nTrue\n&gt;&gt;&gt; dict(a)\n{0: 'a', 1: 'b', 2: 'c', 'foo': 'bar'}\nJavaScript Arrays are sparse — they can have large gaps between array entries without using space for all the empty indexes in between. JSArray’s .array property is a special type of sequence that models this behaviour:\n&gt;&gt;&gt; from v8serialize import SparseMutableSequence\n&gt;&gt;&gt; isinstance(a.array, SparseMutableSequence)\nTrue\n&gt;&gt;&gt; a[6] = 'g'\n&gt;&gt;&gt; a\nJSArray(['a', 'b', 'c', JSHole, JSHole, JSHole, 'g'], foo='bar')\n&gt;&gt;&gt; len(a.array)\n7\n&gt;&gt;&gt; a.array.elements_used\n4\n&gt;&gt;&gt; list(a.array.element_indexes())\n[0, 1, 2, 6]\nelements() is a view of the array as a Mapping, containing keys for indexes that have values.\n&gt;&gt;&gt; a.array.elements().get(6)\n'g'\n&gt;&gt;&gt; a.array.elements().get(4, 'default')\n'default'\n&gt;&gt;&gt; dict(a.array.elements())\n{0: 'a', 1: 'b', 2: 'c', 6: 'g'}\nTo be consistent with normal sequences, .array raises IndexError for out-of-bounds index operations:\n&gt;&gt;&gt; a.array[1234567] = '?'\nTraceback (most recent call last):\n...\nIndexError: list index out of range\nThe main JSArray object allows setting any index though.\n&gt;&gt;&gt; a[1234567] = '?'\n&gt;&gt;&gt; a\nJSArray({0: 'a', 1: 'b', 2: 'c', 6: 'g', 1234567: '?'}, foo='bar')",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Object & Array"
+    ]
+  },
+  {
+    "objectID": "reference/v8serialize.SerializationFeature.first_v8_version.html",
+    "href": "reference/v8serialize.SerializationFeature.first_v8_version.html",
+    "title": "first_v8_version",
+    "section": "",
+    "text": "first_v8_version\nSerializationFeature.first_v8_version\nThe V8 release that introduced this feature."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "v8serialize",
+    "section": "",
+    "text": "pip install v8serialize"
+  },
+  {
+    "objectID": "explanation/v8_serialization_format.html",
+    "href": "explanation/v8_serialization_format.html",
+    "title": "Introduction to the V8 serialization format",
+    "section": "",
+    "text": "The V8 JavaScript Engine is used by several well-known JavaScript platforms, like Node.js and Deno. V8 has built-in support for serializing JavaScript values to binary data, and deserializing them back to values.\nThe capabilities of the serialization format are compatible with the Web Platform’s Structured Clone algorithm, which is used to send JavaScript values between contexts, such as postMessage() to send values to background workers, and to persistently store JavaScript values as data in IndexedDB.\nThe appealing thing about this from a JavaScript developer’s point of view is that many common JavaScript types can be transparently moved between contexts without needing to manually serialize and deserialize them. For example, Date, Map and Set, as well as primitives like undefined are transparently handled, whereas with JSON these types need to be explicitly converted to plain objects, null, etc.\nV8’s code base states that its value serialization format is used to persist data, and requires that changes to its own code maintain backwards compatability, meaning that newer V8 versions must be able to read values serialized by older versions, but values serialized by newer versions are not required to be readable by older versions.",
+    "crumbs": [
+      "Introduction to the V8 serialization format"
+    ]
+  },
+  {
+    "objectID": "explanation/v8_serialization_format.html#users-of-the-format",
+    "href": "explanation/v8_serialization_format.html#users-of-the-format",
+    "title": "Introduction to the V8 serialization format",
+    "section": "Users of the format",
+    "text": "Users of the format\n\nNode.js exposes V8 value serialization to users via its v8 module as serialize()/deserialize() and v8.Serializer/v8.Deserializer.\n\nDeno [also implements the node:v8 module] as part of its Node.js compatibility.\n\nDeno uses the format to store JavaScript values in its Deno KV database.\nA few projects on GitHub aim to implement the format in plain JavaScript, to allow it to be used in browsers or other non-V8 runtimes. For example, worker-tools/v8-value-serializer",
+    "crumbs": [
+      "Introduction to the V8 serialization format"
+    ]
+  },
+  {
+    "objectID": "explanation/v8_serialization_format.html#capabilities",
+    "href": "explanation/v8_serialization_format.html#capabilities",
+    "title": "Introduction to the V8 serialization format",
+    "section": "Capabilities",
+    "text": "Capabilities\nThe format is able to represent the JavaScript types that cover typical data used in programs:\n\nArray\nArrayBuffer\nBoolean\nDataView\nDate\nError types (with a fixed set of error names).\nMap\nNumber\nObject (plain objects only — prototypes, functions and get/set properties are stripped)\nPrimitive (including BigInt, but not Symbol)\nRegExp\nSet\nString\nTypedArray\n\nThe format supports reference cycles, so complex object structures with inter-linked objects are not a problem. It supports multiple references to the same value, so strings can be de-duplicated. It also supports JavaScript’s sparse arrays.\nThese features make it largely transparant for JavaScript to send and receive serialized values.",
+    "crumbs": [
+      "Introduction to the V8 serialization format"
+    ]
+  },
+  {
+    "objectID": "explanation/v8_serialization_format.html#considerations",
+    "href": "explanation/v8_serialization_format.html#considerations",
+    "title": "Introduction to the V8 serialization format",
+    "section": "Considerations",
+    "text": "Considerations\n\nJavaScript details\nAlthough the format is very easy to use from JavaScript, using it outside JavaScript is complicated by the format’s close ties to the JavaScript data types. Implementations must deal with JavaScript features like sparse arrays, support for mixing integer and string properties in arrays and objects, the object-identity equality used by Map and Set, and the wide variety of binary data representations (ArrayBuffer, DataView and all the TypedArray subclases).\nThese aspects complicate interoperability with non-JavaScript languages, and mean that the format makes sense in a context where interoperability with JavaScript is an important requirement. For example, when maximising ease of use for the JavaScript side of an application is a priority. For general purpose data interchange, a simpler format like JSON, or a format designed for cross-language support like Protocol Buffers would be more suitable.\n\n\nStability\nAlthough the V8 source code now clearly describes its backwards compatibility requirement, in the past the format has mistakenly broken backwards compatibility. An example of this was support for Error objects that self-reference in their cause. Previously V8 failed to deserialize Error objects that self-referenced, but in fixing this the the Error deserialization logic was changed in such a way as to not support reading errors serialized by the previous implementation.\nJudging by the history of changes made to V8’s serialization code, the backwards compatability requirement became more clearly and strongly emphasised since this occured.\n\n\nEndianness\nV8 defines the format as using the native byte order of the computer V8 runs on. In theory this could pose interoperability problems. In practice serialized data is always little-endian, as big-endian devices are not common.",
+    "crumbs": [
+      "Introduction to the V8 serialization format"
+    ]
+  },
+  {
+    "objectID": "reference/v8serialize.SerializationFeature.CircularErrorCause.html",
+    "href": "reference/v8serialize.SerializationFeature.CircularErrorCause.html",
+    "title": "CircularErrorCause",
+    "section": "",
+    "text": "CircularErrorCause\nSerializationFeature.CircularErrorCause\nAllow Errors to self-reference in their cause.\nSupport for serializing errors with cause objects referencing the error was added to v15 in Nov 2023\nVersions before this are not able to de-serialize errors linking to themselves in their cause. Also, versions before this change serialize error stack after the cause, whereas versions after this serialize the stack before the cause and are not able to handle the previous stack encoding.\nv8serialize is able to support reading both formats ourselves, despite V8 not being able to read errors written before this change (despite the format remaining at 15). The new error layout can be read by V8 versions before the change.\nv8serialize must avoid writing errors with self-referencing cause values unless this feature is enabled, and the encoder raises a IllegalCyclicReferenceV8SerializeError if this happens."
+  },
+  {
+    "objectID": "reference/index.html",
+    "href": "reference/index.html",
+    "title": "Reference",
+    "section": "",
+    "text": "Core v8serialize functionality.\n\n\n\nEncoding & Decoding\nloads() and dumps() read and write V8-serialized data.\n\n\nCustomized Encoding\nThe v8serialize.encode module writes V8-serialized data.\n\n\nCustomized Decoding\nThe v8serialize.decode module reads V8-serialized data.\n\n\nExceptions\nExceptions raised by v8serialize.\n\n\nTypes & Protocols\nType annotations & Protocols used throughout v8serialize.\n\n\n\n\n\n\nv8serialize.jstypes provides Python equivalents of JavaScript types used in V8-serialized data.\n\n\n\nArrayBuffer, TypedArray, DataView\nPython equivalents of JavaScript’s binary data buffer types.\n\n\nDate\nPython equivalent of JavaScript’s Date is datetime.datetime.\n\n\nError\nPython equivalents of JavaScript Error types.\n\n\nMap & Set\nPython equivalents of JavaScript’s Map & Set types.\n\n\nObject & Array\nPython equivalents of JavaScript’s Object & Array types.\n\n\nPrimitives\nPython equivalents of JavaScript primitives that don’t have a natural Python analogue.\n\n\nRegExp\nPython equivalents of JavaScript RegExp type.\n\n\nUtilities\nFunctions associated with v8codec.jstypes.\n\n\n\n\n\n\nV8 serialization format and JavaScript constants.\n\n\n\nAPI Constants\nEnums and constant values for loads()/dumps()\n\n\nJavaScript Constants\nEnums and constant values for JavaScript types.\n\n\nV8 Serialization Format Constants\nEnums and constant values for the V8 serialization format.\n\n\n\n\n\n\nPlatform-specific HostObject support.\n\n\n\nNode.JS Buffers\nNode.JS’s custom Buffer HostObjects.",
+    "crumbs": [
+      "Reference"
+    ]
+  },
+  {
+    "objectID": "reference/index.html#v8-serialization-format",
+    "href": "reference/index.html#v8-serialization-format",
+    "title": "Reference",
+    "section": "",
+    "text": "Core v8serialize functionality.\n\n\n\nEncoding & Decoding\nloads() and dumps() read and write V8-serialized data.\n\n\nCustomized Encoding\nThe v8serialize.encode module writes V8-serialized data.\n\n\nCustomized Decoding\nThe v8serialize.decode module reads V8-serialized data.\n\n\nExceptions\nExceptions raised by v8serialize.\n\n\nTypes & Protocols\nType annotations & Protocols used throughout v8serialize.",
+    "crumbs": [
+      "Reference"
+    ]
+  },
+  {
+    "objectID": "reference/index.html#javascript-types",
+    "href": "reference/index.html#javascript-types",
+    "title": "Reference",
+    "section": "",
+    "text": "v8serialize.jstypes provides Python equivalents of JavaScript types used in V8-serialized data.\n\n\n\nArrayBuffer, TypedArray, DataView\nPython equivalents of JavaScript’s binary data buffer types.\n\n\nDate\nPython equivalent of JavaScript’s Date is datetime.datetime.\n\n\nError\nPython equivalents of JavaScript Error types.\n\n\nMap & Set\nPython equivalents of JavaScript’s Map & Set types.\n\n\nObject & Array\nPython equivalents of JavaScript’s Object & Array types.\n\n\nPrimitives\nPython equivalents of JavaScript primitives that don’t have a natural Python analogue.\n\n\nRegExp\nPython equivalents of JavaScript RegExp type.\n\n\nUtilities\nFunctions associated with v8codec.jstypes.",
+    "crumbs": [
+      "Reference"
+    ]
+  },
+  {
+    "objectID": "reference/index.html#constants-enums",
+    "href": "reference/index.html#constants-enums",
+    "title": "Reference",
+    "section": "",
+    "text": "V8 serialization format and JavaScript constants.\n\n\n\nAPI Constants\nEnums and constant values for loads()/dumps()\n\n\nJavaScript Constants\nEnums and constant values for JavaScript types.\n\n\nV8 Serialization Format Constants\nEnums and constant values for the V8 serialization format.",
+    "crumbs": [
+      "Reference"
+    ]
+  },
+  {
+    "objectID": "reference/index.html#hostobject-extensions",
+    "href": "reference/index.html#hostobject-extensions",
+    "title": "Reference",
+    "section": "",
+    "text": "Platform-specific HostObject support.\n\n\n\nNode.JS Buffers\nNode.JS’s custom Buffer HostObjects.",
+    "crumbs": [
+      "Reference"
+    ]
+  },
+  {
+    "objectID": "reference/v8serialize.SerializationFeature.supported_by.html",
+    "href": "reference/v8serialize.SerializationFeature.supported_by.html",
+    "title": "supported_by",
+    "section": "",
+    "text": "SerializationFeature.supported_by(v8_version)\nGet the optional serialization features supported by a V8 version or newer.\nVersions of V8 newer than the specified v8_version are expected to continue to be able to read data serialized with these features, because V8 requires that changes to its serialization allow newer versions to read data written by older versions. See the information in V8’s serializer code for details.\n\n\nv8_version: A V8 release number."
+  },
+  {
+    "objectID": "reference/v8serialize.SerializationFeature.supported_by.html#arguments",
+    "href": "reference/v8serialize.SerializationFeature.supported_by.html#arguments",
+    "title": "supported_by",
+    "section": "",
+    "text": "v8_version: A V8 release number."
+  },
+  {
+    "objectID": "reference/v8serialize.SerializationFeature.ResizableArrayBuffers.html",
+    "href": "reference/v8serialize.SerializationFeature.ResizableArrayBuffers.html",
+    "title": "ResizableArrayBuffers",
+    "section": "",
+    "text": "ResizableArrayBuffers\nSerializationFeature.ResizableArrayBuffers\nEnable writing Resizable ArrayBuffers.\nThis was introduced in v15 Dec 2022\nV8 Versions supporting v15 before this cannot deserialize data containing resizable ArrayBuffers."
+  },
+  {
+    "objectID": "reference/javascript_utils.html",
+    "href": "reference/javascript_utils.html",
+    "title": "Utilities",
+    "section": "",
+    "text": "Functions associated with v8codec.jstypes.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Utilities"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_utils.html#notes",
+    "href": "reference/javascript_utils.html#notes",
+    "title": "Utilities",
+    "section": "Notes",
+    "text": "Notes\nIf someone changes the js_repr_settings within your block and your block closes before theirs, your block will emit a JSReprSettingsNotRestored warning and leave the repr settings unchanged. Pass force_restore=True to restore your initial state anyway and not warn.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Utilities"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_utils.html#attributes",
+    "href": "reference/javascript_utils.html#attributes",
+    "title": "Utilities",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nfillvalue\n\n\n\nindent\n\n\n\nmaxjsarray\n\n\n\nmaxjsobject",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Utilities"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_utils.html#methods",
+    "href": "reference/javascript_utils.html#methods",
+    "title": "Utilities",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nrepr_JSArray\n\n\n\nrepr_JSArrayBuffer\n\n\n\nrepr_JSError\n\n\n\nrepr_JSMap\n\n\n\nrepr_JSObject\n\n\n\nrepr_JSSet\n\n\n\nrepr_bytearray\n\n\n\nrepr_bytes\n\n\n\nrepr_memoryview\n\n\n\n\n\nrepr_JSArray\njstypes.JSRepr.repr_JSArray(obj, level)\n\n\nrepr_JSArrayBuffer\njstypes.JSRepr.repr_JSArrayBuffer(obj, level)\n\n\nrepr_JSError\njstypes.JSRepr.repr_JSError(obj, level)\n\n\nrepr_JSMap\njstypes.JSRepr.repr_JSMap(obj, level)\n\n\nrepr_JSObject\njstypes.JSRepr.repr_JSObject(obj, level)\n\n\nrepr_JSSet\njstypes.JSRepr.repr_JSSet(obj, level)\n\n\nrepr_bytearray\njstypes.JSRepr.repr_bytearray(obj, level=1, truncated=None)\n\n\nrepr_bytes\njstypes.JSRepr.repr_bytes(obj, level=1, *, truncated=None)\n\n\nrepr_memoryview\njstypes.JSRepr.repr_memoryview(obj, level)",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Utilities"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_utils.html#parameters",
+    "href": "reference/javascript_utils.html#parameters",
+    "title": "Utilities",
+    "section": "Parameters",
+    "text": "Parameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\nvalue\nobject\nAny Python object\nrequired",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Utilities"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_utils.html#returns",
+    "href": "reference/javascript_utils.html#returns",
+    "title": "Utilities",
+    "section": "Returns",
+    "text": "Returns\n\n\n\nType\nDescription\n\n\n\n\nJSSameValueZero\nAn opaque value that follows the same-value-zero rules when compared with == or passed to hash().",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Utilities"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_utils.html#examples",
+    "href": "reference/javascript_utils.html#examples",
+    "title": "Utilities",
+    "section": "Examples",
+    "text": "Examples\n&gt;&gt;&gt; NaN = float('nan')\n&gt;&gt;&gt; NaN == NaN\nFalse\n&gt;&gt;&gt; same_value_zero(NaN) == same_value_zero(NaN)\nTrue\n&gt;&gt;&gt; True == 1\nTrue\n&gt;&gt;&gt; same_value_zero(True) == same_value_zero(1)\nFalse\n&gt;&gt;&gt; l1, l2 = [0], [0]\n&gt;&gt;&gt; l1 is l2\nFalse\n&gt;&gt;&gt; l1 == l2\nTrue\n&gt;&gt;&gt; same_value_zero(l1) == same_value_zero(l2)\nFalse\n&gt;&gt;&gt; same_value_zero(l1) == same_value_zero(l1)\nTrue\nStrings and numbers are equal by value.\n&gt;&gt;&gt; s1, s2 = str([ord('a')]), str([ord('a')])\n&gt;&gt;&gt; s1 is s2\nFalse\n&gt;&gt;&gt; s1 == s2\nTrue\n&gt;&gt;&gt; same_value_zero(s1) == same_value_zero(s2)\nTrue\n&gt;&gt;&gt; same_value_zero(1.0) == same_value_zero(1)\nTrue",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Utilities"
+    ]
+  },
+  {
+    "objectID": "reference/encoding_decoding.html",
+    "href": "reference/encoding_decoding.html",
+    "title": "Encoding & Decoding",
+    "section": "",
+    "text": "loads() and dumps() read and write V8-serialized data.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Encoding & Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/encoding_decoding.html#parameters",
+    "href": "reference/encoding_decoding.html#parameters",
+    "title": "Encoding & Decoding",
+    "section": "Parameters",
+    "text": "Parameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\nvalue\nobject\nThe Python value to serialize.\nrequired\n\n\nencode_steps\nIterable[EncodeStep] | None\nThe sequence of encode steps that control how the value is converted to JavaScript types.\ndefault_encode_steps\n\n\nfeatures\nSerializationFeature | None\nAdditional features of the V8 serialization format to enable.\nNone\n\n\nv8_version\nVersion | SymbolicVersion | str | None\nThe minimum version of V8 that needs to be able to read the serialized data.\nNone",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Encoding & Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/encoding_decoding.html#returns",
+    "href": "reference/encoding_decoding.html#returns",
+    "title": "Encoding & Decoding",
+    "section": "Returns",
+    "text": "Returns\n\n\n\nType\nDescription\n\n\n\n\nbytes\nThe serialized data.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Encoding & Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/encoding_decoding.html#raises",
+    "href": "reference/encoding_decoding.html#raises",
+    "title": "Encoding & Decoding",
+    "section": "Raises",
+    "text": "Raises\n\n\n\nType\nDescription\n\n\n\n\nUnhandledValueEncodeV8SerializeError\nWhen a value (or a sub-value within it) is not supported by the encode_steps.\n\n\nFeatureNotEnabledEncodeV8SerializeError\nWhen encoding value requires a SerializationFeature to be enabled that isn’t enabled.\n\n\nEncodeV8SerializeError\nIs the parent of all data-specific errors thrown when encoding.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Encoding & Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/encoding_decoding.html#examples",
+    "href": "reference/encoding_decoding.html#examples",
+    "title": "Encoding & Decoding",
+    "section": "Examples",
+    "text": "Examples\n&gt;&gt;&gt; from base64 import b64encode\n&gt;&gt;&gt; from v8serialize import loads\n&gt;&gt;&gt; from v8serialize.jstypes import JSObject, JSSet\n&gt;&gt;&gt;\n&gt;&gt;&gt; data = dumps(JSObject(id=42, title='Stuff', tags=JSSet(['foo', 'bar'])))\n&gt;&gt;&gt; loads(data)\nJSObject(id=42, title='Stuff', tags=JSSet(['foo', 'bar']))",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Encoding & Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/encoding_decoding.html#parameters-1",
+    "href": "reference/encoding_decoding.html#parameters-1",
+    "title": "Encoding & Decoding",
+    "section": "Parameters",
+    "text": "Parameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\ndata\nReadableBinary | Buffer\nThe bytes to deserialize as a bytes-like object such as bytes, bytearray, memoryview.\nrequired\n\n\ndecode_steps\nIterable[DecodeStep] | None\nA sequence of decode steps, which are responsible for creating Python values to represent the JavaScript values found in the data.\nNone\n\n\nnodejs\nbool | None\nNode.js’s custom buffer HostObject extension is enabled unless False, or host_object_deserializer is set.\nNone\n\n\njsmap_type\nJSMapType | None\nA function returning an empty dict to represent Map. Default: JSMap.\nNone\n\n\njsset_type\nJSSetType | None\nA function returning an empty set to represent Set. Default: JSSet.\nNone\n\n\njs_object_type\nJSObjectType | None\nA function returning an empty dict to represent Object. Default: JSObject.\nNone\n\n\njs_array_type\nJSArrayType | None\nA function returning an empty dict to represent Array. Default: JSArray.\nNone\n\n\njs_constants\nMapping[ConstantTags, object] | None\nA dict mapping tags from JS_CONSTANT_TAGS to the values to represent them as. Default: see JS_CONSTANT_TAGS.\nNone\n\n\nhost_object_deserializer\nHostObjectDeserializer[object] | None\nA HostObjectDeserializer to load HostObject extension tags. Default: see desc.\nNone\n\n\njs_error_builder\nJSErrorBuilder[object] | None\nA JSErrorBuilder to create Error representations. Default: JSError.builder\nNone\n\n\ndefault_timezone\ntzinfo | None\nThe timezone to use when creating datetime to represent Date. Default: datetimes have no timezone.\nNone",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Encoding & Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/encoding_decoding.html#returns-1",
+    "href": "reference/encoding_decoding.html#returns-1",
+    "title": "Encoding & Decoding",
+    "section": "Returns",
+    "text": "Returns\n\n\n\nType\nDescription\n\n\n\n\nobject\nThe first value in the data, as deserialized by the decode_steps. Using the default_decode_steps, this will be a type from v8serialize.jstypes, such as JSObject to represent a JavaScript Object.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Encoding & Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/encoding_decoding.html#raises-1",
+    "href": "reference/encoding_decoding.html#raises-1",
+    "title": "Encoding & Decoding",
+    "section": "Raises",
+    "text": "Raises\n\n\n\nType\nDescription\n\n\n\n\nDecodeV8SerializeError\nWhen data is not well-formed V8 serialization format data.\n\n\nUnhandledTagDecodeV8SerializeError\nWhen the decode_steps don’t support a JavaScript type occurring in the data.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Encoding & Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/encoding_decoding.html#notes",
+    "href": "reference/encoding_decoding.html#notes",
+    "title": "Encoding & Decoding",
+    "section": "Notes",
+    "text": "Notes\nData serialized by V8 serialization format version 13 or newer can be decoded. (13 was introduced in 2017, V8 version 5.8.294, used by Node.JS 16.)\n\nloads() does not need any configuration of V8 version or serialization features, because it automatically supports decoding data encoded with or without optional features enabled.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Encoding & Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/encoding_decoding.html#examples-1",
+    "href": "reference/encoding_decoding.html#examples-1",
+    "title": "Encoding & Decoding",
+    "section": "Examples",
+    "text": "Examples\n&gt;&gt;&gt; from v8serialize import dumps, loads\n&gt;&gt;&gt; loads(dumps({'Hello': 'World'}))\nJSMap({'Hello': 'World'})\nThe types used to represent JavaScript values can be changed, for example, we can use a regular Python dict to represent JavaScript Map.\n&gt;&gt;&gt; loads(dumps({'Hello': 'World'}), jsmap_type=dict)\n{'Hello': 'World'}\nBy default JavaScript null and undefined are also different in Python:\n&gt;&gt;&gt; from v8serialize.constants import SerializationTag\n&gt;&gt;&gt; from v8serialize.jstypes import JSUndefined, JSObject\n&gt;&gt;&gt; loads(dumps(JSObject(missing_null=None, missing_undefined=JSUndefined)))\nJSObject(missing_null=None, missing_undefined=JSUndefined)\nBut we can make them both be None:\n&gt;&gt;&gt; loads(dumps(JSObject(missing_null=None,\n...                      missing_undefined=JSUndefined)),\n...       js_constants={SerializationTag.kUndefined: None})\nJSObject(missing_null=None, missing_undefined=None)",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Encoding & Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/encoding_decoding.html#parameters-2",
+    "href": "reference/encoding_decoding.html#parameters-2",
+    "title": "Encoding & Decoding",
+    "section": "Parameters",
+    "text": "Parameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\nencode_steps\nIterable[EncodeStep] | None\nThe sequence of encode steps that control how the value is converted to JavaScript types.\ndefault_encode_steps\n\n\nfeatures\nSerializationFeature | None\nAdditional features of the V8 serialization format to enable.\nNone\n\n\nv8_version\nVersion | UnreleasedVersion | str | None\nThe minimum version of V8 that needs to be able to read the serialized data.\nNone",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Encoding & Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/encoding_decoding.html#attributes",
+    "href": "reference/encoding_decoding.html#attributes",
+    "title": "Encoding & Decoding",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nencode_steps\n\n\n\nfeatures\n\n\n\nfirst_v8_version\nThe earliest version of V8 that can read data produced by this Encoder.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Encoding & Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/encoding_decoding.html#methods",
+    "href": "reference/encoding_decoding.html#methods",
+    "title": "Encoding & Decoding",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nencode\nSerialize a value in the V8 serialization format.\n\n\n\n\nencode\nEncoder.encode(value)\nSerialize a value in the V8 serialization format.\n\nParameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\nvalue\nobject\nThe Python object to serialize.\nrequired\n\n\n\n\n\nReturns\n\n\n\nType\nDescription\n\n\n\n\nbytearray\nA bytearray containing the encoded bytes.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Encoding & Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/encoding_decoding.html#parameters-4",
+    "href": "reference/encoding_decoding.html#parameters-4",
+    "title": "Encoding & Decoding",
+    "section": "Parameters",
+    "text": "Parameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\ndecode_steps\nIterable[DecodeStep] | None\nA sequence of decode steps, which are responsible for creating Python values to represent the JavaScript values found when decoding data.\ndefault_decode_steps",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Encoding & Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/encoding_decoding.html#attributes-1",
+    "href": "reference/encoding_decoding.html#attributes-1",
+    "title": "Encoding & Decoding",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\ndecode_steps\nThe sequence of decode steps that define how to create Python values.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Encoding & Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/encoding_decoding.html#methods-1",
+    "href": "reference/encoding_decoding.html#methods-1",
+    "title": "Encoding & Decoding",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\ndecode\nDeserialize V8 serialization format data from a file.\n\n\ndecodes\nDeserialize V8 serialization format data from a bytes-like object.\n\n\n\n\ndecode\nDecoder.decode(fp)\nDeserialize V8 serialization format data from a file.\nThis Decoder’s decode_steps are used to create Python types from the serialized data.\n\nParameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\nfp\nSupportsRead[bytes]\nThe file-like object to read and deserialize.\nrequired\n\n\n\n\n\nReturns\n\n\n\nType\nDescription\n\n\n\n\nobject\nThe first value in the fp.\n\n\n\n\n\n\ndecodes\nDecoder.decodes(data)\nDeserialize V8 serialization format data from a bytes-like object.\nThis Decoder’s decode_steps are used to create Python types from the serialized data.\n\nParameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\ndata\nReadableBinary | Buffer\nThe bytes-like object to deserialize.\nrequired\n\n\n\n\n\nReturns\n\n\n\nType\nDescription\n\n\n\n\nobject\nThe first value in data.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Encoding & Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/v8serialize.SerializationFeature.MaxCompatibility.html",
+    "href": "reference/v8serialize.SerializationFeature.MaxCompatibility.html",
+    "title": "MaxCompatibility",
+    "section": "",
+    "text": "MaxCompatibility\nSerializationFeature.MaxCompatibility\nThe first version supporting V8 Serialization format version v15."
+  },
+  {
+    "objectID": "reference/customized_decoding.html",
+    "href": "reference/customized_decoding.html",
+    "title": "Customized Decoding",
+    "section": "",
+    "text": "The v8serialize.decode module reads V8-serialized data.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/customized_decoding.html#parameters",
+    "href": "reference/customized_decoding.html#parameters",
+    "title": "Customized Decoding",
+    "section": "Parameters",
+    "text": "Parameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\ntag_readers\nTagReaderRegistry | None\nOverride the tag reader functions implied by other arguments. Default: no overrides.\nNone\n\n\njsmap_type\nJSMapType | None\nA function returning an empty dict to represent Map. Default: JSMap.\nNone\n\n\njsset_type\nJSSetType | None\nA function returning an empty set to represent Set. Default: JSSet.\nNone\n\n\njs_object_type\nJSObjectType | None\nA function returning an empty dict to represent Object. Default: JSObject.\nNone\n\n\njs_array_type\nJSArrayType | None\nA function returning an empty dict to represent Array. Default: JSArray.\nNone\n\n\njs_constants\nMapping[ConstantTags, object] | None\nA dict mapping tags from JS_CONSTANT_TAGS to the values to represent them as. Default: see JS_CONSTANT_TAGS.\nNone\n\n\nhost_object_deserializer\nHostObjectDeserializer[object] | None\nA HostObjectDeserializer to load HostObject extension tags. Default: see desc.\nNone\n\n\njs_error_builder\nJSErrorBuilder[object] | None\nA JSErrorBuilder to create Error representations. Default: JSError.builder\nNone\n\n\ndefault_timezone\ntzinfo | None\nThe timezone to use when creating datetime to represent Date. Default: datetimes have no timezone.\nNone",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/customized_decoding.html#attributes",
+    "href": "reference/customized_decoding.html#attributes",
+    "title": "Customized Decoding",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\ndefault_timezone\n\n\n\nhost_object_deserializer\n\n\n\njs_array_type\n\n\n\njs_constants\n\n\n\njs_error_builder\n\n\n\njs_object_type\n\n\n\njsmap_type\n\n\n\njsset_type\n\n\n\ntag_readers",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/customized_decoding.html#methods",
+    "href": "reference/customized_decoding.html#methods",
+    "title": "Customized Decoding",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\ndecode\n\n\n\ndeserialize_constant\n\n\n\ndeserialize_host_object\n\n\n\ndeserialize_js_array_buffer\n\n\n\ndeserialize_js_array_buffer_view\n\n\n\ndeserialize_js_array_dense\n\n\n\ndeserialize_js_array_sparse\n\n\n\ndeserialize_js_date\n\n\n\ndeserialize_js_error\n\n\n\ndeserialize_js_object\n\n\n\ndeserialize_js_primitive_object\n\n\n\ndeserialize_js_regexp\n\n\n\ndeserialize_jsmap\n\n\n\ndeserialize_jsset\n\n\n\ndeserialize_object_reference\n\n\n\ndeserialize_unsupported_wasm\n\n\n\ndeserialize_v8_shared_object_reference\n\n\n\nregister_tag_readers\n\n\n\n\n\ndecode\ndecode.TagReader.decode(tag, /, ctx, next)\n\n\ndeserialize_constant\ndecode.TagReader.deserialize_constant(tag, ctx)\n\n\ndeserialize_host_object\ndecode.TagReader.deserialize_host_object(tag, ctx)\n\n\ndeserialize_js_array_buffer\ndecode.TagReader.deserialize_js_array_buffer(tag, ctx)\n\n\ndeserialize_js_array_buffer_view\ndecode.TagReader.deserialize_js_array_buffer_view(tag, ctx)\n\n\ndeserialize_js_array_dense\ndecode.TagReader.deserialize_js_array_dense(tag, ctx)\n\n\ndeserialize_js_array_sparse\ndecode.TagReader.deserialize_js_array_sparse(tag, ctx)\n\n\ndeserialize_js_date\ndecode.TagReader.deserialize_js_date(tag, ctx)\n\n\ndeserialize_js_error\ndecode.TagReader.deserialize_js_error(tag, ctx)\n\n\ndeserialize_js_object\ndecode.TagReader.deserialize_js_object(tag, ctx)\n\n\ndeserialize_js_primitive_object\ndecode.TagReader.deserialize_js_primitive_object(tag, ctx)\n\n\ndeserialize_js_regexp\ndecode.TagReader.deserialize_js_regexp(tag, ctx)\n\n\ndeserialize_jsmap\ndecode.TagReader.deserialize_jsmap(tag, ctx)\n\n\ndeserialize_jsset\ndecode.TagReader.deserialize_jsset(tag, ctx)\n\n\ndeserialize_object_reference\ndecode.TagReader.deserialize_object_reference(tag, ctx)\n\n\ndeserialize_unsupported_wasm\ndecode.TagReader.deserialize_unsupported_wasm(tag, ctx)\n\n\ndeserialize_v8_shared_object_reference\ndecode.TagReader.deserialize_v8_shared_object_reference(tag, ctx)\n\n\nregister_tag_readers\ndecode.TagReader.register_tag_readers(tag_readers)",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/customized_decoding.html#attributes-1",
+    "href": "reference/customized_decoding.html#attributes-1",
+    "title": "Customized Decoding",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\ndecode_steps\n\n\n\nstream",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/customized_decoding.html#methods-1",
+    "href": "reference/customized_decoding.html#methods-1",
+    "title": "Customized Decoding",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\ndecode_object\n\n\n\n\n\ndecode_object\ndecode.DefaultDecodeContext.decode_object(tag=None)",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/customized_decoding.html#attributes-2",
+    "href": "reference/customized_decoding.html#attributes-2",
+    "title": "Customized Decoding",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\ndata\n\n\n\neof\n\n\n\nobjects\n\n\n\npos\n\n\n\nversion",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/customized_decoding.html#methods-2",
+    "href": "reference/customized_decoding.html#methods-2",
+    "title": "Customized Decoding",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nensure_capacity\n\n\n\npeak_tag\nGet the current position as a SerializationTag without advancing position.\n\n\nread_bigint\n\n\n\nread_bytes\n\n\n\nread_double\n\n\n\nread_error_tag\n\n\n\nread_header\nRead the V8 serialization stream header and verify it’s a supported version.\n\n\nread_host_object\n\n\n\nread_int32\n\n\n\nread_js_array_buffer\n\n\n\nread_js_array_buffer_view\n\n\n\nread_js_array_dense\n\n\n\nread_js_array_sparse\n\n\n\nread_js_date\n\n\n\nread_js_error\n\n\n\nread_js_object\n\n\n\nread_js_primitive_object\n\n\n\nread_js_regexp\n\n\n\nread_jsmap\n\n\n\nread_jsset\n\n\n\nread_object_reference\n\n\n\nread_padding\n\n\n\nread_string_onebyte\nDecode a OneByteString, which is latin1-encoded text.\n\n\nread_string_twobyte\nDecode a TwoByteString, which is UTF-16-encoded text.\n\n\nread_string_utf8\nDecode a Utf8String, which is UTF8-encoded text.\n\n\nread_tag\nRead the tag at the current position.\n\n\nread_uint32\n\n\n\nread_v8_shared_object_reference\n\n\n\nread_varint\n\n\n\nread_zigzag\n\n\n\nthrow\n\n\n\n\n\nensure_capacity\ndecode.ReadableTagStream.ensure_capacity(count)\n\n\npeak_tag\ndecode.ReadableTagStream.peak_tag()\nGet the current position as a SerializationTag without advancing position.\n\nReturns\n\n\n\nType\nDescription\n\n\n\n\nSerializationTag | None\nThe SerializationTag if the current byte corresponds to one, otherwise None.\n\n\n\n\n\n\nread_bigint\ndecode.ReadableTagStream.read_bigint(tag=False)\n\n\nread_bytes\ndecode.ReadableTagStream.read_bytes(count)\n\n\nread_double\ndecode.ReadableTagStream.read_double(tag=False)\n\n\nread_error_tag\ndecode.ReadableTagStream.read_error_tag()\n\n\nread_header\ndecode.ReadableTagStream.read_header()\nRead the V8 serialization stream header and verify it’s a supported version.\n@return the header’s version number.\n\n\nread_host_object\ndecode.ReadableTagStream.read_host_object(deserializer, tag=False)\n\n\nread_int32\ndecode.ReadableTagStream.read_int32(tag=False)\n\n\nread_js_array_buffer\ndecode.ReadableTagStream.read_js_array_buffer(array_buffer, shared_array_buffer, array_buffer_transfer, tag=None)\n\n\nread_js_array_buffer_view\ndecode.ReadableTagStream.read_js_array_buffer_view(backing_buffer, *, array_buffer_view, tag=False)\n\n\nread_js_array_dense\ndecode.ReadableTagStream.read_js_array_dense(ctx, *, identity, tag=False)\n\n\nread_js_array_sparse\ndecode.ReadableTagStream.read_js_array_sparse(ctx, *, identity, tag=False)\n\n\nread_js_date\ndecode.ReadableTagStream.read_js_date(tz=None, tag=False)\n\n\nread_js_error\ndecode.ReadableTagStream.read_js_error(ctx, *, error=None, tag=False)\n\n\nread_js_object\ndecode.ReadableTagStream.read_js_object(ctx, *, identity, tag=False)\n\n\nread_js_primitive_object\ndecode.ReadableTagStream.read_js_primitive_object(tag=None)\n\n\nread_js_regexp\ndecode.ReadableTagStream.read_js_regexp(ctx, *, tag=False)\n\n\nread_jsmap\ndecode.ReadableTagStream.read_jsmap(ctx, *, identity, tag=False)\n\n\nread_jsset\ndecode.ReadableTagStream.read_jsset(ctx, *, identity, tag=False)\n\n\nread_object_reference\ndecode.ReadableTagStream.read_object_reference(tag=False)\n\n\nread_padding\ndecode.ReadableTagStream.read_padding()\n\n\nread_string_onebyte\ndecode.ReadableTagStream.read_string_onebyte(tag=False)\nDecode a OneByteString, which is latin1-encoded text.\n\n\nread_string_twobyte\ndecode.ReadableTagStream.read_string_twobyte(tag=False)\nDecode a TwoByteString, which is UTF-16-encoded text.\n\n\nread_string_utf8\ndecode.ReadableTagStream.read_string_utf8(tag=False)\nDecode a Utf8String, which is UTF8-encoded text.\n\n\nread_tag\ndecode.ReadableTagStream.read_tag(tag=None, *, consume=True)\nRead the tag at the current position.\nPadding tags are read and ignored until a non-padding tag is found. If consume is False, the current self.pos remains on the tag after returning rather than moving to the next byte. (Padding is always consumed regardless.)\n\n\nread_uint32\ndecode.ReadableTagStream.read_uint32(tag=False)\n\n\nread_v8_shared_object_reference\ndecode.ReadableTagStream.read_v8_shared_object_reference(tag=False)\n\n\nread_varint\ndecode.ReadableTagStream.read_varint(max_bits=None)\n\n\nread_zigzag\ndecode.ReadableTagStream.read_zigzag(max_bits=None)\n\n\nthrow\ndecode.ReadableTagStream.throw(message, *, cause=None)",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/customized_decoding.html#attributes-3",
+    "href": "reference/customized_decoding.html#attributes-3",
+    "title": "Customized Decoding",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nitems\nThe array and object properties.\n\n\nlength\nThe length of the array being deserialized.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/customized_decoding.html#attributes-4",
+    "href": "reference/customized_decoding.html#attributes-4",
+    "title": "Customized Decoding",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nobject\n\n\n\nserialized_id",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/customized_decoding.html#attributes-5",
+    "href": "reference/customized_decoding.html#attributes-5",
+    "title": "Customized Decoding",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nindex",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/customized_decoding.html#methods-3",
+    "href": "reference/customized_decoding.html#methods-3",
+    "title": "Customized Decoding",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nmatch\nGet the TagReaderFn function registered for a tag, or None.\n\n\nregister\nAssociate a function with a tag, so that match() will return it.\n\n\nregister_all\nCopy the registrations of another registry into this one.\n\n\n\n\nmatch\ndecode.TagReaderRegistry.match(tag)\nGet the TagReaderFn function registered for a tag, or None.\n\n\nregister\ndecode.TagReaderRegistry.register(tag, tag_reader)\nAssociate a function with a tag, so that match() will return it.\n\n\nregister_all\ndecode.TagReaderRegistry.register_all(registry)\nCopy the registrations of another registry into this one.\nExisting registrations that also occur in registry are overwritten.",
+    "crumbs": [
+      "Reference",
+      "V8 Serialization format",
+      "Customized Decoding"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_error.html",
+    "href": "reference/javascript_error.html",
+    "title": "Error",
+    "section": "",
+    "text": "Python equivalents of JavaScript Error types.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Error"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_error.html#parameters",
+    "href": "reference/javascript_error.html#parameters",
+    "title": "Error",
+    "section": "Parameters",
+    "text": "Parameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\nmessage\nstr | None\nA description of the error.\nNone\n\n\nname\nstr\nThe name of the error type. Can be anything, but values not in JSErrorName are equivalent to using \"Error\".\nJSErrorName.Error\n\n\nstack\nstr | None\nThe stack trace detailing where the error happened.\nNone\n\n\ncause\nobject | None\nAny object or value that caused this error.\nNone",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Error"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_error.html#methods",
+    "href": "reference/javascript_error.html#methods",
+    "title": "Error",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nbuilder\nCreate a JSErrorData by copying another, satisfying JSErrorBuilder.\n\n\nfrom_exception\nCreate JSErrorData that reproduces the details of a Python Exception.\n\n\nfrom_traceback_exception\nCreate JSErrorData containing details from a TracebackException.\n\n\n\n\nbuilder\njstypes.JSErrorData.builder(initial_js_error, /)\nCreate a JSErrorData by copying another, satisfying JSErrorBuilder.\nThis is a JSErrorBuilder function to configure TagReader to build JSErrorDatas.\n\n\nfrom_exception\njstypes.JSErrorData.from_exception(exc)\nCreate JSErrorData that reproduces the details of a Python Exception.\n\n\nfrom_traceback_exception\njstypes.JSErrorData.from_traceback_exception(tbe)\nCreate JSErrorData containing details from a TracebackException.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Error"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_error.html#attributes",
+    "href": "reference/javascript_error.html#attributes",
+    "title": "Error",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\ncause\nAnother error (or arbitrary object) that this error was caused by.\n\n\nmessage\nThe JavaScript Error’s message.\n\n\nname\nThe JavaScript Error’s name.\n\n\nstack\nThe stack trace showing details of the Error and the calls that lead up",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Error"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_error.html#methods-1",
+    "href": "reference/javascript_error.html#methods-1",
+    "title": "Error",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nbuilder\nCreate a JSError by copying another, satisfying JSErrorBuilder.\n\n\nfrom_js_error\nCreate a JSError by copying fields from another JSError-like object.\n\n\n\n\nbuilder\njstypes.JSError.builder(initial_js_error, /)\nCreate a JSError by copying another, satisfying JSErrorBuilder.\nThis is a JSErrorBuilder function to configure TagReader to build JSErrors.\nTagReader has js_error_builder option that this function can be passed to to have it create JSError objects when deserializing JavaScript Errors.\n\n\nfrom_js_error\njstypes.JSError.from_js_error(js_error)\nCreate a JSError by copying fields from another JSError-like object.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Error"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html",
+    "href": "reference/javascript_buffers.html",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "",
+    "text": "Python equivalents of JavaScript’s binary data buffer types.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#parameters",
+    "href": "reference/javascript_buffers.html#parameters",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Parameters",
+    "text": "Parameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\ndata\nAnyBuffer | None | int\nBinary data to populate the buffer with. Default: null bytes of byte_length.\nNone\n\n\nbyte_length\nint | None\nThe number of bytes the buffer will be created with. Default: length of data or 0.\nNone\n\n\nmax_byte_length\nint | None\nThe maximum length the buffer can be resized to. The buffer will not be resizable if this isn’t set. Default: the initial length of the buffer.\nNone\n\n\nresizable\nbool | None\nMake the buffer resizable, starting at its maximum length. Default: True if a max_byte_length is set.\nNone\n\n\ncopy_data\nbool | None\nWhether to copy the data parameter, or wrap it as is. Default: True.\nNone\n\n\nreadonly\nbool | None\nWhether to allow the buffer data to be modified. Default: False\nNone",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#attributes",
+    "href": "reference/javascript_buffers.html#attributes",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\ndata\nThe buffer’s binary data.\n\n\nmax_byte_length\nThe maximum size that resize() can expand this buffer to.\n\n\nresizable\nWhether this buffer can be resized with resize().",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#methods",
+    "href": "reference/javascript_buffers.html#methods",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nclose\nRelease the buffer’s data if it’s a memoryview.\n\n\nresize\nResize the buffer, within the max_byte_length limit.\n\n\n\n\nclose\njstypes.JSArrayBuffer.close()\nRelease the buffer’s data if it’s a memoryview.\n\n\nresize\njstypes.JSArrayBuffer.resize(byte_length)\nResize the buffer, within the max_byte_length limit.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#returns",
+    "href": "reference/javascript_buffers.html#returns",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Returns",
+    "text": "Returns\n\n\n\n\n\n\n\nType\nDescription\n\n\n\n\nDataView | TypedArray:\nAn instance of DataView or TypedArray wrapping buffer.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#examples",
+    "href": "reference/javascript_buffers.html#examples",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Examples",
+    "text": "Examples\n&gt;&gt;&gt; from v8serialize.constants import ArrayBufferViewTag\n&gt;&gt;&gt; create_view(b'', format=ArrayBufferViewTag.kUint32Array)\nJSUint32Array(b'')\n&gt;&gt;&gt; uint64 = DataFormat.resolve(data_type=DataType.UnsignedInt, byte_length=8)\n&gt;&gt;&gt; create_view(b'', format=uint64)\nJSBigUint64Array(b'')",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#see-also",
+    "href": "reference/javascript_buffers.html#see-also",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "See Also",
+    "text": "See Also\n\ncreate_view()\n\nCreate a (subtype) instance of JSTypedArray.\n\nJS*Array types\n\nThis module contains many subtypes for specific data formats, e.g. JSUint8Array.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#attributes-1",
+    "href": "reference/javascript_buffers.html#attributes-1",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nbacking_buffer\nThe byte buffer this view exposes a range of.\n\n\nbyte_length\nThe number of bytes accessible through this view.\n\n\nbyte_offset\nThe view’s position in the backing_buffer.\n\n\ndata_format\nThe DataFormat for this view’s data type.\n\n\nelement_type\nThe Python type of this view’s individual indexes.\n\n\nis_backing_buffer_resizable\nWhether .backing_buffer can change its byte length.\n\n\nis_in_range\nWhether this view’s entire range exists in the .backing_buffer.\n\n\nis_length_tracking\nWhether this view changes length to match a resizable .backing_buffer.\n\n\nitem_length\nThe number of items in the view’s backing_buffer range.\n\n\nitem_offset\nThe start of the view’s backing_buffer range.\n\n\nreadonly\nWhether the view must be readonly.\n\n\nview_tag\nThe ArrayBufferViewTag this view is for.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#methods-1",
+    "href": "reference/javascript_buffers.html#methods-1",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nfrom_bytes\nCreate a view, validating byte offsets as JavaScript does.\n\n\nget_buffer\nGet a context manager that provides this view’s region as a memoryview.\n\n\nget_buffer_as_memoryview\nAccess the view’s region of .backing_buffer as a memoryview.\n\n\n\n\nfrom_bytes\njstypes.JSTypedArray.from_bytes(backing_buffer, *, byte_offset=0, byte_length=None, readonly=None)\nCreate a view, validating byte offsets as JavaScript does.\n\nSee Also\n\ncreate_view()\n\nCreate a view without specifying the view class.\n\n\n\n\n\nget_buffer\njstypes.JSTypedArray.get_buffer(readonly=None)\nGet a context manager that provides this view’s region as a memoryview.\n\nExamples\n&gt;&gt;&gt; with JSUint8Array.from_bytes(b'\\xFF\\x80').get_buffer() as mv:\n...     assert isinstance(mv, memoryview)\n...     print(mv[0], mv[1])\n255 128\n\n\n\nget_buffer_as_memoryview\njstypes.JSTypedArray.get_buffer_as_memoryview(readonly=None)\nAccess the view’s region of .backing_buffer as a memoryview.\nThe returned memoryview:\n\nWill be empty if the view is not in range.\nIs always 1-dimensional and contains uint8 items (format \"B\").\n\n\nParameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\nreadonly\nLiteral[True] | None\nIf True, the returned memoryview will be read-only (even if this view itself is not read-only).\nNone",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#examples-2",
+    "href": "reference/javascript_buffers.html#examples-2",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Examples",
+    "text": "Examples\n&gt;&gt;&gt; dv = JSDataView(bytearray(3))\n&gt;&gt;&gt; with dv.get_buffer() as buf:\n...     buf.set_uint8(0, 1)\n...     buf.set_uint8(1, 2)\n...     print(\"256 + 2 =\", buf.get_uint16(0))  # big-endian by default\n...     print(\"256 * 2 + 1 =\", buf.get_uint16(0, little_endian=True))\n256 + 2 = 258\n256 * 2 + 1 = 513\n&gt;&gt;&gt; dv.backing_buffer\nbytearray(b'\\x01\\x02\\x00')",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#attributes-2",
+    "href": "reference/javascript_buffers.html#attributes-2",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nbacking_buffer\nThe byte buffer this view exposes a range of.\n\n\nbyte_length\nThe number of bytes accessible through this view.\n\n\nbyte_offset\nThe view’s position in the backing_buffer.\n\n\ndata_format\n\n\n\nis_backing_buffer_resizable\nWhether .backing_buffer can change its byte length.\n\n\nis_in_range\nWhether this view’s entire range exists in the .backing_buffer.\n\n\nis_length_tracking\nWhether this view changes length to match a resizable .backing_buffer.\n\n\nitem_length\nThe number of items in the view’s backing_buffer range.\n\n\nitem_offset\nThe start of the view’s backing_buffer range.\n\n\nreadonly\nWhether the view must be readonly.\n\n\nview_tag",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#methods-2",
+    "href": "reference/javascript_buffers.html#methods-2",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nfrom_bytes\nCreate a view, validating byte offsets as JavaScript does.\n\n\nget_buffer\nAccess the view’s region of .backing_buffer as a DataViewBuffer.\n\n\nget_buffer_as_memoryview\nAccess the view’s region of .backing_buffer as a memoryview.\n\n\n\n\nfrom_bytes\njstypes.JSDataView.from_bytes(backing_buffer, *, byte_offset=0, byte_length=None, readonly=None)\nCreate a view, validating byte offsets as JavaScript does.\n\nSee Also\n\ncreate_view()\n\nCreate a view without specifying the view class.\n\n\n\n\n\nget_buffer\njstypes.JSDataView.get_buffer(readonly=None)\nAccess the view’s region of .backing_buffer as a DataViewBuffer.\n\n\nget_buffer_as_memoryview\njstypes.JSDataView.get_buffer_as_memoryview(readonly=None)\nAccess the view’s region of .backing_buffer as a memoryview.\nThe returned memoryview:\n\nWill be empty if the view is not in range.\nIs always 1-dimensional and contains uint8 items (format \"B\").\n\n\nParameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\nreadonly\nLiteral[True] | None\nIf True, the returned memoryview will be read-only (even if this view itself is not read-only).\nNone",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#see-also-3",
+    "href": "reference/javascript_buffers.html#see-also-3",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "See Also",
+    "text": "See Also\n\nPython’s struct module\n\nThis is the builtin way to read/write binary data with Python.\n\nNumPy Structured Arrays\n\nNumPy provides Structured Arrays which can read/write structured binary data in bulk.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#attributes-3",
+    "href": "reference/javascript_buffers.html#attributes-3",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nbuffer\nThe memoryview this view is operating on.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#methods-3",
+    "href": "reference/javascript_buffers.html#methods-3",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nget_bigint64\n\n\n\nget_biguint64\n\n\n\nget_float16\n\n\n\nget_float32\n\n\n\nget_float64\n\n\n\nget_int16\n\n\n\nget_int32\n\n\n\nget_int8\n\n\n\nget_uint16\n\n\n\nget_uint32\n\n\n\nget_uint8\n\n\n\nread\n\n\n\nset_bigint64\n\n\n\nset_biguint64\n\n\n\nset_float16\n\n\n\nset_float32\n\n\n\nset_float64\n\n\n\nset_int16\n\n\n\nset_int32\n\n\n\nset_int8\n\n\n\nset_uint16\n\n\n\nset_uint32\n\n\n\nset_uint8\n\n\n\nwrite\n\n\n\n\n\nget_bigint64\njstypes.DataViewBuffer.get_bigint64(byte_offset, little_endian=False)\n\n\nget_biguint64\njstypes.DataViewBuffer.get_biguint64(byte_offset, little_endian=False)\n\n\nget_float16\njstypes.DataViewBuffer.get_float16(byte_offset, little_endian=False)\n\n\nget_float32\njstypes.DataViewBuffer.get_float32(byte_offset, little_endian=False)\n\n\nget_float64\njstypes.DataViewBuffer.get_float64(byte_offset, little_endian=False)\n\n\nget_int16\njstypes.DataViewBuffer.get_int16(byte_offset, little_endian=False)\n\n\nget_int32\njstypes.DataViewBuffer.get_int32(byte_offset, little_endian=False)\n\n\nget_int8\njstypes.DataViewBuffer.get_int8(byte_offset)\n\n\nget_uint16\njstypes.DataViewBuffer.get_uint16(byte_offset, little_endian=False)\n\n\nget_uint32\njstypes.DataViewBuffer.get_uint32(byte_offset, little_endian=False)\n\n\nget_uint8\njstypes.DataViewBuffer.get_uint8(byte_offset)\n\n\nread\njstypes.DataViewBuffer.read(struct_format, byte_offset)\n\n\nset_bigint64\njstypes.DataViewBuffer.set_bigint64(byte_offset, value, little_endian=False)\n\n\nset_biguint64\njstypes.DataViewBuffer.set_biguint64(byte_offset, value, little_endian=False)\n\n\nset_float16\njstypes.DataViewBuffer.set_float16(byte_offset, value, little_endian=False)\n\n\nset_float32\njstypes.DataViewBuffer.set_float32(byte_offset, value, little_endian=False)\n\n\nset_float64\njstypes.DataViewBuffer.set_float64(byte_offset, value, little_endian=False)\n\n\nset_int16\njstypes.DataViewBuffer.set_int16(byte_offset, value, little_endian=False)\n\n\nset_int32\njstypes.DataViewBuffer.set_int32(byte_offset, value, little_endian=False)\n\n\nset_int8\njstypes.DataViewBuffer.set_int8(byte_offset, value)\n\n\nset_uint16\njstypes.DataViewBuffer.set_uint16(byte_offset, value, little_endian=False)\n\n\nset_uint32\njstypes.DataViewBuffer.set_uint32(byte_offset, value, little_endian=False)\n\n\nset_uint8\njstypes.DataViewBuffer.set_uint8(byte_offset, value)\n\n\nwrite\njstypes.DataViewBuffer.write(struct_format, byte_offset, *values)",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#attributes-4",
+    "href": "reference/javascript_buffers.html#attributes-4",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nbyte_length\n\n\n\ndata_type\n\n\n\nformat",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#methods-4",
+    "href": "reference/javascript_buffers.html#methods-4",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nresolve\nFind the struct format on this platform with a given size and data type.\n\n\n\n\nresolve\njstypes.DataFormat.resolve(data_type, byte_length)\nFind the struct format on this platform with a given size and data type.\n\nParameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\ndata_type\nDataType\nThe data type to resolve.\nrequired\n\n\nbyte_length\nint\nThe required precision in bytes (\\(bits/8\\), e.g. 32 bits is 4 bytes).\nrequired\n\n\n\n\n\nReturns\n\n\n\nType\nDescription\n\n\n\n\nA DataFormat matching the parameters.\n\n\n\n\n\n\nRaises\n\n\n\nType\nDescription\n\n\n\n\nValueError\nIf the platform does not support a data type with the requested parameters.\n\n\n\n\n\nExamples\n&gt;&gt;&gt; DataFormat.resolve(data_type=DataType.UnsignedInt, byte_length=4)\nDataFormat(byte_length=4, data_type=DataType.UnsignedInt, format='I')",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#attributes-5",
+    "href": "reference/javascript_buffers.html#attributes-5",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nBytes\n\n\n\nFloat\n\n\n\nSignedInt\n\n\n\nUnsignedInt\n\n\n\npython_type\nThe Python type that represents this data type.\n\n\nstruct_formats\nThe struct module format characters for this DataType.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#examples-4",
+    "href": "reference/javascript_buffers.html#examples-4",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Examples",
+    "text": "Examples\n&gt;&gt;&gt; from v8serialize.constants import ArrayBufferViewTag\nResolve a view type from a ArrayBufferViewTag:\n&gt;&gt;&gt; ArrayBufferViewStructFormat(ArrayBufferViewTag.kUint32Array).view_type\n&lt;class 'v8serialize.jstypes.jsbuffers.JSUint32Array'&gt;\nResolve a view type from data type and precision:\n&gt;&gt;&gt; uint64 = DataFormat.resolve(data_type=DataType.UnsignedInt, byte_length=8)\n&gt;&gt;&gt; ArrayBufferViewStructFormat(uint64).view_type\n&lt;class 'v8serialize.jstypes.jsbuffers.JSBigUint64Array'&gt;",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#attributes-6",
+    "href": "reference/javascript_buffers.html#attributes-6",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nBigInt64Array\n\n\n\nBigUint64Array\n\n\n\nDataView\n\n\n\nFloat16Array\n\n\n\nFloat32Array\n\n\n\nFloat64Array\n\n\n\nInt16Array\n\n\n\nInt32Array\n\n\n\nInt8Array\n\n\n\nUint16Array\n\n\n\nUint32Array\n\n\n\nUint8Array\n\n\n\nUint8ClampedArray",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#attributes-7",
+    "href": "reference/javascript_buffers.html#attributes-7",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nbuffer_byte_length\n\n\n\nbyte_length\n\n\n\nbyte_offset",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#attributes-8",
+    "href": "reference/javascript_buffers.html#attributes-8",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nbyte_length\n\n\n\nmax_byte_length",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#attributes-9",
+    "href": "reference/javascript_buffers.html#attributes-9",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nbyte_length\n\n\n\nbyte_offset\n\n\n\nitemsize",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#attributes-10",
+    "href": "reference/javascript_buffers.html#attributes-10",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nbuffer_id",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_buffers.html#attributes-11",
+    "href": "reference/javascript_buffers.html#attributes-11",
+    "title": "ArrayBuffer, TypedArray, DataView",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\ntransfer_id",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "ArrayBuffer, TypedArray, DataView"
+    ]
+  },
+  {
+    "objectID": "reference/v8_constants.html",
+    "href": "reference/v8_constants.html",
+    "title": "V8 Serialization Format Constants",
+    "section": "",
+    "text": "Enums and constant values for the V8 serialization format.",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "V8 Serialization Format Constants"
+    ]
+  },
+  {
+    "objectID": "reference/v8_constants.html#notes",
+    "href": "reference/v8_constants.html#notes",
+    "title": "V8 Serialization Format Constants",
+    "section": "Notes",
+    "text": "Notes\nThese tags are defined in the SerializationTag enum in the v8 src.",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "V8 Serialization Format Constants"
+    ]
+  },
+  {
+    "objectID": "reference/v8_constants.html#attributes",
+    "href": "reference/v8_constants.html#attributes",
+    "title": "V8 Serialization Format Constants",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nkArrayBuffer\n\n\n\nkArrayBufferTransfer\n\n\n\nkArrayBufferView\n\n\n\nkBeginDenseJSArray\n\n\n\nkBeginJSMap\n\n\n\nkBeginJSObject\n\n\n\nkBeginJSSet\n\n\n\nkBeginSparseJSArray\n\n\n\nkBigInt\n\n\n\nkBigIntObject\n\n\n\nkDate\n\n\n\nkDouble\n\n\n\nkEndDenseJSArray\n\n\n\nkEndJSMap\n\n\n\nkEndJSObject\n\n\n\nkEndJSSet\n\n\n\nkEndSparseJSArray\n\n\n\nkError\n\n\n\nkFalse\n\n\n\nkFalseObject\n\n\n\nkHostObject\n\n\n\nkInt32\n\n\n\nkLegacyReservedBlob\n\n\n\nkLegacyReservedBlobIndex\n\n\n\nkLegacyReservedCryptoKey\n\n\n\nkLegacyReservedDOMFileSystem\n\n\n\nkLegacyReservedFile\n\n\n\nkLegacyReservedFileIndex\n\n\n\nkLegacyReservedFileList\n\n\n\nkLegacyReservedFileListIndex\n\n\n\nkLegacyReservedImageBitmap\n\n\n\nkLegacyReservedImageBitmapTransfer\n\n\n\nkLegacyReservedImageData\n\n\n\nkLegacyReservedMessagePort\n\n\n\nkLegacyReservedOffscreenCanvas\n\n\n\nkLegacyReservedRTCCertificate\n\n\n\nkNull\n\n\n\nkNumberObject\n\n\n\nkObjectReference\n\n\n\nkOneByteString\n\n\n\nkPadding\n\n\n\nkRegExp\n\n\n\nkResizableArrayBuffer\n\n\n\nkSharedArrayBuffer\n\n\n\nkSharedObject\n\n\n\nkStringObject\n\n\n\nkTheHole\n\n\n\nkTrue\n\n\n\nkTrueObject\n\n\n\nkTwoByteString\n\n\n\nkUint32\n\n\n\nkUndefined\n\n\n\nkUtf8String\n\n\n\nkVerifyObjectCount\n\n\n\nkVersion\n\n\n\nkWasmMemoryTransfer\n\n\n\nkWasmModuleTransfer",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "V8 Serialization Format Constants"
+    ]
+  },
+  {
+    "objectID": "reference/v8_constants.html#attributes-1",
+    "href": "reference/v8_constants.html#attributes-1",
+    "title": "V8 Serialization Format Constants",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nkBigInt64Array\n\n\n\nkBigUint64Array\n\n\n\nkDataView\n\n\n\nkFloat16Array\n\n\n\nkFloat32Array\n\n\n\nkFloat64Array\n\n\n\nkInt16Array\n\n\n\nkInt32Array\n\n\n\nkInt8Array\n\n\n\nkUint16Array\n\n\n\nkUint32Array\n\n\n\nkUint8Array\n\n\n\nkUint8ClampedArray",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "V8 Serialization Format Constants"
+    ]
+  },
+  {
+    "objectID": "reference/v8_constants.html#attributes-2",
+    "href": "reference/v8_constants.html#attributes-2",
+    "title": "V8 Serialization Format Constants",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nIsBufferResizable\n\n\n\nIsLengthTracking",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "V8 Serialization Format Constants"
+    ]
+  },
+  {
+    "objectID": "reference/v8_constants.html#attributes-3",
+    "href": "reference/v8_constants.html#attributes-3",
+    "title": "V8 Serialization Format Constants",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nCause\nFollowed by a JS object: cause.\n\n\nEnd\nThe end of this error information.\n\n\nEvalErrorPrototype\nThe error is a EvalError. No accompanying data.\n\n\nMessage\nFollowed by message: string.\n\n\nRangeErrorPrototype\nThe error is a RangeError. No accompanying data.\n\n\nReferenceErrorPrototype\nThe error is a ReferenceError. No accompanying data.\n\n\nStack\nFollowed by stack: string.\n\n\nSyntaxErrorPrototype\nThe error is a SyntaxError. No accompanying data.\n\n\nTypeErrorPrototype\nThe error is a TypeError. No accompanying data.\n\n\nUriErrorPrototype\nThe error is a URIError. No accompanying data.",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "V8 Serialization Format Constants"
+    ]
+  },
+  {
+    "objectID": "reference/v8_constants.html#attributes-4",
+    "href": "reference/v8_constants.html#attributes-4",
+    "title": "V8 Serialization Format Constants",
+    "section": "Attributes",
+    "text": "Attributes\n\n\n\nName\nDescription\n\n\n\n\nallowed_tag_names\nA human-readable list of SerializationTags allowed by this constraint.\n\n\nallowed_tags\nThe set of tags allowed by this constraint.\n\n\nname\nA description of the tags allowed by this constraint.",
+    "crumbs": [
+      "Reference",
+      "Constants & Enums",
+      "V8 Serialization Format Constants"
+    ]
+  },
+  {
+    "objectID": "reference/v8serialize.SerializationFeature.RegExpUnicodeSets.html",
+    "href": "reference/v8serialize.SerializationFeature.RegExpUnicodeSets.html",
+    "title": "RegExpUnicodeSets",
+    "section": "",
+    "text": "RegExpUnicodeSets\nSerializationFeature.RegExpUnicodeSets\nEnable writing RegExp with the UnicodeSets flag.\nThis wasn’t a format change in the serializer itself, but versions of V8 without support for this flag will not be able to deserialize containing a RegExp using the flag.\nThe commit adding the v flag was made on 2022-09-03\nNote that it seems the flag wasn’t correctly validated by the serializer, so initially V8 could deserialize RegExps that incorrectly used u and v flags at the same time. v8serialize consistently enforces the mutual-exclusion of u and v flags in JSRegExp."
+  },
+  {
+    "objectID": "reference/javascript_map_set.html",
+    "href": "reference/javascript_map_set.html",
+    "title": "Map & Set",
+    "section": "",
+    "text": "Python equivalents of JavaScript’s Map & Set types.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Map & Set"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_map_set.html#parameters",
+    "href": "reference/javascript_map_set.html#parameters",
+    "title": "Map & Set",
+    "section": "Parameters",
+    "text": "Parameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\ninit\nSupportsKeysAndGetItem[KT, VT] | Iterable[tuple[KT, VT]] | None\nAnother Mapping to copy items from, or a series of (key, value) pairs.\nNone\n\n\nkwargs\nVT\nKeyword arguments become items, and override items from init if names occur in both.\n{}",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Map & Set"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_map_set.html#notes",
+    "href": "reference/javascript_map_set.html#notes",
+    "title": "Map & Set",
+    "section": "Notes",
+    "text": "Notes\nJSMap must be initialized using an iterable of item pairs instead of a dict if any keys are non-hashable or are equal using ==.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Map & Set"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_map_set.html#see-also",
+    "href": "reference/javascript_map_set.html#see-also",
+    "title": "Map & Set",
+    "section": "See Also",
+    "text": "See Also\njstypes.same_value_zero : A key function that provides same-value-zero equality.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Map & Set"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_map_set.html#examples",
+    "href": "reference/javascript_map_set.html#examples",
+    "title": "Map & Set",
+    "section": "Examples",
+    "text": "Examples\nJSMap is like a Python dict, but as in JavaScript, any object can be a JSMap key — keys don’t need to be hashable.\n&gt;&gt;&gt; from v8serialize.jstypes import JSObject\n&gt;&gt;&gt; bob, alice = JSObject(name=\"Bob\"), JSObject(name=\"Alice\")\n&gt;&gt;&gt; m = JSMap([(bob, 1), (alice, 2)])\n&gt;&gt;&gt; m\nJSMap([(JSObject(name='Bob'), 1), (JSObject(name='Alice'), 2)])\n&gt;&gt;&gt; m[alice]\n2\nEquality between JSMap instances works as if you compared a list of both map’s items. When comparing JSMap to normal Python dict, equality works as if the JSMap was a normal dict — order does not matter and the number of items must be equal. Same-value-zero is only used for internally matching keys, not for external equality.\nEquality examples:\n&gt;&gt;&gt; a, b = bytearray(), bytearray()  # non-hashable but supports ==\n&gt;&gt;&gt; assert a == b\n&gt;&gt;&gt; assert a is not b\nBecause a and b are equal, lists containing them in different orders are equal:\n&gt;&gt;&gt; [a, b] == [b, a]\nTrue\nEquality between two JSMaps behaves like the list of items (JSMaps remember insertion order):\n&gt;&gt;&gt; JSMap([(a, 0), (b, 0)]) == JSMap([(a, 0), (b, 0)])\nTrue\n&gt;&gt;&gt; JSMap([(a, 0), (b, 0)]) == JSMap([(b, 0), (a, 0)])\nTrue\n&gt;&gt;&gt; JSMap([(a, 0), (a, 0)]) == JSMap([(b, 0), (b, 0)])\nTrue\nThese behave like:\n&gt;&gt;&gt; list(JSMap([(a, 0), (b, 0)]).items()) == [(b, 0), (a, 0)]\nTrue\nEquality between a JSMap and a normal dict behaves as if the JSMap was a normal dict. The maps must have the same number of items.\n&gt;&gt;&gt; # hashable, distinct instances\n&gt;&gt;&gt; x, y, z = tuple([0]), tuple([0]), tuple([0])\n&gt;&gt;&gt; assert x == y and y == z\n&gt;&gt;&gt; assert x is not y and y is not z\n&gt;&gt;&gt; jsm_dup, jsm_no_dup = JSMap([(x, 0), (y, 0)]), JSMap([(x, 0)])\n&gt;&gt;&gt; m = dict([(y, 0), (z, 0)])\n&gt;&gt;&gt; jsm_dup, jsm_no_dup, m\n(JSMap([((0,), 0), ((0,), 0)]), JSMap({(0,): 0}), {(0,): 0})\n&gt;&gt;&gt; jsm_no_dup == m\nTrue\n&gt;&gt;&gt; jsm_dup == m  # different number of members\nFalse\nEquivalent to\n&gt;&gt;&gt; dict([(x, 0)]) == dict([(y, 0), (z, 0)])\nTrue",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Map & Set"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_map_set.html#methods",
+    "href": "reference/javascript_map_set.html#methods",
+    "title": "Map & Set",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nclear\n\n\n\nget\n\n\n\nupdate\n\n\n\n\n\nclear\njstypes.JSMap.clear()\n\n\nget\njstypes.JSMap.get(key, /, default=None)\n\n\nupdate\njstypes.JSMap.update(other=(), /, **kwds)",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Map & Set"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_map_set.html#parameters-1",
+    "href": "reference/javascript_map_set.html#parameters-1",
+    "title": "Map & Set",
+    "section": "Parameters",
+    "text": "Parameters\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\niterable\nIterable[T] | None\nItems to initialize the JSSet with. Can be empty or not specified.\nNone",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Map & Set"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_map_set.html#notes-1",
+    "href": "reference/javascript_map_set.html#notes-1",
+    "title": "Map & Set",
+    "section": "Notes",
+    "text": "Notes\nJSSet must be initialized using an iterable or regular list instead of a set if any keys are non-hashable or are equal using ==.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Map & Set"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_map_set.html#see-also-1",
+    "href": "reference/javascript_map_set.html#see-also-1",
+    "title": "Map & Set",
+    "section": "See Also",
+    "text": "See Also\njstypes.same_value_zero : A key function that provides same-value-zero equality.",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Map & Set"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_map_set.html#examples-1",
+    "href": "reference/javascript_map_set.html#examples-1",
+    "title": "Map & Set",
+    "section": "Examples",
+    "text": "Examples\nEquality between JSSet instances works as if you compared a list of both set’s elements. When comparing JSSet to a normal Python set, equality works as if the JSSet was a regular set — order does not matter and the number of elements must be equal. Same-value-zero is only used for internal membership checks, not for external equality.\nEquality examples:\n&gt;&gt;&gt; a, b = bytearray(), bytearray()  # non-hashable\n&gt;&gt;&gt; assert a == b\n&gt;&gt;&gt; assert a is not b\nEquality between two JSSets behaves like the list of members (JSSets remember insertion order):\n&gt;&gt;&gt; JSSet([a, b]) == JSSet([a, b])\nTrue\n&gt;&gt;&gt; JSSet([a, b]) == JSSet([b, a])\nTrue\n&gt;&gt;&gt; JSSet([a, a]) == JSSet([b, b])\nTrue\nThese behave like:\n&gt;&gt;&gt; list(JSSet([a, b])) == [b, a]\nTrue\nEquality between a JSSet and a normal set behaves as if the JSSet was a normal set. The sets must have the same number of members.\nNote that if there are non-hashable members, the sets can’t be equal, as normal sets cannot contain non-hashable members.\n&gt;&gt;&gt; # hashable, distinct instances\n&gt;&gt;&gt; x, y, z = tuple([0]), tuple([0]), tuple([0])\n&gt;&gt;&gt; assert x == y and y == z\n&gt;&gt;&gt; assert x is not y and y is not z\n&gt;&gt;&gt; jss_dup, jss_no_dup, s = JSSet([x, y]), JSSet([x]), set([y, z])\n&gt;&gt;&gt; jss_dup, jss_no_dup, s\n(JSSet([(0,), (0,)]), JSSet([(0,)]), {(0,)})\n&gt;&gt;&gt; jss_no_dup == s\nTrue\n&gt;&gt;&gt; jss_dup == s  # different number of members\nFalse\nEquivalent to\n&gt;&gt;&gt; set([x]) == set([y, z])\nTrue",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Map & Set"
+    ]
+  },
+  {
+    "objectID": "reference/javascript_map_set.html#methods-1",
+    "href": "reference/javascript_map_set.html#methods-1",
+    "title": "Map & Set",
+    "section": "Methods",
+    "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\nadd\n\n\n\nclear\n\n\n\ndiscard\n\n\n\n\n\nadd\njstypes.JSSet.add(value)\n\n\nclear\njstypes.JSSet.clear()\n\n\ndiscard\njstypes.JSSet.discard(value)",
+    "crumbs": [
+      "Reference",
+      "JavaScript types",
+      "Map & Set"
+    ]
+  },
+  {
+    "objectID": "howto/use_at_a_glance.html",
+    "href": "howto/use_at_a_glance.html",
+    "title": "How to use at a glance",
+    "section": "",
+    "text": "For more details, see the tutorials.",
+    "crumbs": [
+      "How to use at a glance"
+    ]
+  },
+  {
+    "objectID": "howto/use_at_a_glance.html#serialize-with-python",
+    "href": "howto/use_at_a_glance.html#serialize-with-python",
+    "title": "How to use at a glance",
+    "section": "1 Serialize with Python",
+    "text": "1 Serialize with Python\n\nfrom base64 import b64encode\nfrom v8serialize import dumps\nfrom v8serialize.jstypes import JSObject\n\nserialized = dumps(JSObject(message=\"Hello World\"))\nb64encode(serialized).decode()\n\n'/w9vUwdtZXNzYWdlUwtIZWxsbyBXb3JsZHsB'",
+    "crumbs": [
+      "How to use at a glance"
+    ]
+  },
+  {
+    "objectID": "howto/use_at_a_glance.html#deserialize-with-python",
+    "href": "howto/use_at_a_glance.html#deserialize-with-python",
+    "title": "How to use at a glance",
+    "section": "2 Deserialize with Python",
+    "text": "2 Deserialize with Python\n\nfrom base64 import b64decode\nfrom v8serialize import loads\n\nserialized = b64decode(\"/w9vUwdtZXNzYWdlUwtIZWxsbyBXb3JsZHsB\")\nloads(serialized)\n\nJSObject(message='Hello World')",
+    "crumbs": [
+      "How to use at a glance"
+    ]
+  },
+  {
+    "objectID": "howto/use_at_a_glance.html#serialize-with-node.js-deno",
+    "href": "howto/use_at_a_glance.html#serialize-with-node.js-deno",
+    "title": "How to use at a glance",
+    "section": "3 Serialize with Node.js / Deno",
+    "text": "3 Serialize with Node.js / Deno\nimport * as v8 from 'node:v8';\n\nconst buffer = v8.serialize({message: 'Hello World'});\nconsole.log(buffer.toString('base64'));\n/w9vIgdtZXNzYWdlIgtIZWxsbyBXb3JsZHsB",
+    "crumbs": [
+      "How to use at a glance"
+    ]
+  },
+  {
+    "objectID": "howto/use_at_a_glance.html#deserialize-with-node.js-deno",
+    "href": "howto/use_at_a_glance.html#deserialize-with-node.js-deno",
+    "title": "How to use at a glance",
+    "section": "4 Deserialize with Node.js / Deno",
+    "text": "4 Deserialize with Node.js / Deno\nimport * as v8 from 'node:v8';\n\nconst buffer = Buffer.from('/w9vIgdtZXNzYWdlIgtIZWxsbyBXb3JsZHsB', 'base64');\nconsole.log(v8.deserialize(buffer));\n{ message: 'Hello World' }",
+    "crumbs": [
+      "How to use at a glance"
+    ]
+  }
+]
