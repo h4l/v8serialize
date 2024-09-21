@@ -41,11 +41,6 @@ RUN --mount=source=.,target=/workspace,rw \
     poetry run ruff format --check --diff .
 
 
-FROM lint-setup AS lint-isort
-RUN --mount=source=.,target=/workspace,rw \
-    poetry run isort --check --diff .
-
-
 FROM lint-setup AS lint-mypy
 RUN --mount=source=.,target=/workspace,rw \
     --mount=type=cache,target=.mypy_cache \

@@ -47,10 +47,6 @@ check-code-issues:
 > ruff check src test
 .PHONY: check-code-issues
 
-check-code-import-order:
-> isort --check --diff src test
-.PHONY: check-code-import-order
-
 check-code-format:
 > ruff format --check src test
 .PHONY: check-code-format
@@ -63,6 +59,5 @@ reformat-code:
 > @if [[ "$$(git status --porcelain)" != "" ]]; then
 >   echo "Refusing to reformat code: files have uncommitted changes" >&2 ; exit 1
 > fi
-> isort src test
-> black src test
+> ruff format src test
 .PHONY: reformat-code

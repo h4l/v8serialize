@@ -35,7 +35,7 @@ target "test_package" {
 target "lint" {
     name = "lint-${lint_type}"
     matrix = {
-        lint_type = ["check", "format", "isort", "mypy"],
+        lint_type = ["check", "format", "mypy"],
     }
     args = {
         PYTHON_VER = "slim"
