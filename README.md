@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/v8serialize_logo_auto.svg" width="300" alt="The v8serialize logo. Monochome. Large &quot;V8&quot; and smaller &quot;serialize&quot; in a handwritten style, with the 8 stylized to look like a snake.">
+</p>
+
 # `v8serialize`
 
 Read & write the [V8 serialization format] with Python.
