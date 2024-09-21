@@ -13,6 +13,11 @@ website:
       - sidebar:howto
       - reference/index.qmd
       - sidebar:explanation
+    right:
+      - icon: github
+        href: https://github.com/h4l/v8serialize/
+      - text: "{{< iconify file-icons:pypi >}}"
+        href: https://pypi.org/project/v8serialize/
   sidebar:
     - id: tutorials
       title: "Tutorials"

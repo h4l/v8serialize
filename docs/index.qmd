@@ -9,8 +9,7 @@ about:
   - icon: github
     text: GitHub
     href: https://github.com/h4l/v8serialize/
-  - icon: boxes
-    text: PyPI
+  - text: "{{< iconify file-icons:pypi >}} PyPI"
     href: https://pypi.org/project/v8serialize/
 ---
 
