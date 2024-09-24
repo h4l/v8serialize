@@ -2003,7 +2003,7 @@
     "href": "howto/use_at_a_glance.html#serialize-with-python",
     "title": "How to use at a glance",
     "section": "1 Serialize with Python",
-    "text": "1 Serialize with Python\n\nfrom base64 import b64encode\nfrom v8serialize import dumps\nfrom v8serialize.jstypes import JSObject\n\nserialized = dumps(JSObject(message=\"Hello World\"))\nb64encode(serialized).decode()\n\n'/w9vUwdtZXNzYWdlUwtIZWxsbyBXb3JsZHsB'",
+    "text": "1 Serialize with Python\n\nfrom base64 import b64encode\nfrom datetime import datetime, UTC\nimport re\n\nfrom v8serialize import dumps\nfrom v8serialize.jstypes import JSObject, JSArray, JSUndefined\n\nserialized = dumps(\n    [\n        \"strings 🧵🧶🪡\",\n        123,\n        None,\n        JSUndefined,\n        JSArray([(0, \"a\"), (1, \"b\"), (123456789, \"sparse\")]),\n        JSObject({\"msg\": \"Hi\"}),\n        b\"\\xc0\\xff\\xee\",\n        2**128,\n        {\"maps\": True},\n        {\"sets\", \"yes\"},\n        re.compile(r\"^\\w+$\"),\n        datetime(2024, 1, 1, tzinfo=UTC),\n    ]\n)\n\nprint(b64encode(serialized).decode())\n\n/w9BDFMUc3RyaW5ncyDwn6e18J+ntvCfqqFVezBfQQNBAlUAUwFhJAACQQJVAVMBYiQAAkECVZWa7zpTBnNwYXJzZSQAAiQAA29TA21zZ1MCSGl7AUIDwP/uWiIAAAAAAAAAAAAAAAAAAAAAATtTBG1hcHNUOgInUwRzZXRzUwN5ZXMsAlJTBV5cdyskgAJEAABAHyXMeEIkAAw=",
     "crumbs": [
       "How to use at a glance"
     ]
@@ -2013,7 +2013,7 @@
     "href": "howto/use_at_a_glance.html#deserialize-with-python",
     "title": "How to use at a glance",
     "section": "2 Deserialize with Python",
-    "text": "2 Deserialize with Python\n\nfrom base64 import b64decode\nfrom v8serialize import loads\n\nserialized = b64decode(\"/w9vUwdtZXNzYWdlUwtIZWxsbyBXb3JsZHsB\")\nloads(serialized)\n\nJSObject(message='Hello World')",
+    "text": "2 Deserialize with Python\n\nfrom base64 import b64decode\nfrom v8serialize import loads\n\n# The output of the JavaScript example\nserialized = b64decode(\n    \"/w9BDGMccwB0AHIAaQBuAGcAcwAgAD7Y9d0+2PbdPtih3kn2ATBfYZaa7zpJACIBYUkCIgFiSaq03nUiBnNwYXJzZUADlprvOm8iA21zZyICSGl7AUIDwP/uWjAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAA7IgRtYXBzVDoCJyIDeWVzIgRzZXRzLAJSIgVeXHcrJIACRAAAQB8lzHhCJAAM\"\n)\nprint(loads(serialized))\n\nJSArray([\n  'strings 🧵🧶🪡',\n  123,\n  None,\n  JSUndefined,\n  JSArray({\n    0: 'a',\n    1: 'b',\n    123456789: 'sparse',\n  }),\n  JSObject(msg='Hi'),\n  JSArrayBuffer(b'\\xc0\\xff\\xee'),\n  340282366920938463463374607431768211456,\n  JSMap({\n    'maps': True,\n  }),\n  JSSet([\n    'yes',\n    'sets',\n  ]),\n  JSRegExp(source='^\\\\w+$', flags=&lt;JSRegExpFlag.UnicodeSets: 256&gt;),\n  datetime.datetime(2024, 1, 1, 0, 0),\n])\n\n\nOutput:\nJSArray([\n  'strings 🧵🧶🪡',\n  123,\n  None,\n  JSUndefined,\n  JSArray({\n    0: 'a',\n    1: 'b',\n    123456789: 'sparse',\n  }),\n  JSObject(msg='Hi'),\n  JSArrayBuffer(b'\\xc0\\xff\\xee'),\n  340282366920938463463374607431768211456,\n  JSMap({\n    'maps': True,\n  }),\n  JSSet([\n    'yes',\n    'sets',\n  ]),\n  JSRegExp(source='^\\\\w+$', flags=&lt;JSRegExpFlag.UnicodeSets: 256&gt;),\n  datetime.datetime(2024, 1, 1, 0, 0),\n])",
     "crumbs": [
       "How to use at a glance"
     ]
@@ -2023,7 +2023,7 @@
     "href": "howto/use_at_a_glance.html#serialize-with-node.js-deno",
     "title": "How to use at a glance",
     "section": "3 Serialize with Node.js / Deno",
-    "text": "3 Serialize with Node.js / Deno\nimport * as v8 from 'node:v8';\n\nconst buffer = v8.serialize({message: 'Hello World'});\nconsole.log(buffer.toString('base64'));\n/w9vIgdtZXNzYWdlIgtIZWxsbyBXb3JsZHsB",
+    "text": "3 Serialize with Node.js / Deno\nimport * as v8 from 'node:v8';\n\nconst sparseArray = ['a', 'b'];\nsparseArray[123456789] = 'sparse';\n\nconst buffer = v8.serialize([\n    'strings 🧵🧶🪡',\n    123,\n    null,\n    undefined,\n    sparseArray,\n    {msg: 'Hi'},\n    Uint8Array.from([0xc0, 0xff, 0xee]).buffer,\n    2n**128n,\n    new Map([['maps', true]]),\n    new Set(['yes', 'sets']),\n    /^\\w+$/v,\n    new Date(Date.UTC(2024, 0, 1)),\n]);\n\nconsole.log(buffer.toString('base64'));\n/w9BDGMccwB0AHIAaQBuAGcAcwAgAD7Y9d0+2PbdPtih3kn2ATBfYZaa7zpJACIBYUkCIgFiSaq03nUiBnNwYXJzZUADlprvOm8iA21zZyICSGl7AUIDwP/uWjAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAA7IgRtYXBzVDoCJyIDeWVzIgRzZXRzLAJSIgVeXHcrJIACRAAAQB8lzHhCJAAM",
     "crumbs": [
       "How to use at a glance"
     ]
@@ -2033,7 +2033,7 @@
     "href": "howto/use_at_a_glance.html#deserialize-with-node.js-deno",
     "title": "How to use at a glance",
     "section": "4 Deserialize with Node.js / Deno",
-    "text": "4 Deserialize with Node.js / Deno\nimport * as v8 from 'node:v8';\n\nconst buffer = Buffer.from('/w9vIgdtZXNzYWdlIgtIZWxsbyBXb3JsZHsB', 'base64');\nconsole.log(v8.deserialize(buffer));\n{ message: 'Hello World' }",
+    "text": "4 Deserialize with Node.js / Deno\nimport * as v8 from 'node:v8';\n\n// The output of the Python example\nconst buffer = Buffer.from('/w9BDFMUc3RyaW5ncyDwn6e18J+ntvCfqqFVezBfYZaa7zpVAFMBYVUBUwFiVZWa7zpTBnNwYXJzZUADlprvOm9TA21zZ1MCSGl7AUIDwP/uWiIAAAAAAAAAAAAAAAAAAAAAATtTBG1hcHNUOgInUwN5ZXNTBHNldHMsAlJTBV5cdyskgAJEAABAHyXMeEIkAAw=', 'base64');\nconsole.log(v8.deserialize(buffer));\n[\n  'strings 🧵🧶🪡',\n  123,\n  null,\n  undefined,\n  [ 'a', 'b', &lt;123456787 empty items&gt;, 'sparse' ],\n  { msg: 'Hi' },\n  ArrayBuffer { [Uint8Contents]: &lt;c0 ff ee&gt;, byteLength: 3 },\n  340282366920938463463374607431768211456n,\n  Map(1) { 'maps' =&gt; true },\n  Set(2) { 'yes', 'sets' },\n  /^\\w+$/v,\n  2024-01-01T00:00:00.000Z\n]",
     "crumbs": [
       "How to use at a glance"
     ]

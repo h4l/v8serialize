@@ -256,46 +256,145 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>For more details, see <a href="../tutorials/js_to_py.html">the tutorials</a>.</p>
 <section id="serialize-with-python" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="serialize-with-python"><span class="header-section-number">1</span> Serialize with Python</h2>
-<div id="418a5d0a" class="cell" data-execution_count="1">
+<div id="72a6d38b" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> base64 <span class="im">import</span> b64encode</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> v8serialize <span class="im">import</span> dumps</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> v8serialize.jstypes <span class="im">import</span> JSObject</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> datetime <span class="im">import</span> datetime, UTC</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>serialized <span class="op">=</span> dumps(JSObject(message<span class="op">=</span><span class="st">"Hello World"</span>))</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>b64encode(serialized).decode()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="1">
-<pre><code>'/w9vUwdtZXNzYWdlUwtIZWxsbyBXb3JsZHsB'</code></pre>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> v8serialize <span class="im">import</span> dumps</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> v8serialize.jstypes <span class="im">import</span> JSObject, JSArray, JSUndefined</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>serialized <span class="op">=</span> dumps(</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    [</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">"strings 🧵🧶🪡"</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        <span class="dv">123</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">None</span>,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        JSUndefined,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        JSArray([(<span class="dv">0</span>, <span class="st">"a"</span>), (<span class="dv">1</span>, <span class="st">"b"</span>), (<span class="dv">123456789</span>, <span class="st">"sparse"</span>)]),</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        JSObject({<span class="st">"msg"</span>: <span class="st">"Hi"</span>}),</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">b"</span><span class="ch">\xc0\xff\xee</span><span class="st">"</span>,</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="dv">2</span><span class="op">**</span><span class="dv">128</span>,</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"maps"</span>: <span class="va">True</span>},</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"sets"</span>, <span class="st">"yes"</span>},</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        re.<span class="bu">compile</span>(<span class="vs">r"^\w+$"</span>),</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        datetime(<span class="dv">2024</span>, <span class="dv">1</span>, <span class="dv">1</span>, tzinfo<span class="op">=</span>UTC),</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(b64encode(serialized).decode())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>/w9BDFMUc3RyaW5ncyDwn6e18J+ntvCfqqFVezBfQQNBAlUAUwFhJAACQQJVAVMBYiQAAkECVZWa7zpTBnNwYXJzZSQAAiQAA29TA21zZ1MCSGl7AUIDwP/uWiIAAAAAAAAAAAAAAAAAAAAAATtTBG1hcHNUOgInUwRzZXRzUwN5ZXMsAlJTBV5cdyskgAJEAABAHyXMeEIkAAw=</code></pre>
 </div>
 </div>
 </section>
 <section id="deserialize-with-python" class="level2" data-number="2">
 <h2 data-number="2" class="anchored" data-anchor-id="deserialize-with-python"><span class="header-section-number">2</span> Deserialize with Python</h2>
-<div id="a13ba991" class="cell" data-execution_count="2">
+<div id="09799592" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> base64 <span class="im">import</span> b64decode</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> v8serialize <span class="im">import</span> loads</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>serialized <span class="op">=</span> b64decode(<span class="st">"/w9vUwdtZXNzYWdlUwtIZWxsbyBXb3JsZHsB"</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>loads(serialized)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="2">
-<pre><code>JSObject(message='Hello World')</code></pre>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># The output of the JavaScript example</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>serialized <span class="op">=</span> b64decode(</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"/w9BDGMccwB0AHIAaQBuAGcAcwAgAD7Y9d0+2PbdPtih3kn2ATBfYZaa7zpJACIBYUkCIgFiSaq03nUiBnNwYXJzZUADlprvOm8iA21zZyICSGl7AUIDwP/uWjAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAA7IgRtYXBzVDoCJyIDeWVzIgRzZXRzLAJSIgVeXHcrJIACRAAAQB8lzHhCJAAM"</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(loads(serialized))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>JSArray([
+  'strings 🧵🧶🪡',
+  123,
+  None,
+  JSUndefined,
+  JSArray({
+    0: 'a',
+    1: 'b',
+    123456789: 'sparse',
+  }),
+  JSObject(msg='Hi'),
+  JSArrayBuffer(b'\xc0\xff\xee'),
+  340282366920938463463374607431768211456,
+  JSMap({
+    'maps': True,
+  }),
+  JSSet([
+    'yes',
+    'sets',
+  ]),
+  JSRegExp(source='^\\w+$', flags=&lt;JSRegExpFlag.UnicodeSets: 256&gt;),
+  datetime.datetime(2024, 1, 1, 0, 0),
+])</code></pre>
 </div>
 </div>
+<p>Output:</p>
+<pre><code>JSArray([
+  'strings 🧵🧶🪡',
+  123,
+  None,
+  JSUndefined,
+  JSArray({
+    0: 'a',
+    1: 'b',
+    123456789: 'sparse',
+  }),
+  JSObject(msg='Hi'),
+  JSArrayBuffer(b'\xc0\xff\xee'),
+  340282366920938463463374607431768211456,
+  JSMap({
+    'maps': True,
+  }),
+  JSSet([
+    'yes',
+    'sets',
+  ]),
+  JSRegExp(source='^\\w+$', flags=&lt;JSRegExpFlag.UnicodeSets: 256&gt;),
+  datetime.datetime(2024, 1, 1, 0, 0),
+])</code></pre>
 </section>
 <section id="serialize-with-node.js-deno" class="level2" data-number="3">
 <h2 data-number="3" class="anchored" data-anchor-id="serialize-with-node.js-deno"><span class="header-section-number">3</span> Serialize with Node.js / Deno</h2>
-<div class="sourceCode" id="cb5"><pre class="sourceCode javascript code-with-copy"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="op">*</span> <span class="im">as</span> v8 <span class="im">from</span> <span class="st">'node:v8'</span><span class="op">;</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> buffer <span class="op">=</span> v8<span class="op">.</span><span class="fu">serialize</span>({<span class="dt">message</span><span class="op">:</span> <span class="st">'Hello World'</span>})<span class="op">;</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(buffer<span class="op">.</span><span class="fu">toString</span>(<span class="st">'base64'</span>))<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<pre><code>/w9vIgdtZXNzYWdlIgtIZWxsbyBXb3JsZHsB</code></pre>
+<div class="sourceCode" id="cb6"><pre class="sourceCode javascript code-with-copy"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="op">*</span> <span class="im">as</span> v8 <span class="im">from</span> <span class="st">'node:v8'</span><span class="op">;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sparseArray <span class="op">=</span> [<span class="st">'a'</span><span class="op">,</span> <span class="st">'b'</span>]<span class="op">;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>sparseArray[<span class="dv">123456789</span>] <span class="op">=</span> <span class="st">'sparse'</span><span class="op">;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> buffer <span class="op">=</span> v8<span class="op">.</span><span class="fu">serialize</span>([</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'strings 🧵🧶🪡'</span><span class="op">,</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="dv">123</span><span class="op">,</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">null</span><span class="op">,</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">undefined</span><span class="op">,</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    sparseArray<span class="op">,</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    {<span class="dt">msg</span><span class="op">:</span> <span class="st">'Hi'</span>}<span class="op">,</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Uint8Array</span><span class="op">.</span><span class="fu">from</span>([<span class="bn">0xc0</span><span class="op">,</span> <span class="bn">0xff</span><span class="op">,</span> <span class="bn">0xee</span>])<span class="op">.</span><span class="at">buffer</span><span class="op">,</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="dv">2</span>n<span class="op">**</span><span class="dv">128</span>n<span class="op">,</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="bu">Map</span>([[<span class="st">'maps'</span><span class="op">,</span> <span class="kw">true</span>]])<span class="op">,</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="bu">Set</span>([<span class="st">'yes'</span><span class="op">,</span> <span class="st">'sets'</span>])<span class="op">,</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="ss">/</span><span class="sc">^\w+$</span><span class="ss">/v</span><span class="op">,</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">new</span> <span class="bu">Date</span>(<span class="bu">Date</span><span class="op">.</span><span class="fu">UTC</span>(<span class="dv">2024</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">1</span>))<span class="op">,</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>])<span class="op">;</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(buffer<span class="op">.</span><span class="fu">toString</span>(<span class="st">'base64'</span>))<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>/w9BDGMccwB0AHIAaQBuAGcAcwAgAD7Y9d0+2PbdPtih3kn2ATBfYZaa7zpJACIBYUkCIgFiSaq03nUiBnNwYXJzZUADlprvOm8iA21zZyICSGl7AUIDwP/uWjAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAA7IgRtYXBzVDoCJyIDeWVzIgRzZXRzLAJSIgVeXHcrJIACRAAAQB8lzHhCJAAM</code></pre>
 </section>
 <section id="deserialize-with-node.js-deno" class="level2" data-number="4">
 <h2 data-number="4" class="anchored" data-anchor-id="deserialize-with-node.js-deno"><span class="header-section-number">4</span> Deserialize with Node.js / Deno</h2>
-<div class="sourceCode" id="cb7"><pre class="sourceCode javascript code-with-copy"><code class="sourceCode javascript"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="op">*</span> <span class="im">as</span> v8 <span class="im">from</span> <span class="st">'node:v8'</span><span class="op">;</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> buffer <span class="op">=</span> <span class="bu">Buffer</span><span class="op">.</span><span class="fu">from</span>(<span class="st">'/w9vIgdtZXNzYWdlIgtIZWxsbyBXb3JsZHsB'</span><span class="op">,</span> <span class="st">'base64'</span>)<span class="op">;</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(v8<span class="op">.</span><span class="fu">deserialize</span>(buffer))<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<pre><code>{ message: 'Hello World' }</code></pre>
+<div class="sourceCode" id="cb8"><pre class="sourceCode javascript code-with-copy"><code class="sourceCode javascript"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="op">*</span> <span class="im">as</span> v8 <span class="im">from</span> <span class="st">'node:v8'</span><span class="op">;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">// The output of the Python example</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> buffer <span class="op">=</span> <span class="bu">Buffer</span><span class="op">.</span><span class="fu">from</span>(<span class="st">'/w9BDFMUc3RyaW5ncyDwn6e18J+ntvCfqqFVezBfYZaa7zpVAFMBYVUBUwFiVZWa7zpTBnNwYXJzZUADlprvOm9TA21zZ1MCSGl7AUIDwP/uWiIAAAAAAAAAAAAAAAAAAAAAATtTBG1hcHNUOgInUwN5ZXNTBHNldHMsAlJTBV5cdyskgAJEAABAHyXMeEIkAAw='</span><span class="op">,</span> <span class="st">'base64'</span>)<span class="op">;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(v8<span class="op">.</span><span class="fu">deserialize</span>(buffer))<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>[
+  'strings 🧵🧶🪡',
+  123,
+  null,
+  undefined,
+  [ 'a', 'b', &lt;123456787 empty items&gt;, 'sparse' ],
+  { msg: 'Hi' },
+  ArrayBuffer { [Uint8Contents]: &lt;c0 ff ee&gt;, byteLength: 3 },
+  340282366920938463463374607431768211456n,
+  Map(1) { 'maps' =&gt; true },
+  Set(2) { 'yes', 'sets' },
+  /^\w+$/v,
+  2024-01-01T00:00:00.000Z
+]</code></pre>
 
 
 </section>
