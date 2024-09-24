@@ -8,11 +8,30 @@ For more details, see [the tutorials](../tutorials/js_to_py.qmd).
 ## Serialize with Python
 ```{python}
 from base64 import b64encode
-from v8serialize import dumps
-from v8serialize.jstypes import JSObject
+from datetime import datetime, UTC
+import re
 
-serialized = dumps(JSObject(message="Hello World"))
-b64encode(serialized).decode()
+from v8serialize import dumps
+from v8serialize.jstypes import JSObject, JSArray, JSUndefined
+
+serialized = dumps(
+    [
+        "strings 🧵🧶🪡",
+        123,
+        None,
+        JSUndefined,
+        JSArray([(0, "a"), (1, "b"), (123456789, "sparse")]),
+        JSObject({"msg": "Hi"}),
+        b"\xc0\xff\xee",
+        2**128,
+        {"maps": True},
+        {"sets", "yes"},
+        re.compile(r"^\w+$"),
+        datetime(2024, 1, 1, tzinfo=UTC),
+    ]
+)
+
+print(b64encode(serialized).decode())
 ```
 
 ## Deserialize with Python
@@ -20,8 +39,37 @@ b64encode(serialized).decode()
 from base64 import b64decode
 from v8serialize import loads
 
-serialized = b64decode("/w9vUwdtZXNzYWdlUwtIZWxsbyBXb3JsZHsB")
-loads(serialized)
+# The output of the JavaScript example
+serialized = b64decode(
+    "/w9BDGMccwB0AHIAaQBuAGcAcwAgAD7Y9d0+2PbdPtih3kn2ATBfYZaa7zpJACIBYUkCIgFiSaq03nUiBnNwYXJzZUADlprvOm8iA21zZyICSGl7AUIDwP/uWjAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAA7IgRtYXBzVDoCJyIDeWVzIgRzZXRzLAJSIgVeXHcrJIACRAAAQB8lzHhCJAAM"
+)
+print(loads(serialized))
+```
+Output:
+```
+JSArray([
+  'strings 🧵🧶🪡',
+  123,
+  None,
+  JSUndefined,
+  JSArray({
+    0: 'a',
+    1: 'b',
+    123456789: 'sparse',
+  }),
+  JSObject(msg='Hi'),
+  JSArrayBuffer(b'\xc0\xff\xee'),
+  340282366920938463463374607431768211456,
+  JSMap({
+    'maps': True,
+  }),
+  JSSet([
+    'yes',
+    'sets',
+  ]),
+  JSRegExp(source='^\\w+$', flags=<JSRegExpFlag.UnicodeSets: 256>),
+  datetime.datetime(2024, 1, 1, 0, 0),
+])
 ```
 
 
@@ -30,11 +78,28 @@ loads(serialized)
 ```javascript
 import * as v8 from 'node:v8';
 
-const buffer = v8.serialize({message: 'Hello World'});
+const sparseArray = ['a', 'b'];
+sparseArray[123456789] = 'sparse';
+
+const buffer = v8.serialize([
+    'strings 🧵🧶🪡',
+    123,
+    null,
+    undefined,
+    sparseArray,
+    {msg: 'Hi'},
+    Uint8Array.from([0xc0, 0xff, 0xee]).buffer,
+    2n**128n,
+    new Map([['maps', true]]),
+    new Set(['yes', 'sets']),
+    /^\w+$/v,
+    new Date(Date.UTC(2024, 0, 1)),
+]);
+
 console.log(buffer.toString('base64'));
 ```
 ```
-/w9vIgdtZXNzYWdlIgtIZWxsbyBXb3JsZHsB
+/w9BDGMccwB0AHIAaQBuAGcAcwAgAD7Y9d0+2PbdPtih3kn2ATBfYZaa7zpJACIBYUkCIgFiSaq03nUiBnNwYXJzZUADlprvOm8iA21zZyICSGl7AUIDwP/uWjAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAA7IgRtYXBzVDoCJyIDeWVzIgRzZXRzLAJSIgVeXHcrJIACRAAAQB8lzHhCJAAM
 ```
 
 ## Deserialize with Node.js / Deno
@@ -42,9 +107,23 @@ console.log(buffer.toString('base64'));
 ```javascript
 import * as v8 from 'node:v8';
 
-const buffer = Buffer.from('/w9vIgdtZXNzYWdlIgtIZWxsbyBXb3JsZHsB', 'base64');
+// The output of the Python example
+const buffer = Buffer.from('/w9BDFMUc3RyaW5ncyDwn6e18J+ntvCfqqFVezBfYZaa7zpVAFMBYVUBUwFiVZWa7zpTBnNwYXJzZUADlprvOm9TA21zZ1MCSGl7AUIDwP/uWiIAAAAAAAAAAAAAAAAAAAAAATtTBG1hcHNUOgInUwN5ZXNTBHNldHMsAlJTBV5cdyskgAJEAABAHyXMeEIkAAw=', 'base64');
 console.log(v8.deserialize(buffer));
 ```
 ```
-{ message: 'Hello World' }
+[
+  'strings 🧵🧶🪡',
+  123,
+  null,
+  undefined,
+  [ 'a', 'b', <123456787 empty items>, 'sparse' ],
+  { msg: 'Hi' },
+  ArrayBuffer { [Uint8Contents]: <c0 ff ee>, byteLength: 3 },
+  340282366920938463463374607431768211456n,
+  Map(1) { 'maps' => true },
+  Set(2) { 'yes', 'sets' },
+  /^\w+$/v,
+  2024-01-01T00:00:00.000Z
+]
 ```
