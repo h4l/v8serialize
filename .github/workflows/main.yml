@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  ECHOSERVER_VERSION: 0.2.0
+  ECHOSERVER_VERSION: 0.3.0
 
 jobs:
   prepare_checks:

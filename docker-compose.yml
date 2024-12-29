@@ -28,9 +28,12 @@ services:
     environment:
       V8SERIALIZE_ECHOSERVERS: "${V8SERIALIZE_ECHOSERVERS:-__required_but_not_set__}"
     depends_on:
-      - echoserver-node-22
-      - echoserver-node-18
-      - echoserver-deno
+      echoserver-node-22:
+        condition: service_healthy
+      echoserver-node-18:
+        condition: service_healthy
+      echoserver-deno:
+        condition: service_healthy
     command: pytest -m integration -vv
     volumes:
       - .:${WORKSPACE_MOUNT_PATH:-/workspace}
