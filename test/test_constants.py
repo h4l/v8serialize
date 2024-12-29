@@ -134,11 +134,7 @@ def test_SerializationFeature__for_name() -> None:
         (Version("10.6.0"), SerializationFeature.MaxCompatibility),
         (Version("10.7.123"), SerializationFeature.RegExpUnicodeSets),
         ("10.7.123", SerializationFeature.RegExpUnicodeSets),
-        (
-            Version("15.0.0"),
-            # Float16Array cannot be included as its version is not released
-            ~SerializationFeature.Float16Array,
-        ),
+        (Version("13.1.201"), ~SerializationFeature.MaxCompatibility),
         (SymbolicVersion.Unreleased, ~SerializationFeature.MaxCompatibility),
     ],
 )

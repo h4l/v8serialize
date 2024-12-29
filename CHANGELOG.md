@@ -8,7 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- Marked SerializationFeature.Float16Array as released from V8 13.1.201 (was
+  marked as unreleased).
 
 ## [0.1.0] - 2024-09-24
 

@@ -547,7 +547,7 @@ https://github.com/v8/v8/commit/5ff265b202a593d7f45348c2a3f0d4dd5fdff74e)
     if this happens.
     """
 
-    Float16Array = 8, SymbolicVersion.Unreleased
+    Float16Array = 8, "13.1.201"
     """
     Support for encoding typed array views holding Float16 elements.
 
