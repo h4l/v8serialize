@@ -14,6 +14,7 @@ from v8serialize.jstypes._repr import js_repr_settings as js_repr_settings
 from v8serialize.jstypes.jsarray import JSArray as JSArray
 from v8serialize.jstypes.jsarrayproperties import JSHole as JSHole
 from v8serialize.jstypes.jsarrayproperties import JSHoleType as JSHoleType
+from v8serialize.jstypes.jsbigint import JSBigInt as JSBigInt
 from v8serialize.jstypes.jsbuffers import (
     ArrayBufferViewStructFormat as ArrayBufferViewStructFormat,
 )
