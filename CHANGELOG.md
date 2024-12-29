@@ -11,7 +11,7 @@ and this project adheres to
 ### Added
 
 - Marked SerializationFeature.Float16Array as released from V8 13.1.201 (was
-  marked as unreleased).
+  marked as unreleased). ([#3](https://github.com/h4l/v8serialize/pull/3))
 
 ## [0.1.0] - 2024-09-24
 
