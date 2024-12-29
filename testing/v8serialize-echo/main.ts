@@ -5,7 +5,7 @@ import consumers from "node:stream/consumers";
 import { inspect } from "node:util";
 import v8 from "node:v8";
 
-export const ECHOSERVER_VERSION = "0.2.0";
+export const ECHOSERVER_VERSION = "0.3.0";
 
 function parseSettings() {
   const logWithColor: boolean = env.V8SERIALIZE_LOG_WITH_COLOR === "true";

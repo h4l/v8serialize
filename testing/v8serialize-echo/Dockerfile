@@ -2,6 +2,7 @@ ARG DENO_VERSION NODE_VERSION DNT_NODE_VERSION DNT_DENO_VERSION
 
 FROM denoland/deno:${DENO_VERSION:-alpine} AS echoserver-deno
 
+RUN apk add --no-cache curl
 COPY main.ts .
 USER deno
 
@@ -14,6 +15,10 @@ ENV V8SERIALIZE_LOG_WITH_COLOR=true \
 EXPOSE 8000
 
 CMD ["run", "--no-remote", "--allow-net", "--allow-env", "main.ts"]
+
+HEALTHCHECK --start-period=20s --start-interval=1s \
+  CMD curl --fail --silent --show-error -o /dev/null \
+    "http://localhost:${V8SERIALIZE_PORT:?}/?healthcheck"
 
 
 FROM denoland/deno:bin-${DNT_DENO_VERSION:-latest} AS dnt-deno
@@ -33,7 +38,7 @@ RUN npm pack ./npm
 FROM node:${NODE_VERSION:-alpine} AS echoserver-node
 ARG ECHOSERVER_VERSION
 
-RUN apk add --no-cache tini
+RUN apk add --no-cache tini curl
 WORKDIR /app
 
 RUN --mount=from=npm-package,source=/build/,target=/build/ \
@@ -50,3 +55,7 @@ USER node
 
 ENTRYPOINT ["/sbin/tini", "--", "docker-entrypoint.sh"]
 CMD ["-e", "require('v8serialize-echoserver').main()"]
+
+HEALTHCHECK --start-period=20s --start-interval=1s \
+  CMD curl --fail --silent --show-error -o /dev/null \
+    "http://localhost:${V8SERIALIZE_PORT:?}/?healthcheck"
