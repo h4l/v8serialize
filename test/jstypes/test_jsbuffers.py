@@ -7,10 +7,11 @@ import sys
 from array import array
 from dataclasses import FrozenInstanceError
 from typing import TYPE_CHECKING
-from typing_extensions import Literal
+from typing_extensions import Literal, assert_type
 
 import pytest
 
+from test.utils import typeval
 from v8serialize._pycompat.re import RegexFlag
 from v8serialize.constants import ArrayBufferViewTag
 from v8serialize.jstypes.jsbuffers import (
@@ -50,6 +51,18 @@ def test_DataType() -> None:
     assert DataType.Bytes.python_type is bytes
 
 
+def test_DataType_cast() -> None:
+    float32 = DataFormat.resolve(data_type=DataType.Float, byte_length=4)
+
+    # Types work when casting directly from DataType instances, but not yet from
+    # DataFormat.cast().
+    assert typeval(
+        assert_type(
+            DataType.Float.cast(memoryview(b"\x00" * 4), data_format=float32)[0], float
+        )
+    ) == (float, 0.0)
+
+
 def test_DataFormat() -> None:
     uint64 = DataFormat.resolve(data_type=DataType.UnsignedInt, byte_length=8).format
     assert struct.calcsize(uint64) == 8
@@ -71,6 +84,26 @@ def test_DataFormat() -> None:
         ValueError, match=r"DataType UnsignedInt has no struct_format of byte_length 3"
     ):
         DataFormat.resolve(data_type=DataType.UnsignedInt, byte_length=3)
+
+
+def test_DataFormat_cast() -> None:
+    view = memoryview(bytes(b"\x00" * 8))
+    uint64 = DataFormat.resolve(data_type=DataType.UnsignedInt, byte_length=8)
+    int32 = DataFormat.resolve(data_type=DataType.SignedInt, byte_length=4)
+    float64 = DataFormat.resolve(data_type=DataType.Float, byte_length=8)
+    bytesfmt = DataFormat.resolve(data_type=DataType.Bytes, byte_length=1)
+
+    # FIXME: make the generic types work
+    assert typeval(assert_type(uint64.cast(view)[0], "int | float | bytes")) == (int, 0)
+    assert typeval(assert_type(int32.cast(view)[0], "int | float | bytes")) == (int, 0)
+    assert typeval(assert_type(float64.cast(view)[0], "int | float | bytes")) == (
+        float,
+        0.0,
+    )
+    assert typeval(assert_type(bytesfmt.cast(view)[0], "int | float | bytes")) == (
+        bytes,
+        b"\x00",
+    )
 
 
 def test_ArrayBufferViewStructFormat() -> None:

@@ -329,8 +329,48 @@ class DataType(Enum):
         obj.struct_formats = struct_formats
         return obj
 
+    @overload
+    def cast(  # type: ignore[misc]
+        self: Literal[DataType.UnsignedInt, DataType.SignedInt],
+        view: memoryview,
+        *,
+        data_format: DataFormat,
+    ) -> memoryview[int]: ...
+
+    @overload
+    def cast(  # type: ignore[misc]
+        self: Literal[DataType.Float],
+        view: memoryview,
+        *,
+        data_format: DataFormat,
+    ) -> memoryview[float]: ...
+
+    @overload
+    def cast(  # type: ignore[misc]
+        self: Literal[DataType.Bytes],
+        view: memoryview,
+        *,
+        data_format: DataFormat,
+    ) -> memoryview[bytes]: ...
+
+    def cast(
+        self, view: memoryview, *, data_format: DataFormat
+    ) -> memoryview[int] | memoryview[float] | memoryview[bytes]:
+        if data_format.data_type is not self:
+            raise TypeError(
+                "data_format.data_type must be the DataType cast() is called on"
+            )
+        assert data_format.format in self.struct_formats
+        format = cast(Literal["c", "f", "b"], data_format.format)
+        return view.cast(format)
+
     def __repr__(self) -> str:
         return f"{type(self).__name__}.{self._name_}"
+
+
+AnyDataType = Literal[
+    DataType.UnsignedInt, DataType.SignedInt, DataType.Float, DataType.Bytes
+]
 
 
 @dataclass(frozen=True, **slots_if310())
@@ -341,11 +381,11 @@ class DataFormat:
     """
 
     byte_length: int
-    data_type: DataType
+    data_type: AnyDataType
     format: str
 
     @classmethod
-    def resolve(cls, *, data_type: DataType, byte_length: int) -> Self:
+    def resolve(cls, *, data_type: AnyDataType, byte_length: int) -> Self:
         """
         Find the struct format on this platform with a given size and data type.
 
@@ -380,6 +420,11 @@ class DataFormat:
                 f"byte_length {byte_length}"
             )
         return cls(data_type=data_type, format=format, byte_length=byte_length)
+
+    def cast(
+        self, view: memoryview[Any]
+    ) -> memoryview[int] | memoryview[float] | memoryview[bytes]:
+        return self.data_type.cast(view, data_format=self)  # type: ignore[misc]
 
 
 @dataclass(frozen=True, **slots_if310())
@@ -666,7 +711,7 @@ else:
 
 
 class JSTypedArray(
-    JSArrayBufferView[JSArrayBufferT, memoryview],
+    JSArrayBufferView[JSArrayBufferT, "memoryview[Any]"],
     AnyArrayBufferView,
     Generic[JSArrayBufferT, ViewTagT],
 ):
@@ -693,11 +738,13 @@ JavaScript/Reference/Global_Objects/TypedArray
     element_type: ClassVar[type[int | float]]
     """The Python type of this view's individual indexes."""
 
-    # FIXME: memoryview is generic in typeshed, but mypy errors if I give it the
-    #  ElementT annotation (should match cls.element_type)
+    # FIXME: should be possible to make the memoryview's generic element type
+    #        carry through from the instance's DataFormat. Is it worth all the
+    #        hoop-jumping though? Might just be painful for client code to
+    #        annotate their use correctly.
     def get_buffer(
         self, *, readonly: Literal[True] | None = None
-    ) -> ContextManager[memoryview]:
+    ) -> ContextManager[memoryview[Any]]:
         r"""
         Get a context manager that provides this view's region as a `memoryview`.
 
@@ -708,9 +755,7 @@ JavaScript/Reference/Global_Objects/TypedArray
         ...     print(mv[0], mv[1])
         255 128
         """
-        return self.get_buffer_as_memoryview(readonly=readonly).cast(
-            self.data_format.format
-        )
+        return self.data_format.cast(self.get_buffer_as_memoryview(readonly=readonly))
 
 
 class JSInt8Array(JSTypedArray[JSArrayBufferT, Literal[ArrayBufferViewTag.kInt8Array]]):
@@ -818,7 +863,7 @@ class BackportJSFloat16Array(JSFloat16Array):
     @contextmanager
     def get_buffer(
         self, *, readonly: Literal[True] | None = None
-    ) -> Generator[memoryview]:
+    ) -> Generator[memoryview[Any]]:
         with self.get_buffer_as_memoryview(readonly=readonly) as buffer:
             assert buffer.ndim == 1
             assert buffer.itemsize == 1
@@ -852,7 +897,8 @@ class BackportJSFloat16Array(JSFloat16Array):
 # can't use half floats in memoryview.
 MemoryviewJSFloat16Array: type[JSFloat16Array] = JSFloat16Array
 try:
-    memoryview(b"").cast("e")
+    # annotations don't know about the 'e' float16 format
+    memoryview(b"").cast(cast(Literal["f"], "e"))
 except ValueError:
     JSFloat16Array = BackportJSFloat16Array  # type: ignore[misc, assignment]
 
