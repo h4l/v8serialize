@@ -406,12 +406,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="v8serialize.jstypes.JSMap" class="level1">
 <h1>jstypes.JSMap</h1>
-<p><code>jstypes.JSMap(self, init=None, **kwargs)</code></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSMap(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    init: SupportsKeysAndGetItem[KT, VT] <span class="op">|</span> Iterable[<span class="bu">tuple</span>[KT, VT]] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs: VT,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A Python equivalent of <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map">JavaScript’s Map</a>.</p>
 <p><code>JSMap</code> is a <a href="https://docs.python.org/3/glossary.html#term-mapping">Mapping</a> that uses object identity rather than <code>==</code> for key equality, and allows keys which are not <a href="https://docs.python.org/3/glossary.html#term-hashable">hashable</a>.</p>
 <p><code>JSMap</code> replicates the behaviour of <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map">JavaScript’s Map</a> type, which considers keys equal by the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness#same-value-zero_equality">same-value-zero</a> rules (very close to <code>Object.is()</code> / <code>===</code>).</p>
-<section id="parameters" class="level2">
-<h2 class="anchored" data-anchor-id="parameters">Parameters</h2>
+<section id="parameters" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -423,13 +427,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>init</code></td>
+<td>init</td>
 <td><code>SupportsKeysAndGetItem</code>[<code>KT</code>, <code>VT</code>] | <a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable">Iterable</a>[<a href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<code>KT</code>, <code>VT</code>]] | None</td>
 <td>Another Mapping to copy items from, or a series of <code>(key, value)</code> pairs.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="even">
-<td><code>kwargs</code></td>
+<td>kwargs</td>
 <td><code>VT</code></td>
 <td>Keyword arguments become items, and override items from <code>init</code> if names occur in both.</td>
 <td><code>{}</code></td>
@@ -437,58 +441,58 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="notes" class="level2">
-<h2 class="anchored" data-anchor-id="notes">Notes</h2>
+<section id="notes" class="level2 doc-section doc-section-notes">
+<h2 class="doc-section doc-section-notes anchored" data-anchor-id="notes">Notes</h2>
 <p><code>JSMap</code> must be initialized using an iterable of item pairs instead of a <code>dict</code> if any keys are non-hashable or are equal using <code>==</code>.</p>
 </section>
-<section id="see-also" class="level2">
-<h2 class="anchored" data-anchor-id="see-also">See Also</h2>
+<section id="see-also" class="level2 doc-section doc-section-see-also">
+<h2 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also">See Also</h2>
 <p><a href="../reference/javascript_utils.html#v8serialize.jstypes.same_value_zero"><code>jstypes.same_value_zero</code></a> : A key function that provides same-value-zero equality.</p>
 </section>
-<section id="examples" class="level2">
-<h2 class="anchored" data-anchor-id="examples">Examples</h2>
+<section id="examples" class="level2 doc-section doc-section-examples">
+<h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
 <p>JSMap is like a Python dict, but as in JavaScript, any object can be a JSMap key — keys don’t need to be hashable.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize.jstypes <span class="im">import</span> JSObject</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> bob, alice <span class="op">=</span> JSObject(name<span class="op">=</span><span class="st">"Bob"</span>), JSObject(name<span class="op">=</span><span class="st">"Alice"</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> m <span class="op">=</span> JSMap([(bob, <span class="dv">1</span>), (alice, <span class="dv">2</span>)])</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> m</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>JSMap([(JSObject(name<span class="op">=</span><span class="st">'Bob'</span>), <span class="dv">1</span>), (JSObject(name<span class="op">=</span><span class="st">'Alice'</span>), <span class="dv">2</span>)])</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> m[alice]</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize.jstypes <span class="im">import</span> JSObject</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> bob, alice <span class="op">=</span> JSObject(name<span class="op">=</span><span class="st">"Bob"</span>), JSObject(name<span class="op">=</span><span class="st">"Alice"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> m <span class="op">=</span> JSMap([(bob, <span class="dv">1</span>), (alice, <span class="dv">2</span>)])</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> m</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>JSMap([(JSObject(name<span class="op">=</span><span class="st">'Bob'</span>), <span class="dv">1</span>), (JSObject(name<span class="op">=</span><span class="st">'Alice'</span>), <span class="dv">2</span>)])</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> m[alice]</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Equality between JSMap instances works as if you compared a list of both map’s items. When comparing JSMap to normal Python <code>dict</code>, equality works as if the JSMap was a normal dict — order does not matter and the number of items must be equal. Same-value-zero is only used for internally matching keys, not for external equality.</p>
 <p>Equality examples:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a, b <span class="op">=</span> <span class="bu">bytearray</span>(), <span class="bu">bytearray</span>()  <span class="co"># non-hashable but supports ==</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">assert</span> a <span class="op">==</span> b</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">assert</span> a <span class="kw">is</span> <span class="kw">not</span> b</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a, b <span class="op">=</span> <span class="bu">bytearray</span>(), <span class="bu">bytearray</span>()  <span class="co"># non-hashable but supports ==</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">assert</span> a <span class="op">==</span> b</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">assert</span> a <span class="kw">is</span> <span class="kw">not</span> b</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Because a and b are equal, lists containing them in different orders are equal:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> [a, b] <span class="op">==</span> [b, a]</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> [a, b] <span class="op">==</span> [b, a]</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Equality between two JSMaps behaves like the list of items (JSMaps remember insertion order):</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> JSMap([(a, <span class="dv">0</span>), (b, <span class="dv">0</span>)]) <span class="op">==</span> JSMap([(a, <span class="dv">0</span>), (b, <span class="dv">0</span>)])</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> JSMap([(a, <span class="dv">0</span>), (b, <span class="dv">0</span>)]) <span class="op">==</span> JSMap([(b, <span class="dv">0</span>), (a, <span class="dv">0</span>)])</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> JSMap([(a, <span class="dv">0</span>), (a, <span class="dv">0</span>)]) <span class="op">==</span> JSMap([(b, <span class="dv">0</span>), (b, <span class="dv">0</span>)])</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> JSMap([(a, <span class="dv">0</span>), (b, <span class="dv">0</span>)]) <span class="op">==</span> JSMap([(a, <span class="dv">0</span>), (b, <span class="dv">0</span>)])</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> JSMap([(a, <span class="dv">0</span>), (b, <span class="dv">0</span>)]) <span class="op">==</span> JSMap([(b, <span class="dv">0</span>), (a, <span class="dv">0</span>)])</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> JSMap([(a, <span class="dv">0</span>), (a, <span class="dv">0</span>)]) <span class="op">==</span> JSMap([(b, <span class="dv">0</span>), (b, <span class="dv">0</span>)])</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>These behave like:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">list</span>(JSMap([(a, <span class="dv">0</span>), (b, <span class="dv">0</span>)]).items()) <span class="op">==</span> [(b, <span class="dv">0</span>), (a, <span class="dv">0</span>)]</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">list</span>(JSMap([(a, <span class="dv">0</span>), (b, <span class="dv">0</span>)]).items()) <span class="op">==</span> [(b, <span class="dv">0</span>), (a, <span class="dv">0</span>)]</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Equality between a JSMap and a normal <code>dict</code> behaves as if the JSMap was a normal dict. The maps must have the same number of items.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="co"># hashable, distinct instances</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> x, y, z <span class="op">=</span> <span class="bu">tuple</span>([<span class="dv">0</span>]), <span class="bu">tuple</span>([<span class="dv">0</span>]), <span class="bu">tuple</span>([<span class="dv">0</span>])</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">assert</span> x <span class="op">==</span> y <span class="kw">and</span> y <span class="op">==</span> z</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">assert</span> x <span class="kw">is</span> <span class="kw">not</span> y <span class="kw">and</span> y <span class="kw">is</span> <span class="kw">not</span> z</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> jsm_dup, jsm_no_dup <span class="op">=</span> JSMap([(x, <span class="dv">0</span>), (y, <span class="dv">0</span>)]), JSMap([(x, <span class="dv">0</span>)])</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> m <span class="op">=</span> <span class="bu">dict</span>([(y, <span class="dv">0</span>), (z, <span class="dv">0</span>)])</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> jsm_dup, jsm_no_dup, m</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>(JSMap([((<span class="dv">0</span>,), <span class="dv">0</span>), ((<span class="dv">0</span>,), <span class="dv">0</span>)]), JSMap({(<span class="dv">0</span>,): <span class="dv">0</span>}), {(<span class="dv">0</span>,): <span class="dv">0</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> jsm_no_dup <span class="op">==</span> m</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> jsm_dup <span class="op">==</span> m  <span class="co"># different number of members</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="co"># hashable, distinct instances</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> x, y, z <span class="op">=</span> <span class="bu">tuple</span>([<span class="dv">0</span>]), <span class="bu">tuple</span>([<span class="dv">0</span>]), <span class="bu">tuple</span>([<span class="dv">0</span>])</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">assert</span> x <span class="op">==</span> y <span class="kw">and</span> y <span class="op">==</span> z</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">assert</span> x <span class="kw">is</span> <span class="kw">not</span> y <span class="kw">and</span> y <span class="kw">is</span> <span class="kw">not</span> z</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> jsm_dup, jsm_no_dup <span class="op">=</span> JSMap([(x, <span class="dv">0</span>), (y, <span class="dv">0</span>)]), JSMap([(x, <span class="dv">0</span>)])</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> m <span class="op">=</span> <span class="bu">dict</span>([(y, <span class="dv">0</span>), (z, <span class="dv">0</span>)])</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> jsm_dup, jsm_no_dup, m</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>(JSMap([((<span class="dv">0</span>,), <span class="dv">0</span>), ((<span class="dv">0</span>,), <span class="dv">0</span>)]), JSMap({(<span class="dv">0</span>,): <span class="dv">0</span>}), {(<span class="dv">0</span>,): <span class="dv">0</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> jsm_no_dup <span class="op">==</span> m</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> jsm_dup <span class="op">==</span> m  <span class="co"># different number of members</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Equivalent to</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">dict</span>([(x, <span class="dv">0</span>)]) <span class="op">==</span> <span class="bu">dict</span>([(y, <span class="dv">0</span>), (z, <span class="dv">0</span>)])</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">dict</span>([(x, <span class="dv">0</span>)]) <span class="op">==</span> <span class="bu">dict</span>([(y, <span class="dv">0</span>), (z, <span class="dv">0</span>)])</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="methods" class="level2">
 <h2 class="anchored" data-anchor-id="methods">Methods</h2>
@@ -516,26 +520,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="v8serialize.jstypes.JSMap.clear" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSMap.clear">clear</h3>
-<p><code>jstypes.JSMap.clear()</code></p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSMap.clear()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSMap.get" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSMap.get">get</h3>
-<p><code>jstypes.JSMap.get(key, /, default=None)</code></p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSMap.get(key: KT, <span class="op">/</span>, default: U <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSMap.update" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSMap.update">update</h3>
-<p><code>jstypes.JSMap.update(other=(), /, **kwds)</code></p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSMap.update(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    other: SupportsKeysAndGetItem[KT, VT] <span class="op">|</span> Iterable[<span class="bu">tuple</span>[KT, VT]] <span class="op">=</span> (),</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwds: VT,</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 </section>
 <section id="v8serialize.jstypes.JSSet" class="level1">
 <h1>jstypes.JSSet</h1>
-<p><code>jstypes.JSSet(self, iterable=None, /)</code></p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSSet(<span class="va">self</span>, iterable: Iterable[T] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>, <span class="op">/</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A Python equivalent of <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set">JavaScript’s Set</a>.</p>
 <p><code>JSSet</code> is a <a href="https://docs.python.org/3/library/stdtypes.html#types-set">Python set</a> that uses object identity rather than <code>==</code> for member equality, and allows members which are not <a href="https://docs.python.org/3/glossary.html#term-hashable">hashable</a>.</p>
 <p><code>JSSet</code> replicates the behaviour of <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set">JavaScript’s Set</a> type, which considers members equal by the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness#same-value-zero_equality">same-value-zero</a> rules (very close to <code>Object.is()</code> / <code>===</code>).</p>
-<section id="parameters-1" class="level2">
-<h2 class="anchored" data-anchor-id="parameters-1">Parameters</h2>
+<section id="parameters-1" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -547,7 +555,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>iterable</code></td>
+<td>iterable</td>
 <td><a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable">Iterable</a>[<code>T</code>] | None</td>
 <td>Items to initialize the <code>JSSet</code> with. Can be empty or not specified.</td>
 <td><code>None</code></td>
@@ -555,47 +563,47 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="notes-1" class="level2">
-<h2 class="anchored" data-anchor-id="notes-1">Notes</h2>
+<section id="notes-1" class="level2 doc-section doc-section-notes">
+<h2 class="doc-section doc-section-notes anchored" data-anchor-id="notes-1">Notes</h2>
 <p><code>JSSet</code> must be initialized using an iterable or regular list instead of a <code>set</code> if any keys are non-hashable or are equal using <code>==</code>.</p>
 </section>
-<section id="see-also-1" class="level2">
-<h2 class="anchored" data-anchor-id="see-also-1">See Also</h2>
+<section id="see-also-1" class="level2 doc-section doc-section-see-also">
+<h2 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also-1">See Also</h2>
 <p><a href="../reference/javascript_utils.html#v8serialize.jstypes.same_value_zero"><code>jstypes.same_value_zero</code></a> : A key function that provides same-value-zero equality.</p>
 </section>
-<section id="examples-1" class="level2">
-<h2 class="anchored" data-anchor-id="examples-1">Examples</h2>
+<section id="examples-1" class="level2 doc-section doc-section-examples">
+<h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples-1">Examples</h2>
 <p>Equality between JSSet instances works as if you compared a list of both set’s elements. When comparing JSSet to a normal Python <code>set</code>, equality works as if the JSSet was a regular set — order does not matter and the number of elements must be equal. Same-value-zero is only used for internal membership checks, not for external equality.</p>
 <p>Equality examples:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a, b <span class="op">=</span> <span class="bu">bytearray</span>(), <span class="bu">bytearray</span>()  <span class="co"># non-hashable</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">assert</span> a <span class="op">==</span> b</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">assert</span> a <span class="kw">is</span> <span class="kw">not</span> b</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a, b <span class="op">=</span> <span class="bu">bytearray</span>(), <span class="bu">bytearray</span>()  <span class="co"># non-hashable</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">assert</span> a <span class="op">==</span> b</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">assert</span> a <span class="kw">is</span> <span class="kw">not</span> b</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Equality between two JSSets behaves like the list of members (JSSets remember insertion order):</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> JSSet([a, b]) <span class="op">==</span> JSSet([a, b])</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> JSSet([a, b]) <span class="op">==</span> JSSet([b, a])</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> JSSet([a, a]) <span class="op">==</span> JSSet([b, b])</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> JSSet([a, b]) <span class="op">==</span> JSSet([a, b])</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> JSSet([a, b]) <span class="op">==</span> JSSet([b, a])</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> JSSet([a, a]) <span class="op">==</span> JSSet([b, b])</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>These behave like:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">list</span>(JSSet([a, b])) <span class="op">==</span> [b, a]</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">list</span>(JSSet([a, b])) <span class="op">==</span> [b, a]</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Equality between a JSSet and a normal <code>set</code> behaves as if the JSSet was a normal set. The sets must have the same number of members.</p>
 <p>Note that if there are non-hashable members, the sets can’t be equal, as normal sets cannot contain non-hashable members.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="co"># hashable, distinct instances</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> x, y, z <span class="op">=</span> <span class="bu">tuple</span>([<span class="dv">0</span>]), <span class="bu">tuple</span>([<span class="dv">0</span>]), <span class="bu">tuple</span>([<span class="dv">0</span>])</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">assert</span> x <span class="op">==</span> y <span class="kw">and</span> y <span class="op">==</span> z</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">assert</span> x <span class="kw">is</span> <span class="kw">not</span> y <span class="kw">and</span> y <span class="kw">is</span> <span class="kw">not</span> z</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> jss_dup, jss_no_dup, s <span class="op">=</span> JSSet([x, y]), JSSet([x]), <span class="bu">set</span>([y, z])</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> jss_dup, jss_no_dup, s</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>(JSSet([(<span class="dv">0</span>,), (<span class="dv">0</span>,)]), JSSet([(<span class="dv">0</span>,)]), {(<span class="dv">0</span>,)})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> jss_no_dup <span class="op">==</span> s</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> jss_dup <span class="op">==</span> s  <span class="co"># different number of members</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="co"># hashable, distinct instances</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> x, y, z <span class="op">=</span> <span class="bu">tuple</span>([<span class="dv">0</span>]), <span class="bu">tuple</span>([<span class="dv">0</span>]), <span class="bu">tuple</span>([<span class="dv">0</span>])</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">assert</span> x <span class="op">==</span> y <span class="kw">and</span> y <span class="op">==</span> z</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">assert</span> x <span class="kw">is</span> <span class="kw">not</span> y <span class="kw">and</span> y <span class="kw">is</span> <span class="kw">not</span> z</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> jss_dup, jss_no_dup, s <span class="op">=</span> JSSet([x, y]), JSSet([x]), <span class="bu">set</span>([y, z])</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> jss_dup, jss_no_dup, s</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>(JSSet([(<span class="dv">0</span>,), (<span class="dv">0</span>,)]), JSSet([(<span class="dv">0</span>,)]), {(<span class="dv">0</span>,)})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> jss_no_dup <span class="op">==</span> s</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> jss_dup <span class="op">==</span> s  <span class="co"># different number of members</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Equivalent to</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">set</span>([x]) <span class="op">==</span> <span class="bu">set</span>([y, z])</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">set</span>([x]) <span class="op">==</span> <span class="bu">set</span>([y, z])</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="methods-1" class="level2">
 <h2 class="anchored" data-anchor-id="methods-1">Methods</h2>
@@ -623,15 +631,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="v8serialize.jstypes.JSSet.add" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSSet.add">add</h3>
-<p><code>jstypes.JSSet.add(value)</code></p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSSet.add(value: T)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSSet.clear" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSSet.clear">clear</h3>
-<p><code>jstypes.JSSet.clear()</code></p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSSet.clear()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSSet.discard" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSSet.discard">discard</h3>
-<p><code>jstypes.JSSet.discard(value)</code></p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSSet.discard(value: T)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 
 </section>

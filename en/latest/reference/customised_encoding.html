@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -435,7 +469,12 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.encode.serialize_object_references" class="level1">
 <h1>encode.serialize_object_references</h1>
-<p><code>encode.serialize_object_references(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>encode.serialize_object_references(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">object</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Serialize references to previously-seen objects instead of duplicating them.</p>
 <p>Objects that have already been written to the stream are written as references to the original instance. This:</p>
 <ul>
@@ -443,14 +482,14 @@ ul.task-list li input[type="checkbox"] {
 <li>Preserves object identity after de-serializing.</li>
 <li>Allows cyclic object hierarchies to be serialized and deserialized without causing infinite loops.</li>
 </ul>
-<section id="notes" class="level2">
-<h2 class="anchored" data-anchor-id="notes">Notes</h2>
+<section id="notes" class="level2 doc-section doc-section-notes">
+<h2 class="doc-section doc-section-notes anchored" data-anchor-id="notes">Notes</h2>
 <p>This is an <a href="../reference/types_protocols.html#v8serialize.encode.EncodeStep">encode step</a> that can be used as one of the <code>encode_steps</code> with <code>dumps()</code> or <code>Encoder()</code>.</p>
 </section>
 </section>
 <section id="v8serialize.encode.TagWriter" class="level1">
 <h1>encode.TagWriter</h1>
-<p><code>encode.TagWriter(self)</code></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter(<span class="va">self</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Defines the conversion of Python types into the V8 serialization format.</p>
 <p>TagWriters are responsible for making suitable calls to a WritableTagStream to represent Python objects with the various encoded representations supported by the V8 serialization format.</p>
 <p>The stream delegates back to the <code>EncodeContext</code> when writing hierarchical objects, like arrays, to let the context pass sub-values through a sequence of encode steps, typically ending with a <code>TagWriter</code> as the final step.</p>
@@ -560,101 +599,222 @@ ul.task-list li input[type="checkbox"] {
 </table>
 <section id="v8serialize.encode.TagWriter.encode" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.encode">encode</h3>
-<p><code>encode.TagWriter.encode(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.encode(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">object</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_bool" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_bool">serialize_bool</h3>
-<p><code>encode.TagWriter.serialize_bool(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_bool(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">bool</span>,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_buffer" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_buffer">serialize_buffer</h3>
-<p><code>encode.TagWriter.serialize_buffer(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_buffer(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">bytes</span> <span class="op">|</span> <span class="bu">bytearray</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_buffer_view" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_buffer_view">serialize_buffer_view</h3>
-<p><code>encode.TagWriter.serialize_buffer_view(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_buffer_view(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    value: JSArrayBufferView,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_collection" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_collection">serialize_collection</h3>
-<p><code>encode.TagWriter.serialize_collection(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_collection(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    value: Collection[<span class="bu">object</span>],</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_float" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_float">serialize_float</h3>
-<p><code>encode.TagWriter.serialize_float(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_float(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">float</span>,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_hole" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_hole">serialize_hole</h3>
-<p><code>encode.TagWriter.serialize_hole(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_hole(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    value: JSHoleType,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_int" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_int">serialize_int</h3>
-<p><code>encode.TagWriter.serialize_int(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_int(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_js_array" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_js_array">serialize_js_array</h3>
-<p><code>encode.TagWriter.serialize_js_array(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_js_array(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    value: JSArray[<span class="bu">object</span>],</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_js_array_buffer" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_js_array_buffer">serialize_js_array_buffer</h3>
-<p><code>encode.TagWriter.serialize_js_array_buffer(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_js_array_buffer(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    value: JSArrayBuffer <span class="op">|</span> JSSharedArrayBuffer <span class="op">|</span> JSArrayBufferTransfer,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_js_error" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_js_error">serialize_js_error</h3>
-<p><code>encode.TagWriter.serialize_js_error(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_js_error(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    value: AnyJSError,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_js_object" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_js_object">serialize_js_object</h3>
-<p><code>encode.TagWriter.serialize_js_object(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_js_object(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    value: JSObject[<span class="bu">object</span>],</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_js_primitive_object" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_js_primitive_object">serialize_js_primitive_object</h3>
-<p><code>encode.TagWriter.serialize_js_primitive_object(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_js_primitive_object(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    value: JSPrimitiveObject,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_js_regexp" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_js_regexp">serialize_js_regexp</h3>
-<p><code>encode.TagWriter.serialize_js_regexp(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_js_regexp(</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    value: JSRegExp,</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_mapping" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_mapping">serialize_mapping</h3>
-<p><code>encode.TagWriter.serialize_mapping(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_mapping(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    value: Mapping[<span class="bu">object</span>, <span class="bu">object</span>],</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_none" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_none">serialize_none</h3>
-<p><code>encode.TagWriter.serialize_none(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_none(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="va">None</span>,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_python_datetime" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_python_datetime">serialize_python_datetime</h3>
-<p><code>encode.TagWriter.serialize_python_datetime(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_python_datetime(</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    value: datetime,</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_python_exception" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_python_exception">serialize_python_exception</h3>
-<p><code>encode.TagWriter.serialize_python_exception(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_python_exception(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="pp">BaseException</span>,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_python_regexp" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_python_regexp">serialize_python_regexp</h3>
-<p><code>encode.TagWriter.serialize_python_regexp(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_python_regexp(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    value: re.Pattern[AnyStr],</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_set" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_set">serialize_set</h3>
-<p><code>encode.TagWriter.serialize_set(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_set(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    value: AbstractSet[<span class="bu">object</span>],</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_str" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_str">serialize_str</h3>
-<p><code>encode.TagWriter.serialize_str(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_str(</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">str</span>,</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_undefined" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_undefined">serialize_undefined</h3>
-<p><code>encode.TagWriter.serialize_undefined(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_undefined(</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    value: JSUndefinedType,</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.TagWriter.serialize_v8_shared_object_reference" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.TagWriter.serialize_v8_shared_object_reference">serialize_v8_shared_object_reference</h3>
-<p><code>encode.TagWriter.serialize_v8_shared_object_reference(value, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>encode.TagWriter.serialize_v8_shared_object_reference(</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    value: V8SharedObjectReference,</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: EncodeNextFn,</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 </section>
 <section id="v8serialize.encode.DefaultEncodeContext" class="level1">
 <h1>encode.DefaultEncodeContext</h1>
-<p><code>encode.DefaultEncodeContext(self, encode_steps=None, *, stream=None, deduplicate_max_size=None)</code></p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>encode.DefaultEncodeContext(</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    encode_steps: Iterable[EncodeStepObject <span class="op">|</span> EncodeStepFn] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    stream: WritableTagStream <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    deduplicate_max_size: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <section id="attributes" class="level2">
 <h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
 <table class="caption-top table">
@@ -698,11 +858,11 @@ ul.task-list li input[type="checkbox"] {
 </table>
 <section id="v8serialize.encode.DefaultEncodeContext.deduplicate" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.DefaultEncodeContext.deduplicate">deduplicate</h3>
-<p><code>encode.DefaultEncodeContext.deduplicate(value)</code></p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>encode.DefaultEncodeContext.deduplicate(value: T)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.DefaultEncodeContext.encode_object" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.DefaultEncodeContext.encode_object">encode_object</h3>
-<p><code>encode.DefaultEncodeContext.encode_object(value)</code></p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>encode.DefaultEncodeContext.encode_object(value: <span class="bu">object</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Serialize a single Python value to the stream.</p>
 <p>The encode_steps convert the Python value to JavaScript representation, and the stream writes out V8 serialization format tagged data.</p>
 </section>
@@ -710,7 +870,12 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.encode.WritableTagStream" class="level1">
 <h1>encode.WritableTagStream</h1>
-<p><code>encode.WritableTagStream(self, data=bytearray(), objects=SerializedObjectLog(), features=SerializationFeature.MaxCompatibility)</code></p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream(</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    data: <span class="bu">bytearray</span> <span class="op">=</span> <span class="bu">bytearray</span>(),</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>    objects: SerializedObjectLog <span class="op">=</span> SerializedObjectLog(),</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>    features: SerializationFeature <span class="op">=</span> SerializationFeature.MaxCompatibility,</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Write individual tagged data items in the V8 serialization format.</p>
 <p>This is a low-level interface to incrementally generate a V8 serialization byte stream.</p>
 <section id="attributes-1" class="level2">
@@ -868,144 +1033,237 @@ ul.task-list li input[type="checkbox"] {
 </table>
 <section id="v8serialize.encode.WritableTagStream.constrain_tags" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.constrain_tags">constrain_tags</h3>
-<p><code>encode.WritableTagStream.constrain_tags(allowed_tags)</code></p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.constrain_tags(allowed_tags: TagConstraint)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Prevent writing tags to the stream which are not allowed in a given context.</p>
 <p>This sets the <code>allowed_tags</code> property to prevent tags being written which are not valid in a given context.</p>
-<section id="returns" class="level4">
-<h4 class="anchored" data-anchor-id="returns">Returns</h4>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td></td>
 <td><a href="../reference/customised_encoding.html#v8serialize.encode.TagConstraintRemover">TagConstraintRemover</a></td>
 <td>A context manager that removes the constraint it exits.</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="notes-1" class="level4">
-<h4 class="anchored" data-anchor-id="notes-1">Notes</h4>
+<section id="notes-1" class="level4 doc-section doc-section-notes">
+<h4 class="doc-section doc-section-notes anchored" data-anchor-id="notes-1">Notes</h4>
 <p>Constraints do not stack — an existing set of allowed_tags is replaced. This must only be used where atomic values are valid, not composite values consisting of unknown nested tags.</p>
 </section>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_bigint" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_bigint">write_bigint</h3>
-<p><code>encode.WritableTagStream.write_bigint(value, *, tag=SerializationTag.kBigInt)</code></p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_bigint(</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span>,</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kBigInt] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> SerializationTag.kBigInt,</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_constant" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_constant">write_constant</h3>
-<p><code>encode.WritableTagStream.write_constant(constant)</code></p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_constant(constant: ConstantTags)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_double" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_double">write_double</h3>
-<p><code>encode.WritableTagStream.write_double(value, *, tag=SerializationTag.kDouble)</code></p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_double(</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">float</span> <span class="op">|</span> <span class="bu">int</span>,</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kDouble] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> SerializationTag.kDouble,</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_header" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_header">write_header</h3>
-<p><code>encode.WritableTagStream.write_header()</code></p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_header()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Write the V8 serialization stream header.</p>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_host_object" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_host_object">write_host_object</h3>
-<p><code>encode.WritableTagStream.write_host_object(value, *, serializer)</code></p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_host_object(</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>    value: T,</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>    serializer: HostObjectSerializer[T],</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_int32" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_int32">write_int32</h3>
-<p><code>encode.WritableTagStream.write_int32(value, *, tag=SerializationTag.kInt32)</code></p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_int32(</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span>,</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kInt32] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> SerializationTag.kInt32,</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_js_array_buffer" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_js_array_buffer">write_js_array_buffer</h3>
-<p><code>encode.WritableTagStream.write_js_array_buffer(buffer, *, identity=None)</code></p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_js_array_buffer(</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">buffer</span>: AnyArrayBuffer <span class="op">|</span> AnySharedArrayBuffer <span class="op">|</span> AnyArrayBufferTransfer,</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>    identity: <span class="bu">object</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_js_array_buffer_view" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_js_array_buffer_view">write_js_array_buffer_view</h3>
-<p><code>encode.WritableTagStream.write_js_array_buffer_view(buffer_view, *, identity=None)</code></p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_js_array_buffer_view(</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>    buffer_view: AnyArrayBufferView,</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>    identity: <span class="bu">object</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_js_array_dense" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_js_array_dense">write_js_array_dense</h3>
-<p><code>encode.WritableTagStream.write_js_array_dense(array, ctx, *, properties=None, identity=None)</code></p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_js_array_dense(</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>    array: Collection[<span class="bu">object</span>],</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>    properties: Iterable[<span class="bu">tuple</span>[Any, Any]] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>    identity: <span class="bu">object</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_js_array_sparse" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_js_array_sparse">write_js_array_sparse</h3>
-<p><code>encode.WritableTagStream.write_js_array_sparse(items, ctx, *, length, identity=None)</code></p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_js_array_sparse(</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>    items: Iterable[<span class="bu">tuple</span>[<span class="bu">object</span>, <span class="bu">object</span>]],</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>    length: <span class="bu">int</span>,</span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>    identity: <span class="bu">object</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_js_date" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_js_date">write_js_date</h3>
-<p><code>encode.WritableTagStream.write_js_date(value, *, identity=None)</code></p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_js_date(</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>    value: datetime,</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>    identity: <span class="bu">object</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_js_error" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_js_error">write_js_error</h3>
-<p><code>encode.WritableTagStream.write_js_error(error, ctx, *, identity=None)</code></p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_js_error(</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>    error: AnyJSError,</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>    identity: <span class="bu">object</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_js_object" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_js_object">write_js_object</h3>
-<p><code>encode.WritableTagStream.write_js_object(items, ctx, *, identity=None)</code></p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_js_object(</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>    items: Iterable[<span class="bu">tuple</span>[<span class="bu">object</span>, <span class="bu">object</span>]],</span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>    identity: <span class="bu">object</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_js_primitive_object" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_js_primitive_object">write_js_primitive_object</h3>
-<p><code>encode.WritableTagStream.write_js_primitive_object(obj, *, identity=None)</code></p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_js_primitive_object(</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>    obj: JSPrimitiveObject,</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>    identity: <span class="bu">object</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_js_regexp" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_js_regexp">write_js_regexp</h3>
-<p><code>encode.WritableTagStream.write_js_regexp(regexp, *, identity=None)</code></p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_js_regexp(</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>    regexp: JSRegExp,</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>    identity: <span class="bu">object</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_jsmap" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_jsmap">write_jsmap</h3>
-<p><code>encode.WritableTagStream.write_jsmap(items, ctx, *, identity=None)</code></p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_jsmap(</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>    items: Iterable[<span class="bu">tuple</span>[<span class="bu">object</span>, <span class="bu">object</span>]],</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>    identity: <span class="bu">object</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_jsset" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_jsset">write_jsset</h3>
-<p><code>encode.WritableTagStream.write_jsset(values, ctx, *, identity=None)</code></p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_jsset(</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>    values: Iterable[<span class="bu">object</span>],</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>    ctx: EncodeContext,</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>    identity: <span class="bu">object</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_object_reference" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_object_reference">write_object_reference</h3>
-<p><code>encode.WritableTagStream.write_object_reference(obj=None, serialized_id=None)</code></p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_object_reference(</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>    obj: <span class="bu">object</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>    serialized_id: SerializedId <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_string_onebyte" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_string_onebyte">write_string_onebyte</h3>
-<p><code>encode.WritableTagStream.write_string_onebyte(value, *, tag=SerializationTag.kOneByteString)</code></p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_string_onebyte(</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">str</span>,</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kOneByteString] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> SerializationTag.kOneByteString,</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Encode a OneByte string, which is latin1-encoded text.</p>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_string_twobyte" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_string_twobyte">write_string_twobyte</h3>
-<p><code>encode.WritableTagStream.write_string_twobyte(value, *, tag=SerializationTag.kTwoByteString)</code></p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_string_twobyte(</span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">str</span>,</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kTwoByteString] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> SerializationTag.kTwoByteString,</span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_string_utf8" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_string_utf8">write_string_utf8</h3>
-<p><code>encode.WritableTagStream.write_string_utf8(value, *, tag=SerializationTag.kUtf8String)</code></p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_string_utf8(</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">str</span>,</span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kUtf8String] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> SerializationTag.kUtf8String,</span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Encode a Utf8String, which is UTF-8-encoded text.</p>
 <p><strong>Note: We never encode Utf8String at runtime, but we use it to test the decoder. The V8 implementation only decodes Utf8String.</strong></p>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_tag" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_tag">write_tag</h3>
-<p><code>encode.WritableTagStream.write_tag(tag)</code></p>
+<div class="sourceCode" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_tag(tag: SerializationTag <span class="op">|</span> <span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_uint32" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_uint32">write_uint32</h3>
-<p><code>encode.WritableTagStream.write_uint32(value, *, tag=SerializationTag.kUint32)</code></p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_uint32(</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span>,</span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kUint32] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> SerializationTag.kUint32,</span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_v8_shared_object_reference" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_v8_shared_object_reference">write_v8_shared_object_reference</h3>
-<p><code>encode.WritableTagStream.write_v8_shared_object_reference(value, *, identity=None)</code></p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_v8_shared_object_reference(</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>    value: V8SharedObjectReference,</span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>    identity: <span class="bu">object</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_varint" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_varint">write_varint</h3>
-<p><code>encode.WritableTagStream.write_varint(n)</code></p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_varint(n: <span class="bu">int</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.encode.WritableTagStream.write_zigzag" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.WritableTagStream.write_zigzag">write_zigzag</h3>
-<p><code>encode.WritableTagStream.write_zigzag(n)</code></p>
+<div class="sourceCode" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>encode.WritableTagStream.write_zigzag(n: <span class="bu">int</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 </section>
 <section id="v8serialize.encode.TagConstraintRemover" class="level1">
 <h1>encode.TagConstraintRemover</h1>
-<p><code>encode.TagConstraintRemover(self, stream)</code></p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>encode.TagConstraintRemover(<span class="va">self</span>, stream: WritableTagStream)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Context manager that resets the tag constraint on a WritableTagStream.</p>
 <p>Upon exiting, the stream’s allowed_tags is reset back to None allowing any tag to be written.</p>
 <section id="attributes-2" class="level2">

@@ -398,13 +398,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="v8serialize.jstypes.JSObject" class="level1">
 <h1>jstypes.JSObject</h1>
-<p><code>jstypes.JSObject(self, properties=(), /, **kwarg_properties)</code></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSObject(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    properties: SupportsKeysAndGetItem[<span class="bu">str</span> <span class="op">|</span> <span class="bu">int</span>, T] <span class="op">|</span> Iterable[<span class="bu">tuple</span>[<span class="bu">str</span> <span class="op">|</span> <span class="bu">int</span>, T]] <span class="op">=</span> (),</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwarg_properties: T,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A Python equivalent of <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">JavaScript plain objects</a>.</p>
 <p><code>JSObject</code> is a <a href="https://docs.python.org/3/glossary.html#term-mapping">Python Mapping</a>, whose keys can be strings or numbers. JavaScript Objects treat integer keys and integer strings as equivalent, and <code>JSObject</code> does too. In fact, <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">JavaScript Arrays</a> and Objects are almost entirely the same, and <a href="../reference/javascript_object.html#v8serialize.jstypes.JSArray"><code>JSArray</code></a> is also the same as <code>JSObject</code>, except for its constructor arguments. The <a href="../reference/javascript_object.html#v8serialize.jstypes.JSArray"><code>JSArray</code></a> description provides details of integer indexing behaviour which also applies to <code>JSObject</code>.</p>
 <p><code>JSObject</code> implements just the JavaScript Object behaviour that can be transferred with V8 serialization (which is essentially the behaviour of <a href="https://developer.mozilla.org/en-US/docs/Web/API/structuredClone"><code>structuredClone()</code></a>). This is similar to JSON objects — object prototypes, methods, get/set properties and symbol properties cannot be transferred. Unlike JSON, objects can contain cycles and all the other JavaScript types supported by the V8 Serialization format, such as JavaScript’s <code>RegExp</code> and <code>Date</code> (<a href="../reference/javascript_regexp.html#v8serialize.jstypes.JSRegExp"><code>JSRegExp</code></a> and <a href="https://docs.python.org/3/library/datetime.html#datetime.datetime"><code>datetime.datetime</code></a>).</p>
 <p>JSObject is also an ABC can other types can register as virtual subtypes of in order to serialize themselves as JavaScript Objects (by default, Python Mappings are serialized as JavaScript Maps).</p>
-<section id="parameters" class="level2">
-<h2 class="anchored" data-anchor-id="parameters">Parameters</h2>
+<section id="parameters" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -416,13 +421,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>properties</code></td>
+<td>properties</td>
 <td><code>SupportsKeysAndGetItem</code>[<a href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a href="https://docs.python.org/3/library/functions.html#int">int</a>, <code>T</code>] | <a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable">Iterable</a>[<a href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a href="https://docs.python.org/3/library/functions.html#int">int</a>, <code>T</code>]]</td>
 <td>The items to populate the object with, either as a mapping to copy, or an iterable of <code>(key, value)</code> pairs.</td>
 <td><code>()</code></td>
 </tr>
 <tr class="even">
-<td><code>kwarg_properties</code></td>
+<td>kwarg_properties</td>
 <td><code>T</code></td>
 <td>Additional key-values to populate the object with. These override any items from <code>properties</code> with the same key.</td>
 <td><code>{}</code></td>
@@ -430,22 +435,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="notes" class="level2">
-<h2 class="anchored" data-anchor-id="notes">Notes</h2>
+<section id="notes" class="level2 doc-section doc-section-notes">
+<h2 class="doc-section doc-section-notes anchored" data-anchor-id="notes">Notes</h2>
 <p>The behaviour <code>JSObject</code> implements aims to match that described by the <a href="https://tc39.es/ecma262/#sec-object-type">ECMA-262</a> spec, so that details are not lost in translation when serializing between Python and JavaScript.</p>
 </section>
-<section id="examples" class="level2">
-<h2 class="anchored" data-anchor-id="examples">Examples</h2>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o <span class="op">=</span> JSObject(name<span class="op">=</span><span class="st">'Bob'</span>, likes_hats<span class="op">=</span><span class="va">False</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o[<span class="st">'name'</span>]</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">'Bob'</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o[<span class="st">'518'</span>] <span class="op">=</span> <span class="st">'Teapot'</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o[<span class="st">'404'</span>] <span class="op">=</span> <span class="st">'Not Found'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="examples" class="level2 doc-section doc-section-examples">
+<h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o <span class="op">=</span> JSObject(name<span class="op">=</span><span class="st">'Bob'</span>, likes_hats<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o[<span class="st">'name'</span>]</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">'Bob'</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o[<span class="st">'518'</span>] <span class="op">=</span> <span class="st">'Teapot'</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o[<span class="st">'404'</span>] <span class="op">=</span> <span class="st">'Not Found'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Properties are kept in order of creation, but array indexes (e.g.&nbsp;strings that are non-negative integers) always come first, in numeric order.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>JSObject({<span class="dv">404</span>: <span class="st">'Not Found'</span>, <span class="dv">518</span>: <span class="st">'Teapot'</span>}, name<span class="op">=</span><span class="st">'Bob'</span>, likes_hats<span class="op">=</span><span class="va">False</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">dict</span>(o)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>{<span class="dv">404</span>: <span class="st">'Not Found'</span>, <span class="dv">518</span>: <span class="st">'Teapot'</span>, <span class="st">'name'</span>: <span class="st">'Bob'</span>, <span class="st">'likes_hats'</span>: <span class="va">False</span>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>JSObject({<span class="dv">404</span>: <span class="st">'Not Found'</span>, <span class="dv">518</span>: <span class="st">'Teapot'</span>}, name<span class="op">=</span><span class="st">'Bob'</span>, likes_hats<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">dict</span>(o)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>{<span class="dv">404</span>: <span class="st">'Not Found'</span>, <span class="dv">518</span>: <span class="st">'Teapot'</span>, <span class="st">'name'</span>: <span class="st">'Bob'</span>, <span class="st">'likes_hats'</span>: <span class="va">False</span>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="attributes" class="level2">
 <h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
@@ -490,24 +495,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="v8serialize.jstypes.JSObject.setdefault" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSObject.setdefault">setdefault</h3>
-<p><code>jstypes.JSObject.setdefault(key, default=None, /)</code></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSObject.setdefault(key: Any, default: Any <span class="op">=</span> <span class="va">None</span>, <span class="op">/</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSObject.update" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSObject.update">update</h3>
-<p><code>jstypes.JSObject.update(*args, **kwargs)</code></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSObject.update(<span class="op">*</span>args: Any, <span class="op">**</span>kwargs: T)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 </section>
 <section id="v8serialize.jstypes.JSArray" class="level1">
 <h1>jstypes.JSArray</h1>
-<p><code>jstypes.JSArray(self, properties=(), /, **kwarg_properties)</code></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSArray(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    properties: SupportsKeysAndGetItem[<span class="bu">str</span> <span class="op">|</span> <span class="bu">int</span>, T] <span class="op">|</span> Iterable[T <span class="op">|</span> JSHoleType] <span class="op">=</span> (),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwarg_properties: T,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A Python equivalent of a <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">JavaScript Array</a>.</p>
 <p>The constructor accepts lists/iterables of values, like <code>list()</code> does. Otherwise its functionally the same as <a href="../reference/javascript_object.html#v8serialize.jstypes.JSObject"><code>v8serialize.jstypes.JSObject</code></a>.</p>
 <p>JavaScript Array values deserialized from V8 data are represented as <code>JSArray</code> rather than <code>JSObject</code>, which allows them to round-trip back as Array on the JavaScript side.</p>
 <p>Note in particular that <code>JSArray</code> itself is not a <a href="https://docs.python.org/3/glossary.html#term-sequence">Python Sequence</a>, because JavaScript Arrays can also have string property values. The <code>.array</code> property contains a sequence of the integer-indexed values, which — in the typical case where a <code>JSArray</code> has no string properties — will hold all the object’s values. The <code>.properties</code> Mapping holds just the non-array string properties.</p>
 <p>JavaScript arrays have the special property of supporting sparse indexes — they can store values with large gaps between integer indexes without using space for unused indexes in between. <code>JSArray</code> (and thus <code>JSObject</code>) also have this behaviour. The <code>.array</code> property is <a href="../reference/types_protocols.html#v8serialize.SparseMutableSequence"><code>SparseMutableSequence</code></a>, which extends the regular Sequence API with has extra methods and properties to support sparse arrays. (See the <a href="#examples">examples</a> below.)</p>
-<section id="parameters-1" class="level2">
-<h2 class="anchored" data-anchor-id="parameters-1">Parameters</h2>
+<section id="parameters-1" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -519,13 +529,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>properties</code></td>
+<td>properties</td>
 <td><code>SupportsKeysAndGetItem</code>[<a href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a href="https://docs.python.org/3/library/functions.html#int">int</a>, <code>T</code>] | <a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable">Iterable</a>[<code>T</code> | <code>JSHoleType</code>]</td>
 <td>Ordered values to populate the array with, or a mapping of key-values to initialise either or both int array indexes and string properties.</td>
 <td><code>()</code></td>
 </tr>
 <tr class="even">
-<td><code>kwarg_properties</code></td>
+<td>kwarg_properties</td>
 <td><code>T</code></td>
 <td>Additional key-values to populate either or both int array indexes and string properties. These override any items from <code>properties</code> with the same key.</td>
 <td><code>{}</code></td>
@@ -533,62 +543,62 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="examples-1" class="level2">
-<h2 class="anchored" data-anchor-id="examples-1">Examples</h2>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a <span class="op">=</span> JSArray([<span class="st">'a'</span>, <span class="st">'b'</span>])</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>JSArray([<span class="st">'a'</span>, <span class="st">'b'</span>])</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a[<span class="dv">0</span>]</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">'a'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="examples-1" class="level2 doc-section doc-section-examples">
+<h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples-1">Examples</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a <span class="op">=</span> JSArray([<span class="st">'a'</span>, <span class="st">'b'</span>])</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>JSArray([<span class="st">'a'</span>, <span class="st">'b'</span>])</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a[<span class="dv">0</span>]</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co">'a'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>As in JavaScript, JSArray works exactly like a JSObject — arrays can also have non-integer properties:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a[<span class="st">'foo'</span>] <span class="op">=</span> <span class="st">'bar'</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>JSArray([<span class="st">'a'</span>, <span class="st">'b'</span>], foo<span class="op">=</span><span class="st">'bar'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a[<span class="st">'foo'</span>] <span class="op">=</span> <span class="st">'bar'</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>JSArray([<span class="st">'a'</span>, <span class="st">'b'</span>], foo<span class="op">=</span><span class="st">'bar'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>JavaScript Object and Array treat string properties that are integers the same as using integers directly. JSMap does the same:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a[<span class="st">'2'</span>] <span class="op">=</span> <span class="st">'c'</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>JSArray([<span class="st">'a'</span>, <span class="st">'b'</span>, <span class="st">'c'</span>], foo<span class="op">=</span><span class="st">'bar'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a[<span class="st">'2'</span>] <span class="op">=</span> <span class="st">'c'</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>JSArray([<span class="st">'a'</span>, <span class="st">'b'</span>, <span class="st">'c'</span>], foo<span class="op">=</span><span class="st">'bar'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The <code>.array</code> property is a MutableSequence that contains only the integer-indexed array properties, whereas JSArray objects themselves are MutableMappings of all values:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> typing <span class="im">import</span> MutableSequence, MutableMapping</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">isinstance</span>(a.array, MutableSequence)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">list</span>(a.array)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>[<span class="st">'a'</span>, <span class="st">'b'</span>, <span class="st">'c'</span>]</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">isinstance</span>(a, MutableSequence)</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">isinstance</span>(a, MutableMapping)</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">dict</span>(a)</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>{<span class="dv">0</span>: <span class="st">'a'</span>, <span class="dv">1</span>: <span class="st">'b'</span>, <span class="dv">2</span>: <span class="st">'c'</span>, <span class="st">'foo'</span>: <span class="st">'bar'</span>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> typing <span class="im">import</span> MutableSequence, MutableMapping</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">isinstance</span>(a.array, MutableSequence)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">list</span>(a.array)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>[<span class="st">'a'</span>, <span class="st">'b'</span>, <span class="st">'c'</span>]</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">isinstance</span>(a, MutableSequence)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">isinstance</span>(a, MutableMapping)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">dict</span>(a)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>{<span class="dv">0</span>: <span class="st">'a'</span>, <span class="dv">1</span>: <span class="st">'b'</span>, <span class="dv">2</span>: <span class="st">'c'</span>, <span class="st">'foo'</span>: <span class="st">'bar'</span>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>JavaScript Arrays are <em>sparse</em> — they can have large gaps between array entries without using space for all the empty indexes in between. <code>JSArray</code>’s <code>.array</code> property is a <a href="../reference/types_protocols.html#v8serialize.SparseMutableSequence">special type of sequence</a> that models this behaviour:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize <span class="im">import</span> SparseMutableSequence</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">isinstance</span>(a.array, SparseMutableSequence)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a[<span class="dv">6</span>] <span class="op">=</span> <span class="st">'g'</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>JSArray([<span class="st">'a'</span>, <span class="st">'b'</span>, <span class="st">'c'</span>, JSHole, JSHole, JSHole, <span class="st">'g'</span>], foo<span class="op">=</span><span class="st">'bar'</span>)</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">len</span>(a.array)</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="dv">7</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a.array.elements_used</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="dv">4</span></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">list</span>(a.array.element_indexes())</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>[<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">6</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize <span class="im">import</span> SparseMutableSequence</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">isinstance</span>(a.array, SparseMutableSequence)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a[<span class="dv">6</span>] <span class="op">=</span> <span class="st">'g'</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>JSArray([<span class="st">'a'</span>, <span class="st">'b'</span>, <span class="st">'c'</span>, JSHole, JSHole, JSHole, <span class="st">'g'</span>], foo<span class="op">=</span><span class="st">'bar'</span>)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">len</span>(a.array)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="dv">7</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a.array.elements_used</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="dv">4</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">list</span>(a.array.element_indexes())</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>[<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">6</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p><code>elements()</code> is a view of the array as a Mapping, containing keys for indexes that have values.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a.array.elements().get(<span class="dv">6</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co">'g'</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a.array.elements().get(<span class="dv">4</span>, <span class="st">'default'</span>)</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co">'default'</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">dict</span>(a.array.elements())</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>{<span class="dv">0</span>: <span class="st">'a'</span>, <span class="dv">1</span>: <span class="st">'b'</span>, <span class="dv">2</span>: <span class="st">'c'</span>, <span class="dv">6</span>: <span class="st">'g'</span>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a.array.elements().get(<span class="dv">6</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co">'g'</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a.array.elements().get(<span class="dv">4</span>, <span class="st">'default'</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co">'default'</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="bu">dict</span>(a.array.elements())</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>{<span class="dv">0</span>: <span class="st">'a'</span>, <span class="dv">1</span>: <span class="st">'b'</span>, <span class="dv">2</span>: <span class="st">'c'</span>, <span class="dv">6</span>: <span class="st">'g'</span>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>To be consistent with normal sequences, <code>.array</code> raises <code>IndexError</code> for out-of-bounds index operations:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a.array[<span class="dv">1234567</span>] <span class="op">=</span> <span class="st">'?'</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>Traceback (most recent call last):</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>...</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="pp">IndexError</span>: <span class="bu">list</span> index out of <span class="bu">range</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a.array[<span class="dv">1234567</span>] <span class="op">=</span> <span class="st">'?'</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>Traceback (most recent call last):</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>...</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="pp">IndexError</span>: <span class="bu">list</span> index out of <span class="bu">range</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The main <code>JSArray</code> object allows setting any index though.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a[<span class="dv">1234567</span>] <span class="op">=</span> <span class="st">'?'</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>JSArray({<span class="dv">0</span>: <span class="st">'a'</span>, <span class="dv">1</span>: <span class="st">'b'</span>, <span class="dv">2</span>: <span class="st">'c'</span>, <span class="dv">6</span>: <span class="st">'g'</span>, <span class="dv">1234567</span>: <span class="st">'?'</span>}, foo<span class="op">=</span><span class="st">'bar'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a[<span class="dv">1234567</span>] <span class="op">=</span> <span class="st">'?'</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> a</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>JSArray({<span class="dv">0</span>: <span class="st">'a'</span>, <span class="dv">1</span>: <span class="st">'b'</span>, <span class="dv">2</span>: <span class="st">'c'</span>, <span class="dv">6</span>: <span class="st">'g'</span>, <span class="dv">1234567</span>: <span class="st">'?'</span>}, foo<span class="op">=</span><span class="st">'bar'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 <section id="v8serialize.jstypes.JSHole" class="level1">

@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -367,7 +401,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.JSErrorName" class="level1">
 <h1>JSErrorName</h1>
-<p><code>JSErrorName()</code></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>JSErrorName()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>An enum of the possible <code>.name</code> values of JavaScript Errors.</p>
 <section id="attributes" class="level2">
 <h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
@@ -436,20 +470,22 @@ ul.task-list li input[type="checkbox"] {
 </table>
 <section id="v8serialize.JSErrorName.for_error_name" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.JSErrorName.for_error_name">for_error_name</h3>
-<p><code>JSErrorName.for_error_name(error_name)</code></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>JSErrorName.for_error_name(error_name: <span class="bu">str</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Get the name that will be deserialized when a given name is serialized.</p>
 <p>V8 will ignore unknown error names and substitute <code>"Error"</code>. Only the members of the <code>JSErrorName</code></p>
-<section id="returns" class="level4">
-<h4 class="anchored" data-anchor-id="returns">Returns</h4>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td></td>
 <td><a href="../reference/javascript_constants.html#v8serialize.JSErrorName">JSErrorName</a></td>
 <td>The <code>JSErrorName</code> enum member equal to <code>error_name</code>, or <code>JSErrorName.Error</code> if none match.</td>
 </tr>
@@ -459,18 +495,18 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.JSErrorName.for_error_tag" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.JSErrorName.for_error_tag">for_error_tag</h3>
-<p><code>JSErrorName.for_error_tag(error_tag)</code></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>JSErrorName.for_error_tag(error_tag: SerializationErrorTag)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Get the <code>JSErrorName</code> that corresponds to a <code>SerializationErrorTag</code> value.</p>
 </section>
 </section>
 </section>
 <section id="v8serialize.JSRegExpFlag" class="level1">
 <h1>JSRegExpFlag</h1>
-<p><code>JSRegExpFlag()</code></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>JSRegExpFlag()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The bit flags for V8’s representation of JavaScript RegExp flags.</p>
 <p>This is a an <a href="https://docs.python.org/3/library/enum.html#enum.IntFlag">IntFlag enum</a>.</p>
-<section id="notes" class="level2">
-<h2 class="anchored" data-anchor-id="notes">Notes</h2>
+<section id="notes" class="level2 doc-section doc-section-notes">
+<h2 class="doc-section doc-section-notes anchored" data-anchor-id="notes">Notes</h2>
 <p>Defined at <a href="https://github.com/v8/v8/blob/0654522388d6a3782b9831b5de49b0c0abe0f643/src/regexp/regexp-flags.h#L20)"><code>src/regexp/regexp-flags.h</code></a> in the V8 source code.</p>
 </section>
 <section id="attributes-1" class="level2">
@@ -552,14 +588,14 @@ ul.task-list li input[type="checkbox"] {
 </table>
 <section id="v8serialize.JSRegExpFlag.as_python_flags" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.JSRegExpFlag.as_python_flags">as_python_flags</h3>
-<p><code>JSRegExpFlag.as_python_flags(throw=True)</code></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>JSRegExpFlag.as_python_flags(throw: <span class="bu">bool</span> <span class="op">=</span> <span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Get the Python <code>re</code> module flags that correspond to this value’s active flags.</p>
 <p>Some flags don’t have a direct equivalent, such as Linear. These result in there being no Python equivalent, so the result is None.</p>
 <p>Some flag don’t affect Python because they adjust the JavaScript matching API which isn’t used in Python. For example, <code>HasIndices</code>. These are ignored.</p>
 </section>
 <section id="v8serialize.JSRegExpFlag.from_python_flags" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.JSRegExpFlag.from_python_flags">from_python_flags</h3>
-<p><code>JSRegExpFlag.from_python_flags(python_flags)</code></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>JSRegExpFlag.from_python_flags(python_flags: RegexFlag)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Get the JavaScript flags equivalent to Python <code>re</code> module flags.</p>
 </section>
 </section>

@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -475,12 +509,12 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.encode.HostObjectSerializerFn" class="level1">
 <h1>encode.HostObjectSerializerFn</h1>
-<p><code>encode.HostObjectSerializerFn()</code></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>encode.HostObjectSerializerFn()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The type of a function that writes custom <a href="../reference/v8_constants.html#v8serialize.constants.SerializationTag.kHostObject">HostObjects</a>.</p>
 </section>
 <section id="v8serialize.encode.HostObjectSerializerObj" class="level1">
 <h1>encode.HostObjectSerializerObj</h1>
-<p><code>encode.HostObjectSerializerObj()</code></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>encode.HostObjectSerializerObj()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <section id="attributes" class="level2">
 <h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
 <table class="caption-top table">
@@ -506,7 +540,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.encode.EncodeContext" class="level1">
 <h1>encode.EncodeContext</h1>
-<p><code>encode.EncodeContext()</code></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>encode.EncodeContext()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Maintains the state needed to write Python objects in V8 format.</p>
 <section id="attributes-1" class="level2">
 <h2 class="anchored" data-anchor-id="attributes-1">Attributes</h2>
@@ -547,32 +581,34 @@ ul.task-list li input[type="checkbox"] {
 </table>
 <section id="v8serialize.encode.EncodeContext.deduplicate" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.EncodeContext.deduplicate">deduplicate</h3>
-<p><code>encode.EncodeContext.deduplicate(value)</code></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>encode.EncodeContext.deduplicate(value: T)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Look up and return a previously seen value equal to this value.</p>
 <p>If value is not hashable or not found, it’s returned as-is.</p>
 </section>
 <section id="v8serialize.encode.EncodeContext.encode_object" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.encode.EncodeContext.encode_object">encode_object</h3>
-<p><code>encode.EncodeContext.encode_object(value)</code></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>encode.EncodeContext.encode_object(value: <span class="bu">object</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Encode and write a single Python value to the stream.</p>
 </section>
 </section>
 </section>
 <section id="v8serialize.encode.EncodeNextFn" class="level1">
 <h1>encode.EncodeNextFn</h1>
-<p><code>encode.EncodeNextFn()</code></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>encode.EncodeNextFn()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Delegate to the next encode step in the sequence to write a value.</p>
-<section id="raises" class="level2">
-<h2 class="anchored" data-anchor-id="raises">Raises</h2>
+<section id="raises" class="level2 doc-section doc-section-raises">
+<h2 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td></td>
 <td><a href="../reference/exceptions.html#v8serialize.UnhandledValueEncodeV8SerializeError">UnhandledValueEncodeV8SerializeError</a></td>
 <td>If none of the following steps were able to handle a value.</td>
 </tr>
@@ -582,13 +618,13 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.encode.EncodeStepFn" class="level1">
 <h1>encode.EncodeStepFn</h1>
-<p><code>encode.EncodeStepFn()</code></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>encode.EncodeStepFn()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The signature of a function that writes V8-serialized data to reflect objects.</p>
 <p>Encode steps can either write the <code>ctx.stream</code> directly, or delegate to the next encode step by calling <code>next()</code>. Steps can modify the representation of objects as JavaScript by passing a different <code>value</code> to next than the one they received.</p>
 </section>
 <section id="v8serialize.encode.EncodeStepObject" class="level1">
 <h1>encode.EncodeStepObject</h1>
-<p><code>encode.EncodeStepObject()</code></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>encode.EncodeStepObject()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <section id="attributes-2" class="level2">
 <h2 class="anchored" data-anchor-id="attributes-2">Attributes</h2>
 <table class="caption-top table">
@@ -611,19 +647,19 @@ ul.task-list li input[type="checkbox"] {
 <h1>encode.EncodeStep</h1>
 <p><code>encode.EncodeStep</code></p>
 <p>Either an <code>EncodeStepObject</code> or <code>EncodeStepFn</code>.</p>
-<section id="see-also" class="level2">
-<h2 class="anchored" data-anchor-id="see-also">See Also</h2>
+<section id="see-also" class="level2 doc-section doc-section-see-also">
+<h2 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also">See Also</h2>
 <p><a href="../reference/customised_encoding.html#v8serialize.default_encode_steps"><code>default_encode_steps</code></a></p>
 </section>
 </section>
 <section id="v8serialize.decode.HostObjectDeserializerFn" class="level1">
 <h1>decode.HostObjectDeserializerFn</h1>
-<p><code>decode.HostObjectDeserializerFn()</code></p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>decode.HostObjectDeserializerFn()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The signature of a function that reads HostObject tags from a stream.</p>
 </section>
 <section id="v8serialize.decode.HostObjectDeserializerObj" class="level1">
 <h1>decode.HostObjectDeserializerObj</h1>
-<p><code>decode.HostObjectDeserializerObj()</code></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>decode.HostObjectDeserializerObj()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <section id="attributes-3" class="level2">
 <h2 class="anchored" data-anchor-id="attributes-3">Attributes</h2>
 <table class="caption-top table">
@@ -649,11 +685,22 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.decode.TagReader" class="level1">
 <h1>decode.TagReader</h1>
-<p><code>decode.TagReader(self, tag_readers=None, jsmap_type=None, jsset_type=None, js_object_type=None, js_array_type=None, js_constants=None, host_object_deserializer=None, js_error_builder=None, default_timezone=None)</code></p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    tag_readers: TagReaderRegistry <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    jsmap_type: JSMapType <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    jsset_type: JSSetType <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    js_object_type: JSObjectType <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    js_array_type: JSArrayType <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    js_constants: Mapping[ConstantTags, <span class="bu">object</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    host_object_deserializer: HostObjectDeserializer[<span class="bu">object</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    js_error_builder: JSErrorBuilder[<span class="bu">object</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    default_timezone: tzinfo <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Controls how V8 serialization data is converted to Python values when deserializing.</p>
 <p>Customise the way JavaScript values are represented in Python by creating a <code>TagReader</code> instance with non-default options, and passing it to the <code>decode_steps</code> option of <code>v8serialize.loads()</code> or <code>v8serialize.Decoder()</code></p>
-<section id="parameters" class="level2">
-<h2 class="anchored" data-anchor-id="parameters">Parameters</h2>
+<section id="parameters" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -665,55 +712,55 @@ ul.task-list li input[type="checkbox"] {
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>tag_readers</code></td>
+<td>tag_readers</td>
 <td><a href="../reference/customized_decoding.html#v8serialize.decode.TagReaderRegistry">TagReaderRegistry</a> | None</td>
 <td>Override the tag reader functions implied by other arguments. Default: no overrides.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="even">
-<td><code>jsmap_type</code></td>
+<td>jsmap_type</td>
 <td><a href="../reference/types_protocols.html#v8serialize.decode.JSMapType">JSMapType</a> | None</td>
 <td>A function returning an empty <code>dict</code> to represent Map. Default: <a href="../reference/javascript_map_set.html#v8serialize.jstypes.JSMap">JSMap</a>.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
-<td><code>jsset_type</code></td>
+<td>jsset_type</td>
 <td><a href="../reference/types_protocols.html#v8serialize.decode.JSSetType">JSSetType</a> | None</td>
 <td>A function returning an empty <code>set</code> to represent Set. Default: <a href="../reference/javascript_map_set.html#v8serialize.jstypes.JSSet">JSSet</a>.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="even">
-<td><code>js_object_type</code></td>
+<td>js_object_type</td>
 <td><a href="../reference/types_protocols.html#v8serialize.decode.JSObjectType">JSObjectType</a> | None</td>
 <td>A function returning an empty <code>dict</code> to represent Object. Default: <a href="../reference/javascript_object.html#v8serialize.jstypes.JSObject">JSObject</a>.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
-<td><code>js_array_type</code></td>
+<td>js_array_type</td>
 <td><a href="../reference/types_protocols.html#v8serialize.decode.JSArrayType">JSArrayType</a> | None</td>
 <td>A function returning an empty <code>dict</code> to represent Array. Default: <a href="../reference/javascript_object.html#v8serialize.jstypes.JSArray">JSArray</a>.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="even">
-<td><code>js_constants</code></td>
+<td>js_constants</td>
 <td><a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a>[<a href="../reference/v8_constants.html#v8serialize.constants.ConstantTags">ConstantTags</a>, <a href="https://docs.python.org/3/library/functions.html#object">object</a>] | None</td>
 <td>A dict mapping tags from <a href="../reference/v8_constants.html#v8serialize.constants.JS_CONSTANT_TAGS">JS_CONSTANT_TAGS</a> to the values to represent them as. Default: see <a href="../reference/v8_constants.html#v8serialize.constants.JS_CONSTANT_TAGS">JS_CONSTANT_TAGS</a>.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
-<td><code>host_object_deserializer</code></td>
+<td>host_object_deserializer</td>
 <td><a href="../reference/types_protocols.html#v8serialize.decode.HostObjectDeserializer">HostObjectDeserializer</a>[<a href="https://docs.python.org/3/library/functions.html#object">object</a>] | None</td>
 <td>A <a href="../reference/types_protocols.html#v8serialize.decode.HostObjectDeserializer">HostObjectDeserializer</a> to load <a href="../reference/v8_constants.html#v8serialize.constants.SerializationTag.kHostObject">HostObject</a> extension tags. Default: see <a href="../reference/encoding_decoding.html#v8serialize.loads">desc</a>.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="even">
-<td><code>js_error_builder</code></td>
+<td>js_error_builder</td>
 <td><a href="../reference/types_protocols.html#v8serialize.decode.JSErrorBuilder">JSErrorBuilder</a>[<a href="https://docs.python.org/3/library/functions.html#object">object</a>] | None</td>
 <td>A JSErrorBuilder to create Error representations. Default: <a href="../reference/javascript_error.html#v8serialize.jstypes.JSError.builder">JSError.builder</a></td>
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
-<td><code>default_timezone</code></td>
+<td>default_timezone</td>
 <td><a href="https://docs.python.org/3/library/datetime.html#datetime.tzinfo">tzinfo</a> | None</td>
 <td>The timezone to use when creating <a href="https://docs.python.org/3/library/datetime.html#datetime.datetime">datetime</a> to represent Date. Default: datetimes have no timezone.</td>
 <td><code>None</code></td>
@@ -856,86 +903,136 @@ ul.task-list li input[type="checkbox"] {
 </table>
 <section id="v8serialize.decode.TagReader.decode" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.decode">decode</h3>
-<p><code>decode.TagReader.decode(tag, /, ctx, next)</code></p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.decode(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    tag: SerializationTag,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    ctx: DecodeContext,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">next</span>: DecodeNextFn,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.decode.TagReader.deserialize_constant" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_constant">deserialize_constant</h3>
-<p><code>decode.TagReader.deserialize_constant(tag, ctx)</code></p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.deserialize_constant(tag: ConstantTags, ctx: DecodeContext)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.decode.TagReader.deserialize_host_object" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_host_object">deserialize_host_object</h3>
-<p><code>decode.TagReader.deserialize_host_object(tag, ctx)</code></p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.deserialize_host_object(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kHostObject],</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    ctx: DecodeContext,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.decode.TagReader.deserialize_js_array_buffer" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_array_buffer">deserialize_js_array_buffer</h3>
-<p><code>decode.TagReader.deserialize_js_array_buffer(tag, ctx)</code></p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.deserialize_js_array_buffer(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    tag: ArrayBufferTags,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    ctx: DecodeContext,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.decode.TagReader.deserialize_js_array_buffer_view" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_array_buffer_view">deserialize_js_array_buffer_view</h3>
-<p><code>decode.TagReader.deserialize_js_array_buffer_view(tag, ctx)</code></p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.deserialize_js_array_buffer_view(</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kArrayBufferView],</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    ctx: DecodeContext,</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.decode.TagReader.deserialize_js_array_dense" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_array_dense">deserialize_js_array_dense</h3>
-<p><code>decode.TagReader.deserialize_js_array_dense(tag, ctx)</code></p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.deserialize_js_array_dense(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kBeginDenseJSArray],</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    ctx: DecodeContext,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.decode.TagReader.deserialize_js_array_sparse" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_array_sparse">deserialize_js_array_sparse</h3>
-<p><code>decode.TagReader.deserialize_js_array_sparse(tag, ctx)</code></p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.deserialize_js_array_sparse(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kBeginSparseJSArray],</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    ctx: DecodeContext,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.decode.TagReader.deserialize_js_date" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_date">deserialize_js_date</h3>
-<p><code>decode.TagReader.deserialize_js_date(tag, ctx)</code></p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.deserialize_js_date(</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kDate],</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    ctx: DecodeContext,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.decode.TagReader.deserialize_js_error" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_error">deserialize_js_error</h3>
-<p><code>decode.TagReader.deserialize_js_error(tag, ctx)</code></p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.deserialize_js_error(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kError],</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    ctx: DecodeContext,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.decode.TagReader.deserialize_js_object" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_object">deserialize_js_object</h3>
-<p><code>decode.TagReader.deserialize_js_object(tag, ctx)</code></p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.deserialize_js_object(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kBeginJSObject],</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    ctx: DecodeContext,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.decode.TagReader.deserialize_js_primitive_object" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_primitive_object">deserialize_js_primitive_object</h3>
-<p><code>decode.TagReader.deserialize_js_primitive_object(tag, ctx)</code></p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.deserialize_js_primitive_object(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    tag: PrimitiveObjectTag,</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    ctx: DecodeContext,</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.decode.TagReader.deserialize_js_regexp" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_js_regexp">deserialize_js_regexp</h3>
-<p><code>decode.TagReader.deserialize_js_regexp(tag, ctx)</code></p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.deserialize_js_regexp(</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kRegExp],</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    ctx: DecodeContext,</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.decode.TagReader.deserialize_jsmap" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_jsmap">deserialize_jsmap</h3>
-<p><code>decode.TagReader.deserialize_jsmap(tag, ctx)</code></p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.deserialize_jsmap(</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kBeginJSMap],</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    ctx: DecodeContext,</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.decode.TagReader.deserialize_jsset" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_jsset">deserialize_jsset</h3>
-<p><code>decode.TagReader.deserialize_jsset(tag, ctx)</code></p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.deserialize_jsset(</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kBeginJSSet],</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    ctx: DecodeContext,</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.decode.TagReader.deserialize_object_reference" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_object_reference">deserialize_object_reference</h3>
-<p><code>decode.TagReader.deserialize_object_reference(tag, ctx)</code></p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.deserialize_object_reference(</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kObjectReference],</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    ctx: DecodeContext,</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.decode.TagReader.deserialize_unsupported_wasm" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_unsupported_wasm">deserialize_unsupported_wasm</h3>
-<p><code>decode.TagReader.deserialize_unsupported_wasm(tag, ctx)</code></p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.deserialize_unsupported_wasm(</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kWasmMemoryTransfer, SerializationTag.kWasmModuleTransfer],</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    ctx: DecodeContext,</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.decode.TagReader.deserialize_v8_shared_object_reference" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.deserialize_v8_shared_object_reference">deserialize_v8_shared_object_reference</h3>
-<p><code>decode.TagReader.deserialize_v8_shared_object_reference(tag, ctx)</code></p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.deserialize_v8_shared_object_reference(</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    tag: Literal[SerializationTag.kSharedObject],</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    ctx: DecodeContext,</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.decode.TagReader.register_tag_readers" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.TagReader.register_tag_readers">register_tag_readers</h3>
-<p><code>decode.TagReader.register_tag_readers(tag_readers)</code></p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>decode.TagReader.register_tag_readers(tag_readers: TagReaderRegistry)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 </section>
 <section id="v8serialize.decode.ReadableTagStreamReadFunction" class="level1">
 <h1>decode.ReadableTagStreamReadFunction</h1>
-<p><code>decode.ReadableTagStreamReadFunction()</code></p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>decode.ReadableTagStreamReadFunction()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The type of an unbound, argument-less <code>ReadableTagStream</code> method.</p>
 </section>
 <section id="v8serialize.decode.DecodeContext" class="level1">
 <h1>decode.DecodeContext</h1>
-<p><code>decode.DecodeContext()</code></p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>decode.DecodeContext()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <section id="attributes-5" class="level2">
 <h2 class="anchored" data-anchor-id="attributes-5">Attributes</h2>
 <table class="caption-top table">
@@ -971,37 +1068,41 @@ ul.task-list li input[type="checkbox"] {
 </table>
 <section id="v8serialize.decode.DecodeContext.decode_object" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.decode.DecodeContext.decode_object">decode_object</h3>
-<p><code>decode.DecodeContext.decode_object(tag=...)</code></p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>decode.DecodeContext.decode_object(tag: SerializationTag <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> ...)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return a value by reading a tag’s data from this context’s stream.</p>
 <p>If <code>tag</code> is None, the stream is positioned on a tag which must be read and advanced over. If <code>tag</code> is a <code>SerializationTag</code>, it is the tag that the stream is now positioned just after, and a tag must not be read from the stream again before handling the provided <code>tag</code>.</p>
-<section id="returns" class="level4">
-<h4 class="anchored" data-anchor-id="returns">Returns</h4>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td></td>
 <td><a href="https://docs.python.org/3/library/functions.html#object">object</a></td>
 <td>A value representing the <code>tag</code>.</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="raises-1" class="level4">
-<h4 class="anchored" data-anchor-id="raises-1">Raises</h4>
+<section id="raises-1" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises-1">Raises</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td></td>
 <td><a href="../reference/exceptions.html#v8serialize.UnhandledTagDecodeV8SerializeError">UnhandledTagDecodeV8SerializeError</a></td>
 <td>If it’s not possible to read the tag.</td>
 </tr>
@@ -1013,13 +1114,19 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.decode.DecodeNextFn" class="level1">
 <h1>decode.DecodeNextFn</h1>
-<p><code>decode.DecodeNextFn()</code></p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>decode.DecodeNextFn()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Delegate to the next decode step in the sequence to read a tag from the stream.</p>
-<section id="returns-1" class="level2">
-<h2 class="anchored" data-anchor-id="returns-1">Returns</h2>
+<section id="returns-1" class="level2 doc-section doc-section-returns">
+<h2 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h2>
 <table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 78%">
+</colgroup>
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
@@ -1027,22 +1134,25 @@ ul.task-list li input[type="checkbox"] {
 <tbody>
 <tr class="odd">
 <td></td>
+<td></td>
 <td>The value representing the tag the next decode step read.</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="raises-2" class="level2">
-<h2 class="anchored" data-anchor-id="raises-2">Raises</h2>
+<section id="raises-2" class="level2 doc-section doc-section-raises">
+<h2 class="doc-section doc-section-raises anchored" data-anchor-id="raises-2">Raises</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td></td>
 <td><a href="../reference/exceptions.html#v8serialize.UnhandledTagDecodeV8SerializeError">UnhandledTagDecodeV8SerializeError</a></td>
 <td>If none of the following decode steps were able to read the tag.</td>
 </tr>
@@ -1052,13 +1162,13 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.decode.DecodeStepFn" class="level1">
 <h1>decode.DecodeStepFn</h1>
-<p><code>decode.DecodeStepFn()</code></p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>decode.DecodeStepFn()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The signature of a function that returns objects to reflect V8-serialized data.</p>
 <p>Decode steps can either read the <code>ctx.stream</code> directly, or delegate to the next decode step by calling <code>next()</code>. Steps can modify the return the value decoded by the next step before returning it.</p>
 </section>
 <section id="v8serialize.decode.DecodeStepObject" class="level1">
 <h1>decode.DecodeStepObject</h1>
-<p><code>decode.DecodeStepObject()</code></p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>decode.DecodeStepObject()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <section id="attributes-6" class="level2">
 <h2 class="anchored" data-anchor-id="attributes-6">Attributes</h2>
 <table class="caption-top table">
@@ -1081,8 +1191,8 @@ ul.task-list li input[type="checkbox"] {
 <h1>decode.DecodeStep</h1>
 <p><code>decode.DecodeStep</code></p>
 <p>Either a <code>DecodeStepObject</code> or <code>DecodeStepFn</code>.</p>
-<section id="see-also-1" class="level2">
-<h2 class="anchored" data-anchor-id="see-also-1">See Also</h2>
+<section id="see-also-1" class="level2 doc-section doc-section-see-also">
+<h2 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also-1">See Also</h2>
 <p><a href="../reference/customized_decoding.html#v8serialize.default_decode_steps"><code>default_decode_steps</code></a></p>
 </section>
 </section>
@@ -1104,7 +1214,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.decode.AnyJSError" class="level1">
 <h1>decode.AnyJSError</h1>
-<p><code>decode.AnyJSError()</code></p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>decode.AnyJSError()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A Protocol matching <a href="../reference/javascript_error.html#v8serialize.jstypes.JSError">JSError</a> and <a href="../reference/javascript_error.html#v8serialize.jstypes.JSErrorData">JSErrorData</a>.</p>
 <section id="attributes-7" class="level2">
 <h2 class="anchored" data-anchor-id="attributes-7">Attributes</h2>
@@ -1138,27 +1248,27 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.decode.ArrayBufferConstructor" class="level1">
 <h1>decode.ArrayBufferConstructor</h1>
-<p><code>decode.ArrayBufferConstructor()</code></p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>decode.ArrayBufferConstructor()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A function that creates a representation of a serialized ArrayBuffer.</p>
 </section>
 <section id="v8serialize.decode.ArrayBufferTransferConstructor" class="level1">
 <h1>decode.ArrayBufferTransferConstructor</h1>
-<p><code>decode.ArrayBufferTransferConstructor()</code></p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>decode.ArrayBufferTransferConstructor()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A function that creates a representation of a serialized ArrayBufferTransfer.</p>
 </section>
 <section id="v8serialize.decode.ArrayBufferViewConstructor" class="level1">
 <h1>decode.ArrayBufferViewConstructor</h1>
-<p><code>decode.ArrayBufferViewConstructor()</code></p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>decode.ArrayBufferViewConstructor()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A function that creates a representation of a serialized ArrayBuffer view.</p>
 </section>
 <section id="v8serialize.decode.JSErrorBuilder" class="level1">
 <h1>decode.JSErrorBuilder</h1>
-<p><code>decode.JSErrorBuilder()</code></p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>decode.JSErrorBuilder()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A function that creates a representation of a serialized Error.</p>
 </section>
 <section id="v8serialize.decode.SharedArrayBufferConstructor" class="level1">
 <h1>decode.SharedArrayBufferConstructor</h1>
-<p><code>decode.SharedArrayBufferConstructor()</code></p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>decode.SharedArrayBufferConstructor()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A function that creates a representation of a serialized SharedArrayBuffer.</p>
 </section>
 <section id="v8serialize.decode.SharedArrayBufferId" class="level1">
@@ -1171,12 +1281,12 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.Buffer" class="level1">
 <h1>Buffer</h1>
-<p><code>Buffer()</code></p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>Buffer()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>An alias of <a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Buffer"><code>collections.abc.Buffer</code></a>.</p>
 </section>
 <section id="v8serialize.BufferSequence" class="level1">
 <h1>BufferSequence</h1>
-<p><code>BufferSequence()</code></p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>BufferSequence()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A <code>Sequence[int]</code> that’s also a <code>Buffer</code>.</p>
 <p>Essentially binary data, like <code>bytes</code>, <code>bytearray</code>, <code>array.array</code> and <code>memoryview</code>.</p>
 </section>
@@ -1188,7 +1298,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.SparseMutableSequence" class="level1">
 <h1>SparseMutableSequence</h1>
-<p><code>SparseMutableSequence()</code></p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>SparseMutableSequence()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A writable extension of <a href="../reference/types_protocols.html#v8serialize.SparseSequence"><code>SparseSequence</code></a>.</p>
 <section id="methods-3" class="level2">
 <h2 class="anchored" data-anchor-id="methods-3">Methods</h2>
@@ -1208,7 +1318,7 @@ ul.task-list li input[type="checkbox"] {
 </table>
 <section id="v8serialize.SparseMutableSequence.resize" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.SparseMutableSequence.resize">resize</h3>
-<p><code>SparseMutableSequence.resize(length)</code></p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>SparseMutableSequence.resize(length: <span class="bu">int</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Change the length of the array.</p>
 <p>Elements are dropped if the length is reduced, or gaps are created at the end if the length is increased.</p>
 </section>
@@ -1216,7 +1326,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.SparseSequence" class="level1">
 <h1>SparseSequence</h1>
-<p><code>SparseSequence()</code></p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>SparseSequence()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A Sequence that can have holes — indexes with no value present.</p>
 <p>Similar to an ordered dict with int keys, but the empty values have a type that need not be <code>None</code> — the <code>hole_value</code> property — with type <code>_HoleT_co</code>.</p>
 <p>Unlike a <code>dict</code>, the bounds are defined, <code>__len__</code> is the length including holes. Indexing with <code>__getitem__</code> returns the hole value instead of raising a <code>KeyError</code> as <code>dict</code> does. Accessing out-of-bound values raises an <code>IndexError</code> as other Sequences do.</p>
@@ -1264,13 +1374,13 @@ ul.task-list li input[type="checkbox"] {
 </table>
 <section id="v8serialize.SparseSequence.element_indexes" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.SparseSequence.element_indexes">element_indexes</h3>
-<p><code>SparseSequence.element_indexes(order=...)</code></p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>SparseSequence.element_indexes(order: Order <span class="op">=</span> ...)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Iterate over the indexes in the sequence that are not holes.</p>
 <p><code>order</code> is <code>Order.ASCENDING</code> if not specified. <code>Order.UNORDERED</code> allows the implementation to use whichever order is most efficient.</p>
 </section>
 <section id="v8serialize.SparseSequence.elements" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.SparseSequence.elements">elements</h3>
-<p><code>SparseSequence.elements(order=...)</code></p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>SparseSequence.elements(order: Order <span class="op">=</span> ...)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Get a live view of the index elements with existant values.</p>
 <p><code>order</code> is <code>Order.ASCENDING</code> if not specified. <code>Order.UNORDERED</code> allows the implementation to use whichever order is most efficient.</p>
 <p>This is analogous to the <code>items()</code> method of <code>Mapping</code>s.</p>

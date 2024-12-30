@@ -414,12 +414,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="v8serialize.dumps" class="level1">
 <h1>dumps</h1>
-<p><code>dumps(value, *, encode_steps=default_encode_steps, features=None, v8_version=None)</code></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>dumps(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">object</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    encode_steps: Iterable[EncodeStep] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> default_encode_steps,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    features: SerializationFeature <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    v8_version: Version <span class="op">|</span> SymbolicVersion <span class="op">|</span> <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Serialize a Python value into a JavaScript value in the V8 serialization format.</p>
 <p><code>v8_version</code> and <code>features</code> together control the <a href="../reference/api_constants.html#v8serialize.SerializationFeature">SerializationFeatures</a> that are enabled. Setting <code>v8_version</code> enables all features supported by the version. Setting <code>features</code> selectively enables the specified features. The union of these feature sets is enabled when encoding.</p>
 <p>If <code>features</code> and <code>v8_version</code> are left unchanged, no serialization features beyond the baseline are enabled, so serialized data can be read by any V8 runtime from <a href="../reference/v8serialize.SerializationFeature.MaxCompatibility.html#v8serialize.SerializationFeature.MaxCompatibility"><code>SerializationFeature.MaxCompatibility.first_v8_version</code></a>.</p>
-<section id="parameters" class="level2">
-<h2 class="anchored" data-anchor-id="parameters">Parameters</h2>
+<section id="parameters" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -431,25 +437,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>value</code></td>
+<td>value</td>
 <td><a href="https://docs.python.org/3/library/functions.html#object">object</a></td>
 <td>The Python value to serialize.</td>
 <td><em>required</em></td>
 </tr>
 <tr class="even">
-<td><code>encode_steps</code></td>
+<td>encode_steps</td>
 <td><a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable">Iterable</a>[<a href="../reference/types_protocols.html#v8serialize.encode.EncodeStep">EncodeStep</a>] | None</td>
 <td>The sequence of <a href="../reference/types_protocols.html#v8serialize.encode.EncodeStep">encode steps</a> that control how the <code>value</code> is converted to JavaScript types.</td>
 <td><code>default_encode_steps</code></td>
 </tr>
 <tr class="odd">
-<td><code>features</code></td>
+<td>features</td>
 <td><a href="../reference/api_constants.html#v8serialize.SerializationFeature">SerializationFeature</a> | None</td>
 <td>Additional features of the V8 serialization format to enable.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="even">
-<td><code>v8_version</code></td>
+<td>v8_version</td>
 <td><a href="https://packaging.pypa.io/en/stable/version.html#packaging.version.Version">Version</a> | <a href="../reference/api_constants.html#v8serialize.SymbolicVersion">SymbolicVersion</a> | <a href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</td>
 <td>The minimum version of V8 that needs to be able to read the serialized data.</td>
 <td><code>None</code></td>
@@ -457,62 +463,81 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns" class="level2">
-<h2 class="anchored" data-anchor-id="returns">Returns</h2>
+<section id="returns" class="level2 doc-section doc-section-returns">
+<h2 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td></td>
 <td><a href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></td>
 <td>The serialized data.</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="raises" class="level2">
-<h2 class="anchored" data-anchor-id="raises">Raises</h2>
+<section id="raises" class="level2 doc-section doc-section-raises">
+<h2 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td></td>
 <td><a href="../reference/exceptions.html#v8serialize.UnhandledValueEncodeV8SerializeError">UnhandledValueEncodeV8SerializeError</a></td>
 <td>When a <code>value</code> (or a sub-value within it) is not supported by the <code>encode_steps</code>.</td>
 </tr>
 <tr class="even">
+<td></td>
 <td><a href="../reference/exceptions.html#v8serialize.FeatureNotEnabledEncodeV8SerializeError">FeatureNotEnabledEncodeV8SerializeError</a></td>
 <td>When encoding <code>value</code> requires a <a href="../reference/api_constants.html#v8serialize.SerializationFeature"><code>SerializationFeature</code></a> to be enabled that isn’t enabled.</td>
 </tr>
 <tr class="odd">
+<td></td>
 <td><a href="../reference/exceptions.html#v8serialize.EncodeV8SerializeError">EncodeV8SerializeError</a></td>
 <td>Is the parent of all data-specific errors thrown when encoding.</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="examples" class="level2">
-<h2 class="anchored" data-anchor-id="examples">Examples</h2>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> base64 <span class="im">import</span> b64encode</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize <span class="im">import</span> loads</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize.jstypes <span class="im">import</span> JSObject, JSSet</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> data <span class="op">=</span> dumps(JSObject(<span class="bu">id</span><span class="op">=</span><span class="dv">42</span>, title<span class="op">=</span><span class="st">'Stuff'</span>, tags<span class="op">=</span>JSSet([<span class="st">'foo'</span>, <span class="st">'bar'</span>])))</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> loads(data)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>JSObject(<span class="bu">id</span><span class="op">=</span><span class="dv">42</span>, title<span class="op">=</span><span class="st">'Stuff'</span>, tags<span class="op">=</span>JSSet([<span class="st">'foo'</span>, <span class="st">'bar'</span>]))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="examples" class="level2 doc-section doc-section-examples">
+<h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> base64 <span class="im">import</span> b64encode</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize <span class="im">import</span> loads</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize.jstypes <span class="im">import</span> JSObject, JSSet</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> data <span class="op">=</span> dumps(JSObject(<span class="bu">id</span><span class="op">=</span><span class="dv">42</span>, title<span class="op">=</span><span class="st">'Stuff'</span>, tags<span class="op">=</span>JSSet([<span class="st">'foo'</span>, <span class="st">'bar'</span>])))</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> loads(data)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>JSObject(<span class="bu">id</span><span class="op">=</span><span class="dv">42</span>, title<span class="op">=</span><span class="st">'Stuff'</span>, tags<span class="op">=</span>JSSet([<span class="st">'foo'</span>, <span class="st">'bar'</span>]))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 <section id="v8serialize.loads" class="level1">
 <h1>loads</h1>
-<p><code>loads(data, *, decode_steps=None, nodejs=None, jsmap_type=None, jsset_type=None, js_object_type=None, js_array_type=None, js_constants=None, host_object_deserializer=None, js_error_builder=None, default_timezone=None)</code></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>loads(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    data: ReadableBinary <span class="op">|</span> Buffer,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    decode_steps: Iterable[DecodeStep] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    nodejs: <span class="bu">bool</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    jsmap_type: JSMapType <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    jsset_type: JSSetType <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    js_object_type: JSObjectType <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    js_array_type: JSArrayType <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    js_constants: Mapping[ConstantTags, <span class="bu">object</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    host_object_deserializer: HostObjectDeserializer[<span class="bu">object</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    js_error_builder: JSErrorBuilder[<span class="bu">object</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    default_timezone: tzinfo <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Deserialize a JavaScript value encoded in V8 serialization format.</p>
 <p>The serialized JavaScript types are mapped to appropriate Python equivalents according to the keyword argument options:</p>
 <ol type="1">
@@ -522,8 +547,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><code>host_object_deserializer</code> defaults to <a href="../reference/extensions_nodejs.html#v8serialize.extensions.NodeJsArrayBufferViewHostObjectHandler">NodeJsArrayBufferViewHostObjectHandler</a> unless <code>nodejs</code> is <code>False</code>.</li>
 </ul></li>
 </ol>
-<section id="parameters-1" class="level2">
-<h2 class="anchored" data-anchor-id="parameters-1">Parameters</h2>
+<section id="parameters-1" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -535,67 +560,67 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>data</code></td>
+<td>data</td>
 <td><a href="../reference/types_protocols.html#v8serialize.ReadableBinary">ReadableBinary</a> | <a href="../reference/types_protocols.html#v8serialize.Buffer">Buffer</a></td>
 <td>The bytes to deserialize as a bytes-like object such as <code>bytes</code>, <code>bytearray</code>, <code>memoryview</code>.</td>
 <td><em>required</em></td>
 </tr>
 <tr class="even">
-<td><code>decode_steps</code></td>
+<td>decode_steps</td>
 <td><a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable">Iterable</a>[<a href="../reference/types_protocols.html#v8serialize.decode.DecodeStep">DecodeStep</a>] | None</td>
 <td>A sequence of decode steps, which are responsible for creating Python values to represent the JavaScript values found in the <code>data</code>.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
-<td><code>nodejs</code></td>
+<td>nodejs</td>
 <td><a href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</td>
 <td>Node.js’s custom buffer HostObject extension is enabled unless <code>False</code>, or <code>host_object_deserializer</code> is set.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="even">
-<td><code>jsmap_type</code></td>
+<td>jsmap_type</td>
 <td><a href="../reference/types_protocols.html#v8serialize.decode.JSMapType">JSMapType</a> | None</td>
 <td>A function returning an empty <code>dict</code> to represent Map. Default: <a href="../reference/javascript_map_set.html#v8serialize.jstypes.JSMap">JSMap</a>.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
-<td><code>jsset_type</code></td>
+<td>jsset_type</td>
 <td><a href="../reference/types_protocols.html#v8serialize.decode.JSSetType">JSSetType</a> | None</td>
 <td>A function returning an empty <code>set</code> to represent Set. Default: <a href="../reference/javascript_map_set.html#v8serialize.jstypes.JSSet">JSSet</a>.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="even">
-<td><code>js_object_type</code></td>
+<td>js_object_type</td>
 <td><a href="../reference/types_protocols.html#v8serialize.decode.JSObjectType">JSObjectType</a> | None</td>
 <td>A function returning an empty <code>dict</code> to represent Object. Default: <a href="../reference/javascript_object.html#v8serialize.jstypes.JSObject">JSObject</a>.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
-<td><code>js_array_type</code></td>
+<td>js_array_type</td>
 <td><a href="../reference/types_protocols.html#v8serialize.decode.JSArrayType">JSArrayType</a> | None</td>
 <td>A function returning an empty <code>dict</code> to represent Array. Default: <a href="../reference/javascript_object.html#v8serialize.jstypes.JSArray">JSArray</a>.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="even">
-<td><code>js_constants</code></td>
+<td>js_constants</td>
 <td><a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping">Mapping</a>[<a href="../reference/v8_constants.html#v8serialize.constants.ConstantTags">ConstantTags</a>, <a href="https://docs.python.org/3/library/functions.html#object">object</a>] | None</td>
 <td>A dict mapping tags from <a href="../reference/v8_constants.html#v8serialize.constants.JS_CONSTANT_TAGS">JS_CONSTANT_TAGS</a> to the values to represent them as. Default: see <a href="../reference/v8_constants.html#v8serialize.constants.JS_CONSTANT_TAGS">JS_CONSTANT_TAGS</a>.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
-<td><code>host_object_deserializer</code></td>
+<td>host_object_deserializer</td>
 <td><a href="../reference/types_protocols.html#v8serialize.decode.HostObjectDeserializer">HostObjectDeserializer</a>[<a href="https://docs.python.org/3/library/functions.html#object">object</a>] | None</td>
 <td>A <a href="../reference/types_protocols.html#v8serialize.decode.HostObjectDeserializer">HostObjectDeserializer</a> to load <a href="../reference/v8_constants.html#v8serialize.constants.SerializationTag.kHostObject">HostObject</a> extension tags. Default: see <a href="../reference/encoding_decoding.html#v8serialize.loads">desc</a>.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="even">
-<td><code>js_error_builder</code></td>
+<td>js_error_builder</td>
 <td><a href="../reference/types_protocols.html#v8serialize.decode.JSErrorBuilder">JSErrorBuilder</a>[<a href="https://docs.python.org/3/library/functions.html#object">object</a>] | None</td>
 <td>A JSErrorBuilder to create Error representations. Default: <a href="../reference/javascript_error.html#v8serialize.jstypes.JSError.builder">JSError.builder</a></td>
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
-<td><code>default_timezone</code></td>
+<td>default_timezone</td>
 <td><a href="https://docs.python.org/3/library/datetime.html#datetime.tzinfo">tzinfo</a> | None</td>
 <td>The timezone to use when creating <a href="https://docs.python.org/3/library/datetime.html#datetime.datetime">datetime</a> to represent Date. Default: datetimes have no timezone.</td>
 <td><code>None</code></td>
@@ -603,78 +628,89 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns-1" class="level2">
-<h2 class="anchored" data-anchor-id="returns-1">Returns</h2>
+<section id="returns-1" class="level2 doc-section doc-section-returns">
+<h2 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td></td>
 <td><a href="https://docs.python.org/3/library/functions.html#object">object</a></td>
 <td>The first value in the <code>data</code>, as deserialized by the <code>decode_steps</code>. Using the <a href="../reference/customized_decoding.html#v8serialize.default_decode_steps"><code>default_decode_steps</code></a>, this will be a type from <code>v8serialize.jstypes</code>, such as <code>JSObject</code> to represent a JavaScript Object.</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="raises-1" class="level2">
-<h2 class="anchored" data-anchor-id="raises-1">Raises</h2>
+<section id="raises-1" class="level2 doc-section doc-section-raises">
+<h2 class="doc-section doc-section-raises anchored" data-anchor-id="raises-1">Raises</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td></td>
 <td><a href="../reference/exceptions.html#v8serialize.DecodeV8SerializeError">DecodeV8SerializeError</a></td>
 <td>When <code>data</code> is not well-formed V8 serialization format data.</td>
 </tr>
 <tr class="even">
+<td></td>
 <td><a href="../reference/exceptions.html#v8serialize.UnhandledTagDecodeV8SerializeError">UnhandledTagDecodeV8SerializeError</a></td>
 <td>When the <code>decode_steps</code> don’t support a JavaScript type occurring in the <code>data</code>.</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="notes" class="level2">
-<h2 class="anchored" data-anchor-id="notes">Notes</h2>
+<section id="notes" class="level2 doc-section doc-section-notes">
+<h2 class="doc-section doc-section-notes anchored" data-anchor-id="notes">Notes</h2>
 <p>Data serialized by V8 serialization format version 13 or newer can be decoded. (<a href="https://github.com/v8/v8/commit/6543519977b2012b58a4ffef28b8527db404fbdb">13 was introduced in 2017, V8 version 5.8.294</a>, used by Node.JS 16.)</p>
 <div class="callout-notes">
 <p><code>loads()</code> does not need any configuration of V8 version or serialization features, because it automatically supports decoding data encoded with or without optional features enabled.</p>
 </div>
 </section>
-<section id="examples-1" class="level2">
-<h2 class="anchored" data-anchor-id="examples-1">Examples</h2>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize <span class="im">import</span> dumps, loads</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> loads(dumps({<span class="st">'Hello'</span>: <span class="st">'World'</span>}))</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>JSMap({<span class="st">'Hello'</span>: <span class="st">'World'</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="examples-1" class="level2 doc-section doc-section-examples">
+<h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples-1">Examples</h2>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize <span class="im">import</span> dumps, loads</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> loads(dumps({<span class="st">'Hello'</span>: <span class="st">'World'</span>}))</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>JSMap({<span class="st">'Hello'</span>: <span class="st">'World'</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The types used to represent JavaScript values can be changed, for example, we can use a regular Python dict to represent JavaScript Map.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> loads(dumps({<span class="st">'Hello'</span>: <span class="st">'World'</span>}), jsmap_type<span class="op">=</span><span class="bu">dict</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>{<span class="st">'Hello'</span>: <span class="st">'World'</span>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> loads(dumps({<span class="st">'Hello'</span>: <span class="st">'World'</span>}), jsmap_type<span class="op">=</span><span class="bu">dict</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>{<span class="st">'Hello'</span>: <span class="st">'World'</span>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>By default JavaScript null and undefined are also different in Python:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize.constants <span class="im">import</span> SerializationTag</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize.jstypes <span class="im">import</span> JSUndefined, JSObject</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> loads(dumps(JSObject(missing_null<span class="op">=</span><span class="va">None</span>, missing_undefined<span class="op">=</span>JSUndefined)))</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>JSObject(missing_null<span class="op">=</span><span class="va">None</span>, missing_undefined<span class="op">=</span>JSUndefined)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize.constants <span class="im">import</span> SerializationTag</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize.jstypes <span class="im">import</span> JSUndefined, JSObject</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> loads(dumps(JSObject(missing_null<span class="op">=</span><span class="va">None</span>, missing_undefined<span class="op">=</span>JSUndefined)))</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>JSObject(missing_null<span class="op">=</span><span class="va">None</span>, missing_undefined<span class="op">=</span>JSUndefined)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>But we can make them both be None:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> loads(dumps(JSObject(missing_null<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>...                      missing_undefined<span class="op">=</span>JSUndefined)),</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>...       js_constants<span class="op">=</span>{SerializationTag.kUndefined: <span class="va">None</span>})</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>JSObject(missing_null<span class="op">=</span><span class="va">None</span>, missing_undefined<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> loads(dumps(JSObject(missing_null<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>...                      missing_undefined<span class="op">=</span>JSUndefined)),</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>...       js_constants<span class="op">=</span>{SerializationTag.kUndefined: <span class="va">None</span>})</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>JSObject(missing_null<span class="op">=</span><span class="va">None</span>, missing_undefined<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 <section id="v8serialize.Encoder" class="level1">
 <h1>Encoder</h1>
-<p><code>Encoder(self, *, encode_steps=default_encode_steps, features=None, v8_version=None)</code></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>Encoder(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    encode_steps: Iterable[EncodeStep] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> default_encode_steps,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    features: SerializationFeature <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    v8_version: Version <span class="op">|</span> UnreleasedVersion <span class="op">|</span> <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A re-usable configuration for serializing objects into V8 serialization format.</p>
 <p>The <code>encode_steps</code>, <code>features</code> and <code>v8_version</code> arguments behave as described for <a href="../reference/encoding_decoding.html#v8serialize.dumps"><code>dumps()</code></a>. The <code>encode()</code> method behaves like <code>dumps()</code> without needing to pass the arguments for every call.</p>
-<section id="parameters-2" class="level2">
-<h2 class="anchored" data-anchor-id="parameters-2">Parameters</h2>
+<section id="parameters-2" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -686,19 +722,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>encode_steps</code></td>
+<td>encode_steps</td>
 <td><a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable">Iterable</a>[<a href="../reference/types_protocols.html#v8serialize.encode.EncodeStep">EncodeStep</a>] | None</td>
 <td>The sequence of encode steps that control how the <code>value</code> is converted to JavaScript types.</td>
 <td><code>default_encode_steps</code></td>
 </tr>
 <tr class="even">
-<td><code>features</code></td>
+<td>features</td>
 <td><a href="../reference/api_constants.html#v8serialize.SerializationFeature">SerializationFeature</a> | None</td>
 <td>Additional features of the V8 serialization format to enable.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
-<td><code>v8_version</code></td>
+<td>v8_version</td>
 <td><a href="https://packaging.pypa.io/en/stable/version.html#packaging.version.Version">Version</a> | <a href="../reference/types_protocols.html#v8serialize.constants.UnreleasedVersion">UnreleasedVersion</a> | <a href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</td>
 <td>The minimum version of V8 that needs to be able to read the serialized data.</td>
 <td><code>None</code></td>
@@ -749,10 +785,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="v8serialize.Encoder.encode" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.Encoder.encode">encode</h3>
-<p><code>Encoder.encode(value)</code></p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>Encoder.encode(value: <span class="bu">object</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Serialize a value in the V8 serialization format.</p>
-<section id="parameters-3" class="level4">
-<h4 class="anchored" data-anchor-id="parameters-3">Parameters</h4>
+<section id="parameters-3" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -764,7 +800,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>value</code></td>
+<td>value</td>
 <td><a href="https://docs.python.org/3/library/functions.html#object">object</a></td>
 <td>The Python object to serialize.</td>
 <td><em>required</em></td>
@@ -772,17 +808,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns-2" class="level4">
-<h4 class="anchored" data-anchor-id="returns-2">Returns</h4>
+<section id="returns-2" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td></td>
 <td><a href="https://docs.python.org/3/library/stdtypes.html#bytearray">bytearray</a></td>
 <td>A <code>bytearray</code> containing the encoded bytes.</td>
 </tr>
@@ -794,11 +832,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="v8serialize.Decoder" class="level1">
 <h1>Decoder</h1>
-<p><code>Decoder(self, decode_steps=default_decode_steps)</code></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>Decoder(<span class="va">self</span>, decode_steps: Iterable[DecodeStep] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> default_decode_steps)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A re-usable configuration for deserializing V8 serialization format data.</p>
 <p>The <code>decode_steps</code> argument behaves as described for <a href="../reference/encoding_decoding.html#v8serialize.loads"><code>loads()</code></a>. The <code>decode()</code> and <code>decodes()</code> methods behave like <code>loads()</code> without needing to pass the <code>decode_steps</code> for every call.</p>
-<section id="parameters-4" class="level2">
-<h2 class="anchored" data-anchor-id="parameters-4">Parameters</h2>
+<section id="parameters-4" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -810,7 +848,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>decode_steps</code></td>
+<td>decode_steps</td>
 <td><a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable">Iterable</a>[<a href="../reference/types_protocols.html#v8serialize.decode.DecodeStep">DecodeStep</a>] | None</td>
 <td>A sequence of decode steps, which are responsible for creating Python values to represent the JavaScript values found when decoding data.</td>
 <td><code>default_decode_steps</code></td>
@@ -857,11 +895,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="v8serialize.Decoder.decode" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.Decoder.decode">decode</h3>
-<p><code>Decoder.decode(fp)</code></p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>Decoder.decode(fp: SupportsRead[<span class="bu">bytes</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Deserialize V8 serialization format data from a file.</p>
 <p>This Decoder’s <code>decode_steps</code> are used to create Python types from the serialized data.</p>
-<section id="parameters-5" class="level4">
-<h4 class="anchored" data-anchor-id="parameters-5">Parameters</h4>
+<section id="parameters-5" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -873,7 +911,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>fp</code></td>
+<td>fp</td>
 <td><code>SupportsRead</code>[<a href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a>]</td>
 <td>The file-like object to read and deserialize.</td>
 <td><em>required</em></td>
@@ -881,17 +919,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns-3" class="level4">
-<h4 class="anchored" data-anchor-id="returns-3">Returns</h4>
+<section id="returns-3" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td></td>
 <td><a href="https://docs.python.org/3/library/functions.html#object">object</a></td>
 <td>The first value in the <code>fp</code>.</td>
 </tr>
@@ -901,11 +941,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="v8serialize.Decoder.decodes" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.Decoder.decodes">decodes</h3>
-<p><code>Decoder.decodes(data)</code></p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>Decoder.decodes(data: ReadableBinary <span class="op">|</span> Buffer)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Deserialize V8 serialization format data from a bytes-like object.</p>
 <p>This Decoder’s <code>decode_steps</code> are used to create Python types from the serialized data.</p>
-<section id="parameters-6" class="level4">
-<h4 class="anchored" data-anchor-id="parameters-6">Parameters</h4>
+<section id="parameters-6" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -917,7 +957,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>data</code></td>
+<td>data</td>
 <td><a href="../reference/types_protocols.html#v8serialize.ReadableBinary">ReadableBinary</a> | <a href="../reference/types_protocols.html#v8serialize.Buffer">Buffer</a></td>
 <td>The bytes-like object to deserialize.</td>
 <td><em>required</em></td>
@@ -925,17 +965,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns-4" class="level4">
-<h4 class="anchored" data-anchor-id="returns-4">Returns</h4>
+<section id="returns-4" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td></td>
 <td><a href="https://docs.python.org/3/library/functions.html#object">object</a></td>
 <td>The first value in <code>data</code>.</td>
 </tr>

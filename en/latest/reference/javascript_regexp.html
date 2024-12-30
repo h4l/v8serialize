@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -355,7 +389,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.jstypes.JSRegExp" class="level1">
 <h1>jstypes.JSRegExp</h1>
-<p><code>jstypes.JSRegExp(self, source, flags=JSRegExpFlag.NoFlag)</code></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSRegExp(<span class="va">self</span>, source: <span class="bu">str</span>, flags: JSRegExpFlag <span class="op">=</span> JSRegExpFlag.NoFlag)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The data represented by a <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp">JavaScript RegExp</a>.</p>
 <p>Note that while Python and JavaScript Regular Expressions are similar, they each have features and syntax not supported by the other. Simple expressions will work the same in both languages, but this is not the case in general.</p>
 <p><strong><code>JSRegExp</code> does not support matching text with the RegExp</strong>, but <a href="../reference/javascript_regexp.html#v8serialize.jstypes.JSRegExp.as_python_pattern"><code>as_python_pattern()</code></a> can work for patterns that use compatible syntax and flags.</p>
@@ -402,13 +436,16 @@ ul.task-list li input[type="checkbox"] {
 </table>
 <section id="v8serialize.jstypes.JSRegExp.as_python_pattern" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSRegExp.as_python_pattern">as_python_pattern</h3>
-<p><code>jstypes.JSRegExp.as_python_pattern(throw=True)</code></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSRegExp.as_python_pattern(throw: <span class="bu">bool</span> <span class="op">=</span> <span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Naively compile the JavaScript RegExp as a Python re.Pattern.</p>
 <p>The pattern may fail to compile due to syntax incompatibility, or may compile but behave incorrectly due to differences between Python and JavaScript’s regular expression support.</p>
 </section>
 <section id="v8serialize.jstypes.JSRegExp.from_python_pattern" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSRegExp.from_python_pattern">from_python_pattern</h3>
-<p><code>jstypes.JSRegExp.from_python_pattern(pattern, throw=True)</code></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSRegExp.from_python_pattern(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    pattern: re.Pattern[AnyStr],</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    throw: <span class="bu">bool</span> <span class="op">=</span> <span class="va">True</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Naively create a JSRegExp with an un-translated Python re.Pattern.</p>
 <p>As with <code>as_python_pattern()</code> this can result in JSRegExp objects that won’t behave on the JavaScript side in the same way as in Python.</p>
 <p>This can fail if the Python pattern has <code>re.VERBOSE</code> set, as there’s no equivalent JavaScript flag.</p>

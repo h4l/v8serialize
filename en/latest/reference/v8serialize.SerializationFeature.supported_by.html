@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -176,11 +210,11 @@ ul.task-list li input[type="checkbox"] {
 
 <section id="v8serialize.SerializationFeature.supported_by" class="level1">
 <h1>supported_by</h1>
-<p><code>SerializationFeature.supported_by(v8_version)</code></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>SerializationFeature.supported_by(v8_version: Version <span class="op">|</span> UnreleasedVersion <span class="op">|</span> <span class="bu">str</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Get the optional serialization features supported by a V8 version or newer.</p>
 <p>Versions of V8 newer than the specified <code>v8_version</code> are expected to continue to be able to read data serialized with these features, because V8 requires that changes to its serialization allow newer versions to read data written by older versions. See the <a href="https://github.com/v8/v8/blob/42d57fc8309677f13bfb4a443723a4c7306ec1b7/src/objects/value-serializer.cc#L51">information in V8’s serializer code for details</a>.</p>
-<section id="arguments" class="level2">
-<h2 class="anchored" data-anchor-id="arguments">Arguments</h2>
+<section id="arguments" class="level2 doc-section doc-section-arguments">
+<h2 class="doc-section doc-section-arguments anchored" data-anchor-id="arguments">Arguments</h2>
 <p>v8_version: A V8 release number.</p>
 
 

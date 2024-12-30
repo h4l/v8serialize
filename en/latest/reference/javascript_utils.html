@@ -408,17 +408,28 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="v8serialize.jstypes.js_repr_settings" class="level1">
 <h1>jstypes.js_repr_settings</h1>
-<p><code>jstypes.js_repr_settings(js_repr=None, *, force_restore=False, **kwargs)</code></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>jstypes.js_repr_settings(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    js_repr: JSRepr <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    force_restore: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs: <span class="bu">int</span> <span class="op">|</span> <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Override the active repr settings for JS types.</p>
 <p>This returns a context manager that will restore the previous settings at the end of the context block. The context object is an instance of <a href="../reference/javascript_utils.html#v8serialize.jstypes.JSRepr"><code>JSRepr</code></a>.</p>
-<section id="notes" class="level2">
-<h2 class="anchored" data-anchor-id="notes">Notes</h2>
+<section id="notes" class="level2 doc-section doc-section-notes">
+<h2 class="doc-section doc-section-notes anchored" data-anchor-id="notes">Notes</h2>
 <p>If someone changes the <code>js_repr_settings</code> within your block and your block closes before theirs, your block will emit a <code>JSReprSettingsNotRestored</code> warning and leave the repr settings unchanged. Pass <code>force_restore=True</code> to restore your initial state anyway and not warn.</p>
 </section>
 </section>
 <section id="v8serialize.jstypes.JSRepr" class="level1">
 <h1>jstypes.JSRepr</h1>
-<p><code>jstypes.JSRepr(self, *, maxjsobject=20, maxjsarray=20, **kwargs)</code></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSRepr(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    maxjsobject: <span class="bu">int</span> <span class="op">=</span> <span class="dv">20</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    maxjsarray: <span class="bu">int</span> <span class="op">=</span> <span class="dv">20</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs: Any,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Generate repr strings for JS types.</p>
 <p>This implements the repr strings used by JSObject, JSArray and others, which can be indented and handle cyclic references by substituting <code>...</code> after several recursive calls.</p>
 <div class="callout callout-style-default callout-warning callout-titled">
@@ -513,54 +524,63 @@ Warning
 </table>
 <section id="v8serialize.jstypes.JSRepr.repr_JSArray" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSRepr.repr_JSArray">repr_JSArray</h3>
-<p><code>jstypes.JSRepr.repr_JSArray(obj, level)</code></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSRepr.repr_JSArray(obj: JSArray, level: <span class="bu">int</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSRepr.repr_JSArrayBuffer" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSRepr.repr_JSArrayBuffer">repr_JSArrayBuffer</h3>
-<p><code>jstypes.JSRepr.repr_JSArrayBuffer(obj, level)</code></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSRepr.repr_JSArrayBuffer(obj: JSArrayBuffer, level: <span class="bu">int</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSRepr.repr_JSError" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSRepr.repr_JSError">repr_JSError</h3>
-<p><code>jstypes.JSRepr.repr_JSError(obj, level)</code></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSRepr.repr_JSError(obj: JSError, level: <span class="bu">int</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSRepr.repr_JSMap" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSRepr.repr_JSMap">repr_JSMap</h3>
-<p><code>jstypes.JSRepr.repr_JSMap(obj, level)</code></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSRepr.repr_JSMap(obj: JSMap, level: <span class="bu">int</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSRepr.repr_JSObject" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSRepr.repr_JSObject">repr_JSObject</h3>
-<p><code>jstypes.JSRepr.repr_JSObject(obj, level)</code></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSRepr.repr_JSObject(obj: JSObject, level: <span class="bu">int</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSRepr.repr_JSSet" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSRepr.repr_JSSet">repr_JSSet</h3>
-<p><code>jstypes.JSRepr.repr_JSSet(obj, level)</code></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSRepr.repr_JSSet(obj: JSSet, level: <span class="bu">int</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSRepr.repr_bytearray" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSRepr.repr_bytearray">repr_bytearray</h3>
-<p><code>jstypes.JSRepr.repr_bytearray(obj, level=1, truncated=None)</code></p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSRepr.repr_bytearray(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    obj: <span class="bu">bytearray</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    level: <span class="bu">int</span> <span class="op">=</span> <span class="dv">1</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    truncated: <span class="bu">bool</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSRepr.repr_bytes" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSRepr.repr_bytes">repr_bytes</h3>
-<p><code>jstypes.JSRepr.repr_bytes(obj, level=1, *, truncated=None)</code></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSRepr.repr_bytes(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    obj: <span class="bu">bytes</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    level: <span class="bu">int</span> <span class="op">=</span> <span class="dv">1</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    truncated: <span class="bu">bool</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSRepr.repr_memoryview" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSRepr.repr_memoryview">repr_memoryview</h3>
-<p><code>jstypes.JSRepr.repr_memoryview(obj, level)</code></p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSRepr.repr_memoryview(obj: <span class="bu">memoryview</span>, level: <span class="bu">int</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 </section>
 <section id="v8serialize.jstypes.JSReprSettingsNotRestored" class="level1">
 <h1>jstypes.JSReprSettingsNotRestored</h1>
-<p><code>jstypes.JSReprSettingsNotRestored()</code></p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSReprSettingsNotRestored()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.same_value_zero" class="level1">
 <h1>jstypes.same_value_zero</h1>
-<p><code>jstypes.same_value_zero(value)</code></p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>jstypes.same_value_zero(value: <span class="bu">object</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Get a surrogate value that follows <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness#same-value-zero_equality">JavaScript same-value-zero equality rules</a>.</p>
 <p>Python values can be compared according to same-value-zero by using <code>==</code>, <code>hash()</code> on the result of calling this function on the values, rather than on the values them directly. Like a key function when sorting.</p>
 <p><code>same_value_zero(x) == same_value_zero(y)</code> is <code>True</code> if <code>x</code> and <code>y</code> are equal under <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness#same-value-zero_equality">JavaScript’s same-value-zero rule</a>.</p>
-<section id="parameters" class="level2">
-<h2 class="anchored" data-anchor-id="parameters">Parameters</h2>
+<section id="parameters" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -572,7 +592,7 @@ Warning
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>value</code></td>
+<td>value</td>
 <td><a href="https://docs.python.org/3/library/functions.html#object">object</a></td>
 <td>Any Python object</td>
 <td><em>required</em></td>
@@ -580,53 +600,55 @@ Warning
 </tbody>
 </table>
 </section>
-<section id="returns" class="level2">
-<h2 class="anchored" data-anchor-id="returns">Returns</h2>
+<section id="returns" class="level2 doc-section doc-section-returns">
+<h2 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td></td>
 <td><a href="../reference/javascript_utils.html#v8serialize.jstypes.JSSameValueZero">JSSameValueZero</a></td>
 <td>An opaque value that follows the same-value-zero rules when compared with <code>==</code> or passed to <code>hash()</code>.</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="examples" class="level2">
-<h2 class="anchored" data-anchor-id="examples">Examples</h2>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> NaN <span class="op">=</span> <span class="bu">float</span>(<span class="st">'nan'</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> NaN <span class="op">==</span> NaN</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> same_value_zero(NaN) <span class="op">==</span> same_value_zero(NaN)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="va">True</span> <span class="op">==</span> <span class="dv">1</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> same_value_zero(<span class="va">True</span>) <span class="op">==</span> same_value_zero(<span class="dv">1</span>)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> l1, l2 <span class="op">=</span> [<span class="dv">0</span>], [<span class="dv">0</span>]</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> l1 <span class="kw">is</span> l2</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> l1 <span class="op">==</span> l2</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> same_value_zero(l1) <span class="op">==</span> same_value_zero(l2)</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> same_value_zero(l1) <span class="op">==</span> same_value_zero(l1)</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="examples" class="level2 doc-section doc-section-examples">
+<h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> NaN <span class="op">=</span> <span class="bu">float</span>(<span class="st">'nan'</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> NaN <span class="op">==</span> NaN</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> same_value_zero(NaN) <span class="op">==</span> same_value_zero(NaN)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="va">True</span> <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> same_value_zero(<span class="va">True</span>) <span class="op">==</span> same_value_zero(<span class="dv">1</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> l1, l2 <span class="op">=</span> [<span class="dv">0</span>], [<span class="dv">0</span>]</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> l1 <span class="kw">is</span> l2</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> l1 <span class="op">==</span> l2</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> same_value_zero(l1) <span class="op">==</span> same_value_zero(l2)</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> same_value_zero(l1) <span class="op">==</span> same_value_zero(l1)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Strings and numbers are equal by value.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> s1, s2 <span class="op">=</span> <span class="bu">str</span>([<span class="bu">ord</span>(<span class="st">'a'</span>)]), <span class="bu">str</span>([<span class="bu">ord</span>(<span class="st">'a'</span>)])</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> s1 <span class="kw">is</span> s2</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> s1 <span class="op">==</span> s2</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> same_value_zero(s1) <span class="op">==</span> same_value_zero(s2)</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> same_value_zero(<span class="fl">1.0</span>) <span class="op">==</span> same_value_zero(<span class="dv">1</span>)</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> s1, s2 <span class="op">=</span> <span class="bu">str</span>([<span class="bu">ord</span>(<span class="st">'a'</span>)]), <span class="bu">str</span>([<span class="bu">ord</span>(<span class="st">'a'</span>)])</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> s1 <span class="kw">is</span> s2</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> s1 <span class="op">==</span> s2</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> same_value_zero(s1) <span class="op">==</span> same_value_zero(s2)</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> same_value_zero(<span class="fl">1.0</span>) <span class="op">==</span> same_value_zero(<span class="dv">1</span>)</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 <section id="v8serialize.jstypes.JSSameValueZero" class="level1">

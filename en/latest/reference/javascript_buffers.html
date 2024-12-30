@@ -468,12 +468,17 @@ window.Quarto = {
   <li><a href="#attributes-4" id="toc-attributes-4" class="nav-link" data-scroll-target="#attributes-4">Attributes</a></li>
   <li><a href="#methods-4" id="toc-methods-4" class="nav-link" data-scroll-target="#methods-4">Methods</a>
   <ul class="collapse">
+  <li><a href="#v8serialize.jstypes.DataFormat.cast" id="toc-v8serialize.jstypes.DataFormat.cast" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataFormat.cast">cast</a></li>
   <li><a href="#v8serialize.jstypes.DataFormat.resolve" id="toc-v8serialize.jstypes.DataFormat.resolve" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataFormat.resolve">resolve</a></li>
   </ul></li>
   </ul></li>
   <li><a href="#v8serialize.jstypes.DataType" id="toc-v8serialize.jstypes.DataType" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataType">jstypes.DataType</a>
   <ul class="collapse">
   <li><a href="#attributes-5" id="toc-attributes-5" class="nav-link" data-scroll-target="#attributes-5">Attributes</a></li>
+  <li><a href="#methods-5" id="toc-methods-5" class="nav-link" data-scroll-target="#methods-5">Methods</a>
+  <ul class="collapse">
+  <li><a href="#v8serialize.jstypes.DataType.cast" id="toc-v8serialize.jstypes.DataType.cast" class="nav-link" data-scroll-target="#v8serialize.jstypes.DataType.cast">cast</a></li>
+  </ul></li>
   </ul></li>
   <li><a href="#v8serialize.jstypes.ArrayBufferViewStructFormat" id="toc-v8serialize.jstypes.ArrayBufferViewStructFormat" class="nav-link" data-scroll-target="#v8serialize.jstypes.ArrayBufferViewStructFormat">jstypes.ArrayBufferViewStructFormat</a>
   <ul class="collapse">
@@ -528,14 +533,23 @@ window.Quarto = {
 </section>
 <section id="v8serialize.jstypes.JSArrayBuffer" class="level1">
 <h1>jstypes.JSArrayBuffer</h1>
-<p><code>jstypes.JSArrayBuffer(self, data=None, byte_length=None, *, max_byte_length=None, resizable=None, copy_data=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSArrayBuffer(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    data: AnyBuffer <span class="op">|</span> <span class="va">None</span> <span class="op">|</span> <span class="bu">int</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    byte_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    max_byte_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    resizable: <span class="bu">bool</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    copy_data: <span class="bu">bool</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    readonly: <span class="bu">bool</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Python equivalent of <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer">JavaScript’s ArrayBuffer</a>.</p>
 <ul>
 <li>This is a <a href="" title="`typecontextmanager`">context manager</a> which returns itself and calls <code>close()</code> on exit.</li>
 <li>This is a <a href="" title="`collections.abc.Buffer`">Buffer</a> which exposes its <code>data</code> as a memoryview.</li>
 </ul>
-<section id="parameters" class="level2">
-<h2 class="anchored" data-anchor-id="parameters">Parameters</h2>
+<section id="parameters" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -547,37 +561,37 @@ window.Quarto = {
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>data</code></td>
+<td>data</td>
 <td><code>AnyBuffer</code> | None | <a href="https://docs.python.org/3/library/functions.html#int">int</a></td>
 <td>Binary data to populate the buffer with. Default: null bytes of <code>byte_length</code>.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="even">
-<td><code>byte_length</code></td>
+<td>byte_length</td>
 <td><a href="https://docs.python.org/3/library/functions.html#int">int</a> | None</td>
 <td>The number of bytes the buffer will be created with. Default: length of <code>data</code> or 0.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
-<td><code>max_byte_length</code></td>
+<td>max_byte_length</td>
 <td><a href="https://docs.python.org/3/library/functions.html#int">int</a> | None</td>
 <td>The maximum length the buffer can be resized to. The buffer will not be resizable if this isn’t set. Default: the initial length of the buffer.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="even">
-<td><code>resizable</code></td>
+<td>resizable</td>
 <td><a href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</td>
 <td>Make the buffer resizable, starting at its maximum length. Default: <code>True</code> if a <code>max_byte_length</code> is set.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
-<td><code>copy_data</code></td>
+<td>copy_data</td>
 <td><a href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</td>
 <td>Whether to copy the <code>data</code> parameter, or wrap it as is. Default: <code>True</code>.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="even">
-<td><code>readonly</code></td>
+<td>readonly</td>
 <td><a href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</td>
 <td>Whether to allow the buffer data to be modified. Default: <code>False</code></td>
 <td><code>None</code></td>
@@ -632,55 +646,71 @@ window.Quarto = {
 </table>
 <section id="v8serialize.jstypes.JSArrayBuffer.close" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSArrayBuffer.close">close</h3>
-<p><code>jstypes.JSArrayBuffer.close()</code></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSArrayBuffer.close()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Release the buffer’s data if it’s a <code>memoryview</code>.</p>
 </section>
 <section id="v8serialize.jstypes.JSArrayBuffer.resize" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSArrayBuffer.resize">resize</h3>
-<p><code>jstypes.JSArrayBuffer.resize(byte_length)</code></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSArrayBuffer.resize(byte_length: <span class="bu">int</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Resize the buffer, within the <code>max_byte_length</code> limit.</p>
 </section>
 </section>
 </section>
 <section id="v8serialize.jstypes.create_view" class="level1">
 <h1>jstypes.create_view</h1>
-<p><code>jstypes.create_view(buffer, format, *, byte_offset=0, byte_length=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>jstypes.create_view(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">buffer</span>: JSArrayBufferT,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span>: ArrayBufferViewTag <span class="op">|</span> DataFormat <span class="op">|</span> ArrayBufferViewStructFormat,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    byte_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create a view over a data buffer, enforcing byte boundaries as JavaScript does.</p>
 <p>This creates an instance of the appropriate view type for the <code>format</code>.</p>
-<section id="returns" class="level2">
-<h2 class="anchored" data-anchor-id="returns">Returns</h2>
+<section id="returns" class="level2 doc-section doc-section-returns">
+<h2 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h2>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 28%">
-<col style="width: 71%">
+<col style="width: 8%">
+<col style="width: 26%">
+<col style="width: 65%">
 </colgroup>
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td></td>
 <td>DataView | TypedArray:</td>
 <td>An instance of <code>DataView</code> or <code>TypedArray</code> wrapping <code>buffer</code>.</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="examples" class="level2">
-<h2 class="anchored" data-anchor-id="examples">Examples</h2>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize.constants <span class="im">import</span> ArrayBufferViewTag</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> create_view(<span class="st">b''</span>, <span class="bu">format</span><span class="op">=</span>ArrayBufferViewTag.kUint32Array)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>JSUint32Array(<span class="st">b''</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> uint64 <span class="op">=</span> DataFormat.resolve(data_type<span class="op">=</span>DataType.UnsignedInt, byte_length<span class="op">=</span><span class="dv">8</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> create_view(<span class="st">b''</span>, <span class="bu">format</span><span class="op">=</span>uint64)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>JSBigUint64Array(<span class="st">b''</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="examples" class="level2 doc-section doc-section-examples">
+<h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize.constants <span class="im">import</span> ArrayBufferViewTag</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> create_view(<span class="st">b''</span>, <span class="bu">format</span><span class="op">=</span>ArrayBufferViewTag.kUint32Array)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>JSUint32Array(<span class="st">b''</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> uint64 <span class="op">=</span> DataFormat.resolve(data_type<span class="op">=</span>DataType.UnsignedInt, byte_length<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> create_view(<span class="st">b''</span>, <span class="bu">format</span><span class="op">=</span>uint64)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>JSBigUint64Array(<span class="st">b''</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 <section id="v8serialize.jstypes.JSTypedArray" class="level1">
 <h1>jstypes.JSTypedArray</h1>
-<p><code>jstypes.JSTypedArray(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSTypedArray(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    backing_buffer: JSArrayBufferT,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    item_offset: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    item_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Python equivalent of <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray">JavaScript’s TypedArray</a>.</p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -695,8 +725,8 @@ Note
 <p>As in JavaScript, this is an abstract type which cannot be instantiated.</p>
 </div>
 </div>
-<section id="see-also" class="level2">
-<h2 class="anchored" data-anchor-id="see-also">See Also</h2>
+<section id="see-also" class="level2 doc-section doc-section-see-also">
+<h2 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also">See Also</h2>
 <dl>
 <dt><a href="../reference/javascript_buffers.html#v8serialize.jstypes.create_view"><code>create_view()</code></a></dt>
 <dd>
@@ -795,10 +825,16 @@ This module contains many subtypes for specific data formats, e.g.&nbsp;<a href=
 </table>
 <section id="v8serialize.jstypes.JSTypedArray.from_bytes" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSTypedArray.from_bytes">from_bytes</h3>
-<p><code>jstypes.JSTypedArray.from_bytes(backing_buffer, *, byte_offset=0, byte_length=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSTypedArray.from_bytes(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    backing_buffer: JSArrayBufferT,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    byte_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create a view, validating byte offsets as JavaScript does.</p>
-<section id="see-also-1" class="level4">
-<h4 class="anchored" data-anchor-id="see-also-1">See Also</h4>
+<section id="see-also-1" class="level4 doc-section doc-section-see-also">
+<h4 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also-1">See Also</h4>
 <dl>
 <dt><a href="../reference/javascript_buffers.html#v8serialize.jstypes.create_view"><code>create_view()</code></a></dt>
 <dd>
@@ -809,27 +845,29 @@ Create a view without specifying the view class.
 </section>
 <section id="v8serialize.jstypes.JSTypedArray.get_buffer" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSTypedArray.get_buffer">get_buffer</h3>
-<p><code>jstypes.JSTypedArray.get_buffer(readonly=None)</code></p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSTypedArray.get_buffer(readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Get a context manager that provides this view’s region as a <code>memoryview</code>.</p>
-<section id="examples-1" class="level4">
-<h4 class="anchored" data-anchor-id="examples-1">Examples</h4>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">with</span> JSUint8Array.from_bytes(<span class="st">b'</span><span class="ch">\xFF\x80</span><span class="st">'</span>).get_buffer() <span class="im">as</span> mv:</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>...     <span class="cf">assert</span> <span class="bu">isinstance</span>(mv, <span class="bu">memoryview</span>)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>...     <span class="bu">print</span>(mv[<span class="dv">0</span>], mv[<span class="dv">1</span>])</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="dv">255</span> <span class="dv">128</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="examples-1" class="level4 doc-section doc-section-examples">
+<h4 class="doc-section doc-section-examples anchored" data-anchor-id="examples-1">Examples</h4>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="cf">with</span> JSUint8Array.from_bytes(<span class="st">b'</span><span class="ch">\xFF\x80</span><span class="st">'</span>).get_buffer() <span class="im">as</span> mv:</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>...     <span class="cf">assert</span> <span class="bu">isinstance</span>(mv, <span class="bu">memoryview</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>...     <span class="bu">print</span>(mv[<span class="dv">0</span>], mv[<span class="dv">1</span>])</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="dv">255</span> <span class="dv">128</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 <section id="v8serialize.jstypes.JSTypedArray.get_buffer_as_memoryview" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSTypedArray.get_buffer_as_memoryview">get_buffer_as_memoryview</h3>
-<p><code>jstypes.JSTypedArray.get_buffer_as_memoryview(readonly=None)</code></p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSTypedArray.get_buffer_as_memoryview(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Access the view’s region of <code>.backing_buffer</code> as a <code>memoryview</code>.</p>
 <p>The returned <code>memoryview</code>:</p>
 <ul>
 <li>Will be <strong>empty</strong> if the view is not in range.</li>
 <li>Is always 1-dimensional and contains uint8 items (format <code>"B"</code>).</li>
 </ul>
-<section id="parameters-1" class="level4">
-<h4 class="anchored" data-anchor-id="parameters-1">Parameters</h4>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -841,7 +879,7 @@ Create a view without specifying the view class.
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>readonly</code></td>
+<td>readonly</td>
 <td><a href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[True] | None</td>
 <td>If True, the returned <code>memoryview</code> will be read-only (even if this view itself is not read-only).</td>
 <td><code>None</code></td>
@@ -854,13 +892,19 @@ Create a view without specifying the view class.
 </section>
 <section id="v8serialize.jstypes.JSDataView" class="level1">
 <h1>jstypes.JSDataView</h1>
-<p><code>jstypes.JSDataView(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSDataView(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    backing_buffer: JSArrayBufferT,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    item_offset: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    item_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <pre><code>Python equivalent of [JavaScript's DataView].
 
 [JavaScript's DataView]: https://developer.mozilla.org/en-US/docs/Web/\</code></pre>
 <p>JavaScript/Reference/Global_Objects/DataView</p>
-<section id="examples-2" class="level2">
-<h2 class="anchored" data-anchor-id="examples-2">Examples</h2>
+<section id="examples-2" class="level2 doc-section doc-section-----examples">
+<h2 class="doc-section doc-section-----examples anchored" data-anchor-id="examples-2">Examples</h2>
 <pre><code>&gt;&gt;&gt; dv = JSDataView(bytearray(3))
 &gt;&gt;&gt; with dv.get_buffer() as buf:
 ...     buf.set_uint8(0, 1)
@@ -955,10 +999,16 @@ bytearray(b'\x01\x02\x00')</code></pre>
 </table>
 <section id="v8serialize.jstypes.JSDataView.from_bytes" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSDataView.from_bytes">from_bytes</h3>
-<p><code>jstypes.JSDataView.from_bytes(backing_buffer, *, byte_offset=0, byte_length=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSDataView.from_bytes(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    backing_buffer: JSArrayBufferT,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    byte_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create a view, validating byte offsets as JavaScript does.</p>
-<section id="see-also-2" class="level4">
-<h4 class="anchored" data-anchor-id="see-also-2">See Also</h4>
+<section id="see-also-2" class="level4 doc-section doc-section-see-also">
+<h4 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also-2">See Also</h4>
 <dl>
 <dt><a href="../reference/javascript_buffers.html#v8serialize.jstypes.create_view"><code>create_view()</code></a></dt>
 <dd>
@@ -969,20 +1019,22 @@ Create a view without specifying the view class.
 </section>
 <section id="v8serialize.jstypes.JSDataView.get_buffer" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSDataView.get_buffer">get_buffer</h3>
-<p><code>jstypes.JSDataView.get_buffer(readonly=None)</code></p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSDataView.get_buffer(readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Access the view’s region of <code>.backing_buffer</code> as a <a href="../reference/javascript_buffers.html#v8serialize.jstypes.DataViewBuffer"><code>DataViewBuffer</code></a>.</p>
 </section>
 <section id="v8serialize.jstypes.JSDataView.get_buffer_as_memoryview" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.JSDataView.get_buffer_as_memoryview">get_buffer_as_memoryview</h3>
-<p><code>jstypes.JSDataView.get_buffer_as_memoryview(readonly=None)</code></p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSDataView.get_buffer_as_memoryview(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Access the view’s region of <code>.backing_buffer</code> as a <code>memoryview</code>.</p>
 <p>The returned <code>memoryview</code>:</p>
 <ul>
 <li>Will be <strong>empty</strong> if the view is not in range.</li>
 <li>Is always 1-dimensional and contains uint8 items (format <code>"B"</code>).</li>
 </ul>
-<section id="parameters-2" class="level4">
-<h4 class="anchored" data-anchor-id="parameters-2">Parameters</h4>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -994,7 +1046,7 @@ Create a view without specifying the view class.
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>readonly</code></td>
+<td>readonly</td>
 <td><a href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[True] | None</td>
 <td>If True, the returned <code>memoryview</code> will be read-only (even if this view itself is not read-only).</td>
 <td><code>None</code></td>
@@ -1007,7 +1059,7 @@ Create a view without specifying the view class.
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer" class="level1">
 <h1>jstypes.DataViewBuffer</h1>
-<p><code>jstypes.DataViewBuffer(self, buffer)</code></p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer(<span class="va">self</span>, <span class="bu">buffer</span>: <span class="bu">memoryview</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Provides methods to read/write data types in a <a href="../reference/javascript_buffers.html#v8serialize.jstypes.JSDataView"><code>JSDataView</code></a>.</p>
 <p>This is return type of <a href="../reference/javascript_buffers.html#v8serialize.jstypes.JSDataView.get_buffer"><code>JSDataView.get_buffer()</code></a>. It provides all the methods to read/write binary data as variable-width int/float data types that <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">JavaScript’s DataView</a> provides.</p>
 <ul>
@@ -1027,8 +1079,8 @@ Note
 <p>The <code>get_*</code>/<code>set_*</code> methods read &amp; write values as big-endian unless the <code>little_endian=True</code> argument is used. Most computers are have little-endian native byte order, and the V8 serialization format itself is defined as using the system’s native byte order, and <code>v8serialize</code> assumes it’s running on a little-endian system.</p>
 </div>
 </div>
-<section id="see-also-3" class="level2">
-<h2 class="anchored" data-anchor-id="see-also-3">See Also</h2>
+<section id="see-also-3" class="level2 doc-section doc-section-see-also">
+<h2 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also-3">See Also</h2>
 <dl>
 <dt><a href="https://docs.python.org/3/library/struct.html#module-struct">Python’s <code>struct</code> module</a></dt>
 <dd>
@@ -1167,105 +1219,156 @@ NumPy provides Structured Arrays which can read/write structured binary data in 
 </table>
 <section id="v8serialize.jstypes.DataViewBuffer.get_bigint64" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_bigint64">get_bigint64</h3>
-<p><code>jstypes.DataViewBuffer.get_bigint64(byte_offset, little_endian=False)</code></p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.get_bigint64(</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span>,</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.get_biguint64" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_biguint64">get_biguint64</h3>
-<p><code>jstypes.DataViewBuffer.get_biguint64(byte_offset, little_endian=False)</code></p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.get_biguint64(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span>,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.get_float16" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_float16">get_float16</h3>
-<p><code>jstypes.DataViewBuffer.get_float16(byte_offset, little_endian=False)</code></p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.get_float16(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span>,</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.get_float32" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_float32">get_float32</h3>
-<p><code>jstypes.DataViewBuffer.get_float32(byte_offset, little_endian=False)</code></p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.get_float32(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span>,</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>,</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.get_float64" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_float64">get_float64</h3>
-<p><code>jstypes.DataViewBuffer.get_float64(byte_offset, little_endian=False)</code></p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.get_float64(</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span>,</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>,</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.get_int16" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_int16">get_int16</h3>
-<p><code>jstypes.DataViewBuffer.get_int16(byte_offset, little_endian=False)</code></p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.get_int16(byte_offset: <span class="bu">int</span>, little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.get_int32" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_int32">get_int32</h3>
-<p><code>jstypes.DataViewBuffer.get_int32(byte_offset, little_endian=False)</code></p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.get_int32(byte_offset: <span class="bu">int</span>, little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.get_int8" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_int8">get_int8</h3>
-<p><code>jstypes.DataViewBuffer.get_int8(byte_offset)</code></p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.get_int8(byte_offset: <span class="bu">int</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.get_uint16" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_uint16">get_uint16</h3>
-<p><code>jstypes.DataViewBuffer.get_uint16(byte_offset, little_endian=False)</code></p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.get_uint16(byte_offset: <span class="bu">int</span>, little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.get_uint32" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_uint32">get_uint32</h3>
-<p><code>jstypes.DataViewBuffer.get_uint32(byte_offset, little_endian=False)</code></p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.get_uint32(byte_offset: <span class="bu">int</span>, little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.get_uint8" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.get_uint8">get_uint8</h3>
-<p><code>jstypes.DataViewBuffer.get_uint8(byte_offset)</code></p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.get_uint8(byte_offset: <span class="bu">int</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.read" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.read">read</h3>
-<p><code>jstypes.DataViewBuffer.read(struct_format, byte_offset)</code></p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.read(struct_format: <span class="bu">str</span>, byte_offset: <span class="bu">int</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.set_bigint64" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_bigint64">set_bigint64</h3>
-<p><code>jstypes.DataViewBuffer.set_bigint64(byte_offset, value, little_endian=False)</code></p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.set_bigint64(</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span>,</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span>,</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>,</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.set_biguint64" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_biguint64">set_biguint64</h3>
-<p><code>jstypes.DataViewBuffer.set_biguint64(byte_offset, value, little_endian=False)</code></p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.set_biguint64(</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span>,</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span>,</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>    little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>,</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.set_float16" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_float16">set_float16</h3>
-<p><code>jstypes.DataViewBuffer.set_float16(byte_offset, value, little_endian=False)</code></p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.set_float16(</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span>,</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">float</span>,</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>    little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>,</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.set_float32" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_float32">set_float32</h3>
-<p><code>jstypes.DataViewBuffer.set_float32(byte_offset, value, little_endian=False)</code></p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.set_float32(</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span>,</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">float</span>,</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>    little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>,</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.set_float64" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_float64">set_float64</h3>
-<p><code>jstypes.DataViewBuffer.set_float64(byte_offset, value, little_endian=False)</code></p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.set_float64(</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span>,</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">float</span>,</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>    little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>,</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.set_int16" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_int16">set_int16</h3>
-<p><code>jstypes.DataViewBuffer.set_int16(byte_offset, value, little_endian=False)</code></p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.set_int16(</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span>,</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span>,</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>    little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>,</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.set_int32" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_int32">set_int32</h3>
-<p><code>jstypes.DataViewBuffer.set_int32(byte_offset, value, little_endian=False)</code></p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.set_int32(</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span>,</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span>,</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>    little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>,</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.set_int8" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_int8">set_int8</h3>
-<p><code>jstypes.DataViewBuffer.set_int8(byte_offset, value)</code></p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.set_int8(byte_offset: <span class="bu">int</span>, value: <span class="bu">int</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.set_uint16" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_uint16">set_uint16</h3>
-<p><code>jstypes.DataViewBuffer.set_uint16(byte_offset, value, little_endian=False)</code></p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.set_uint16(</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span>,</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span>,</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>    little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>,</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.set_uint32" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_uint32">set_uint32</h3>
-<p><code>jstypes.DataViewBuffer.set_uint32(byte_offset, value, little_endian=False)</code></p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.set_uint32(</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span>,</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span>,</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>    little_endian: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>,</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.set_uint8" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.set_uint8">set_uint8</h3>
-<p><code>jstypes.DataViewBuffer.set_uint8(byte_offset, value)</code></p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.set_uint8(byte_offset: <span class="bu">int</span>, value: <span class="bu">int</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.DataViewBuffer.write" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataViewBuffer.write">write</h3>
-<p><code>jstypes.DataViewBuffer.write(struct_format, byte_offset, *values)</code></p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataViewBuffer.write(struct_format: <span class="bu">str</span>, byte_offset: <span class="bu">int</span>, <span class="op">*</span>values: Any)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 </section>
 <section id="v8serialize.jstypes.DataFormat" class="level1">
 <h1>jstypes.DataFormat</h1>
-<p><code>jstypes.DataFormat(self, byte_length, data_type, format)</code></p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataFormat(<span class="va">self</span>, byte_length: <span class="bu">int</span>, data_type: AnyDataType, <span class="bu">format</span>: <span class="bu">str</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A <a href="https://docs.python.org/3/library/struct.html#module-struct">struct format</a> for a specific data type and precision.</p>
 <section id="attributes-4" class="level2">
 <h2 class="anchored" data-anchor-id="attributes-4">Attributes</h2>
@@ -1303,17 +1406,25 @@ NumPy provides Structured Arrays which can read/write structured binary data in 
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#v8serialize.jstypes.DataFormat.cast">cast</a></td>
+<td></td>
+</tr>
+<tr class="even">
 <td><a href="#v8serialize.jstypes.DataFormat.resolve">resolve</a></td>
 <td>Find the struct format on this platform with a given size and data type.</td>
 </tr>
 </tbody>
 </table>
+<section id="v8serialize.jstypes.DataFormat.cast" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataFormat.cast">cast</h3>
+<div class="sourceCode" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataFormat.cast(view: <span class="bu">memoryview</span>[Any])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
 <section id="v8serialize.jstypes.DataFormat.resolve" class="level3">
 <h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataFormat.resolve">resolve</h3>
-<p><code>jstypes.DataFormat.resolve(data_type, byte_length)</code></p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataFormat.resolve(data_type: AnyDataType, byte_length: <span class="bu">int</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Find the struct format on this platform with a given size and data type.</p>
-<section id="parameters-3" class="level4">
-<h4 class="anchored" data-anchor-id="parameters-3">Parameters</h4>
+<section id="parameters-3" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -1325,13 +1436,13 @@ NumPy provides Structured Arrays which can read/write structured binary data in 
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>data_type</code></td>
-<td><a href="../reference/javascript_buffers.html#v8serialize.jstypes.DataType">DataType</a></td>
+<td>data_type</td>
+<td><code>AnyDataType</code></td>
 <td>The data type to resolve.</td>
 <td><em>required</em></td>
 </tr>
 <tr class="even">
-<td><code>byte_length</code></td>
+<td>byte_length</td>
 <td><a href="https://docs.python.org/3/library/functions.html#int">int</a></td>
 <td>The required precision in bytes (<span class="math inline">\(bits/8\)</span>, e.g.&nbsp;32 bits is 4 bytes).</td>
 <td><em>required</em></td>
@@ -1339,51 +1450,55 @@ NumPy provides Structured Arrays which can read/write structured binary data in 
 </tbody>
 </table>
 </section>
-<section id="returns-1" class="level4">
-<h4 class="anchored" data-anchor-id="returns-1">Returns</h4>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td></td>
 <td>A <code>DataFormat</code> matching the parameters.</td>
 <td></td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="raises" class="level4">
-<h4 class="anchored" data-anchor-id="raises">Raises</h4>
+<section id="raises" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
+<th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td></td>
 <td><a href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></td>
 <td>If the platform does not support a data type with the requested parameters.</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="examples-3" class="level4">
-<h4 class="anchored" data-anchor-id="examples-3">Examples</h4>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> DataFormat.resolve(data_type<span class="op">=</span>DataType.UnsignedInt, byte_length<span class="op">=</span><span class="dv">4</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>DataFormat(byte_length<span class="op">=</span><span class="dv">4</span>, data_type<span class="op">=</span>DataType.UnsignedInt, <span class="bu">format</span><span class="op">=</span><span class="st">'I'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="examples-3" class="level4 doc-section doc-section-examples">
+<h4 class="doc-section doc-section-examples anchored" data-anchor-id="examples-3">Examples</h4>
+<div class="sourceCode" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> DataFormat.resolve(data_type<span class="op">=</span>DataType.UnsignedInt, byte_length<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>DataFormat(byte_length<span class="op">=</span><span class="dv">4</span>, data_type<span class="op">=</span>DataType.UnsignedInt, <span class="bu">format</span><span class="op">=</span><span class="st">'I'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 </section>
 </section>
 <section id="v8serialize.jstypes.DataType" class="level1">
 <h1>jstypes.DataType</h1>
-<p><code>jstypes.DataType()</code></p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataType()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>An enum of the data types used in JavaScript buffers.</p>
 <section id="attributes-5" class="level2">
 <h2 class="anchored" data-anchor-id="attributes-5">Attributes</h2>
@@ -1422,22 +1537,46 @@ NumPy provides Structured Arrays which can read/write structured binary data in 
 </tbody>
 </table>
 </section>
+<section id="methods-5" class="level2">
+<h2 class="anchored" data-anchor-id="methods-5">Methods</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#v8serialize.jstypes.DataType.cast">cast</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<section id="v8serialize.jstypes.DataType.cast" class="level3">
+<h3 class="anchored" data-anchor-id="v8serialize.jstypes.DataType.cast">cast</h3>
+<div class="sourceCode" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>jstypes.DataType.cast(view: <span class="bu">memoryview</span>, <span class="op">*</span>, data_format: DataFormat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
 </section>
 <section id="v8serialize.jstypes.ArrayBufferViewStructFormat" class="level1">
 <h1>jstypes.ArrayBufferViewStructFormat</h1>
-<p><code>jstypes.ArrayBufferViewStructFormat(self, value)</code></p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>jstypes.ArrayBufferViewStructFormat(</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>    value: ArrayBufferViewTag <span class="op">|</span> DataFormat <span class="op">|</span> ArrayBufferViewStructFormat,</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>An enum of the TypedArray and DataView types.</p>
 <p>This is used to name view types, and resolve the view type for an <a href="../reference/v8_constants.html#v8serialize.constants.ArrayBufferViewTag"><code>ArrayBufferViewTag</code></a> value.</p>
-<section id="examples-4" class="level2">
-<h2 class="anchored" data-anchor-id="examples-4">Examples</h2>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize.constants <span class="im">import</span> ArrayBufferViewTag</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="examples-4" class="level2 doc-section doc-section-examples">
+<h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples-4">Examples</h2>
+<div class="sourceCode" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">from</span> v8serialize.constants <span class="im">import</span> ArrayBufferViewTag</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Resolve a view type from a <code>ArrayBufferViewTag</code>:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> ArrayBufferViewStructFormat(ArrayBufferViewTag.kUint32Array).view_type</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;</span><span class="kw">class</span> <span class="st">'v8serialize.jstypes.jsbuffers.JSUint32Array'</span><span class="op">&gt;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> ArrayBufferViewStructFormat(ArrayBufferViewTag.kUint32Array).view_type</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;</span><span class="kw">class</span> <span class="st">'v8serialize.jstypes.jsbuffers.JSUint32Array'</span><span class="op">&gt;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Resolve a view type from data type and precision:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> uint64 <span class="op">=</span> DataFormat.resolve(data_type<span class="op">=</span>DataType.UnsignedInt, byte_length<span class="op">=</span><span class="dv">8</span>)</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> ArrayBufferViewStructFormat(uint64).view_type</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;</span><span class="kw">class</span> <span class="st">'v8serialize.jstypes.jsbuffers.JSBigUint64Array'</span><span class="op">&gt;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> uint64 <span class="op">=</span> DataFormat.resolve(data_type<span class="op">=</span>DataType.UnsignedInt, byte_length<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> ArrayBufferViewStructFormat(uint64).view_type</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;</span><span class="kw">class</span> <span class="st">'v8serialize.jstypes.jsbuffers.JSBigUint64Array'</span><span class="op">&gt;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="attributes-6" class="level2">
 <h2 class="anchored" data-anchor-id="attributes-6">Attributes</h2>
@@ -1507,12 +1646,18 @@ NumPy provides Structured Arrays which can read/write structured binary data in 
 </section>
 <section id="v8serialize.jstypes.JSArrayBufferError" class="level1">
 <h1>jstypes.JSArrayBufferError</h1>
-<p><code>jstypes.JSArrayBufferError(self)</code></p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSArrayBufferError(<span class="va">self</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The parent type of exceptions raised by the JavaScript buffer types.</p>
 </section>
 <section id="v8serialize.jstypes.BoundsJSArrayBufferError" class="level1">
 <h1>jstypes.BoundsJSArrayBufferError</h1>
-<p><code>jstypes.BoundsJSArrayBufferError(self, message, byte_offset, byte_length, buffer_byte_length)</code></p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>jstypes.BoundsJSArrayBufferError(</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>    message: <span class="bu">str</span>,</span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span>,</span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>    byte_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span>,</span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a>    buffer_byte_length: <span class="bu">int</span>,</span>
+<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Raised when a byte offset is out of bounds.</p>
 <section id="attributes-7" class="level2">
 <h2 class="anchored" data-anchor-id="attributes-7">Attributes</h2>
@@ -1542,7 +1687,13 @@ NumPy provides Structured Arrays which can read/write structured binary data in 
 </section>
 <section id="v8serialize.jstypes.ByteLengthJSArrayBufferError" class="level1">
 <h1>jstypes.ByteLengthJSArrayBufferError</h1>
-<p><code>jstypes.ByteLengthJSArrayBufferError(self, message, *, byte_length, max_byte_length)</code></p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>jstypes.ByteLengthJSArrayBufferError(</span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>    message: <span class="bu">str</span>,</span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a>    byte_length: <span class="bu">int</span>,</span>
+<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a>    max_byte_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span>,</span>
+<span id="cb55-7"><a href="#cb55-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Raised when a byte length is out of bounds.</p>
 <section id="attributes-8" class="level2">
 <h2 class="anchored" data-anchor-id="attributes-8">Attributes</h2>
@@ -1568,7 +1719,14 @@ NumPy provides Structured Arrays which can read/write structured binary data in 
 </section>
 <section id="v8serialize.jstypes.ItemSizeJSArrayBufferError" class="level1">
 <h1>jstypes.ItemSizeJSArrayBufferError</h1>
-<p><code>jstypes.ItemSizeJSArrayBufferError(self, message, *, itemsize, byte_offset, byte_length)</code></p>
+<div class="sourceCode" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>jstypes.ItemSizeJSArrayBufferError(</span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>    message: <span class="bu">str</span>,</span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>    itemsize: <span class="bu">int</span>,</span>
+<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a>    byte_offset: <span class="bu">int</span>,</span>
+<span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a>    byte_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span>,</span>
+<span id="cb56-8"><a href="#cb56-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Raised when a byte offset or length is not divisible by itemsize.</p>
 <section id="attributes-9" class="level2">
 <h2 class="anchored" data-anchor-id="attributes-9">Attributes</h2>
@@ -1598,55 +1756,127 @@ NumPy provides Structured Arrays which can read/write structured binary data in 
 </section>
 <section id="v8serialize.jstypes.JSInt8Array" class="level1">
 <h1>jstypes.JSInt8Array</h1>
-<p><code>jstypes.JSInt8Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSInt8Array(</span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>    backing_buffer: JSArrayBufferT,</span>
+<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>    item_offset: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>    item_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb57-7"><a href="#cb57-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSUint8Array" class="level1">
 <h1>jstypes.JSUint8Array</h1>
-<p><code>jstypes.JSUint8Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSUint8Array(</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>    backing_buffer: JSArrayBufferT,</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>    item_offset: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>    item_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSUint8ClampedArray" class="level1">
 <h1>jstypes.JSUint8ClampedArray</h1>
-<p><code>jstypes.JSUint8ClampedArray(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb59"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSUint8ClampedArray(</span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>    backing_buffer: JSArrayBufferT,</span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>    item_offset: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a>    item_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb59-7"><a href="#cb59-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSInt16Array" class="level1">
 <h1>jstypes.JSInt16Array</h1>
-<p><code>jstypes.JSInt16Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSInt16Array(</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>    backing_buffer: JSArrayBufferT,</span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>    item_offset: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a>    item_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb60-7"><a href="#cb60-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSUint16Array" class="level1">
 <h1>jstypes.JSUint16Array</h1>
-<p><code>jstypes.JSUint16Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSUint16Array(</span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>    backing_buffer: JSArrayBufferT,</span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>    item_offset: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb61-5"><a href="#cb61-5" aria-hidden="true" tabindex="-1"></a>    item_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb61-6"><a href="#cb61-6" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb61-7"><a href="#cb61-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSInt32Array" class="level1">
 <h1>jstypes.JSInt32Array</h1>
-<p><code>jstypes.JSInt32Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb62"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSInt32Array(</span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>    backing_buffer: JSArrayBufferT,</span>
+<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a>    item_offset: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb62-5"><a href="#cb62-5" aria-hidden="true" tabindex="-1"></a>    item_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb62-6"><a href="#cb62-6" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb62-7"><a href="#cb62-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSUint32Array" class="level1">
 <h1>jstypes.JSUint32Array</h1>
-<p><code>jstypes.JSUint32Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb63"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSUint32Array(</span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>    backing_buffer: JSArrayBufferT,</span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>    item_offset: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>    item_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSBigInt64Array" class="level1">
 <h1>jstypes.JSBigInt64Array</h1>
-<p><code>jstypes.JSBigInt64Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb64"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSBigInt64Array(</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>    backing_buffer: JSArrayBufferT,</span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>    item_offset: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a>    item_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb64-7"><a href="#cb64-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSBigUint64Array" class="level1">
 <h1>jstypes.JSBigUint64Array</h1>
-<p><code>jstypes.JSBigUint64Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb65"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSBigUint64Array(</span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a>    backing_buffer: JSArrayBufferT,</span>
+<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a>    item_offset: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb65-5"><a href="#cb65-5" aria-hidden="true" tabindex="-1"></a>    item_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb65-6"><a href="#cb65-6" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb65-7"><a href="#cb65-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSFloat16Array" class="level1">
 <h1>jstypes.JSFloat16Array</h1>
-<p><code>jstypes.JSFloat16Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb66"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSFloat16Array(</span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>    backing_buffer: JSArrayBufferT,</span>
+<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>    item_offset: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb66-5"><a href="#cb66-5" aria-hidden="true" tabindex="-1"></a>    item_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb66-6"><a href="#cb66-6" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb66-7"><a href="#cb66-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSFloat32Array" class="level1">
 <h1>jstypes.JSFloat32Array</h1>
-<p><code>jstypes.JSFloat32Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb67"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSFloat32Array(</span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a>    backing_buffer: JSArrayBufferT,</span>
+<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a>    item_offset: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb67-5"><a href="#cb67-5" aria-hidden="true" tabindex="-1"></a>    item_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb67-6"><a href="#cb67-6" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb67-7"><a href="#cb67-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSFloat64Array" class="level1">
 <h1>jstypes.JSFloat64Array</h1>
-<p><code>jstypes.JSFloat64Array(self, backing_buffer, item_offset=0, item_length=None, readonly=None)</code></p>
+<div class="sourceCode" id="cb68"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSFloat64Array(</span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>    backing_buffer: JSArrayBufferT,</span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a>    item_offset: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb68-5"><a href="#cb68-5" aria-hidden="true" tabindex="-1"></a>    item_length: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb68-6"><a href="#cb68-6" aria-hidden="true" tabindex="-1"></a>    readonly: Literal[<span class="va">True</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb68-7"><a href="#cb68-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.jstypes.JSSharedArrayBuffer" class="level1">
 <h1>jstypes.JSSharedArrayBuffer</h1>
-<p><code>jstypes.JSSharedArrayBuffer(self, buffer_id)</code></p>
+<div class="sourceCode" id="cb69"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSSharedArrayBuffer(<span class="va">self</span>, buffer_id: SharedArrayBufferId)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Python equivalent of <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer">JavaScript’s SharedArrayBuffer</a>.</p>
 <p>This type exists for completeness, and to allow these values to be round-tripped back to V8 if they ever do occur.</p>
 <p>Much like <a href="../reference/javascript_buffers.html#v8serialize.jstypes.JSArrayBufferTransfer"><code>JSArrayBufferTransfer</code></a>, this type should not occur in practice. It currently does nothing other than hold an integer <code>buffer_id</code>. V8 does not seem to allow SharedArrayBuffer objects to be serialized by Node.JS’s <a href="https://nodejs.org/api/v8.html#serialization-api"><code>v8.serialize()</code></a> API.</p>
@@ -1670,7 +1900,7 @@ NumPy provides Structured Arrays which can read/write structured binary data in 
 </section>
 <section id="v8serialize.jstypes.JSArrayBufferTransfer" class="level1">
 <h1>jstypes.JSArrayBufferTransfer</h1>
-<p><code>jstypes.JSArrayBufferTransfer(self, transfer_id)</code></p>
+<div class="sourceCode" id="cb70"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSArrayBufferTransfer(<span class="va">self</span>, transfer_id: TransferId)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A non-standard V8 type representing an ArrayBuffer being <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer#transferring_arraybuffers">transferred</a>.</p>
 <p>This type exists for completeness, but should not occur in data serialized by JavaScript runtimes using APIs like Node.JS’s <a href="https://nodejs.org/api/v8.html#serialization-api"><code>v8.serialize()</code></a>. Transferring ArrayBuffers is an internal activity in V8 and it’s not possible to access this type from JavaScript code running in V8, so it can’t be serialized from JavaScript code.</p>
 <section id="attributes-11" class="level2">

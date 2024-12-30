@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -371,7 +405,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.V8SerializeError" class="level1">
 <h1>V8SerializeError</h1>
-<p><code>V8SerializeError(self, message, *args)</code></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>V8SerializeError(<span class="va">self</span>, message: <span class="bu">str</span>, <span class="op">*</span>args: <span class="bu">object</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The base class that all v8serialize errors are subclasses of.</p>
 <section id="attributes" class="level2">
 <h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
@@ -393,7 +427,13 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.DecodeV8SerializeError" class="level1">
 <h1>DecodeV8SerializeError</h1>
-<p><code>DecodeV8SerializeError(self, message, *args, position, data)</code></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>DecodeV8SerializeError(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    message: <span class="bu">str</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>args: <span class="bu">object</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    position: <span class="bu">int</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    data: ReadableBinary,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <section id="attributes-1" class="level2">
 <h2 class="anchored" data-anchor-id="attributes-1">Attributes</h2>
 <table class="caption-top table">
@@ -418,11 +458,16 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.EncodeV8SerializeError" class="level1">
 <h1>EncodeV8SerializeError</h1>
-<p><code>EncodeV8SerializeError(self)</code></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>EncodeV8SerializeError(<span class="va">self</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="v8serialize.UnhandledValueEncodeV8SerializeError" class="level1">
 <h1>UnhandledValueEncodeV8SerializeError</h1>
-<p><code>UnhandledValueEncodeV8SerializeError(self, message, *args, value)</code></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>UnhandledValueEncodeV8SerializeError(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    message: <span class="bu">str</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>args: <span class="bu">object</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">object</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>No <a href="../reference/types_protocols.html#v8serialize.encode.EncodeStep">encode step</a> is able to represent a Python value in the V8 Serialization format.</p>
 <p>Raised when attempting to serialize an object that the none of the configured encode steps know how to represent as V8 serialization tags.</p>
 <section id="attributes-2" class="level2">
@@ -445,7 +490,12 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.FeatureNotEnabledEncodeV8SerializeError" class="level1">
 <h1>FeatureNotEnabledEncodeV8SerializeError</h1>
-<p><code>FeatureNotEnabledEncodeV8SerializeError(self, message, *, feature_required)</code></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>FeatureNotEnabledEncodeV8SerializeError(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    message: <span class="bu">str</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    feature_required: SerializationFeature,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The SerializationFeature required to write a value is not enabled.</p>
 <p>Raised when a WritableTagStream is commanded to write data that requires a <code>SerializationFeature</code> that is not enabled.</p>
 <section id="attributes-3" class="level2">
@@ -468,7 +518,14 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.UnhandledTagDecodeV8SerializeError" class="level1">
 <h1>UnhandledTagDecodeV8SerializeError</h1>
-<p><code>UnhandledTagDecodeV8SerializeError(self, message, *args, tag, position, data)</code></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>UnhandledTagDecodeV8SerializeError(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    message: <span class="bu">str</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>args: <span class="bu">object</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    tag: SerializationTag,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    position: <span class="bu">int</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    data: ReadableBinary,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>No <code>TagReader</code> is able to handle a <code>SerializationTag</code>.</p>
 <p>Raised when attempting to deserialize a tag that no <code>TagReader</code> is able to handle (by reading the tag’s data from the stream and representing the data as a Python object).</p>
 <section id="attributes-4" class="level2">
@@ -491,7 +548,12 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="v8serialize.IllegalCyclicReferenceV8SerializeError" class="level1">
 <h1>IllegalCyclicReferenceV8SerializeError</h1>
-<p><code>IllegalCyclicReferenceV8SerializeError(self, message, serialized_id, obj)</code></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>IllegalCyclicReferenceV8SerializeError(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    message: <span class="bu">str</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    serialized_id: SerializedId,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    obj: <span class="bu">object</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <section id="attributes-5" class="level2">
 <h2 class="anchored" data-anchor-id="attributes-5">Attributes</h2>
 <table class="caption-top table">
