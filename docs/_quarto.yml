@@ -275,6 +275,7 @@ quartodoc:
           contents:
             - jstypes.JSUndefined
             - jstypes.JSPrimitiveObject
+            - jstypes.PrimitiveObjectValue
         - kind: page
           path: "javascript_regexp"
           summary:
@@ -341,6 +342,7 @@ quartodoc:
             - constants.JS_CONSTANT_TAGS
             - constants.JS_ARRAY_BUFFER_TAGS
             - constants.JS_PRIMITIVE_OBJECT_TAGS
+            - constants.PrimitiveObjectTag
             - constants.JS_STRING_TAGS
 
     - title: HostObject Extensions

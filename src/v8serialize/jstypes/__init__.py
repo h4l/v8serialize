@@ -53,7 +53,25 @@ from v8serialize.jstypes.jserror import JSError as JSError
 from v8serialize.jstypes.jserror import JSErrorData as JSErrorData
 from v8serialize.jstypes.jsmap import JSMap as JSMap
 from v8serialize.jstypes.jsobject import JSObject as JSObject
+from v8serialize.jstypes.jsprimitiveobject import (
+    FalseJSPrimitiveObject as FalseJSPrimitiveObject,
+)
 from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject as JSPrimitiveObject
+from v8serialize.jstypes.jsprimitiveobject import (
+    NumberJSPrimitiveObject as NumberJSPrimitiveObject,
+)
+from v8serialize.jstypes.jsprimitiveobject import (
+    PrimitiveObjectValue as PrimitiveObjectValue,
+)
+from v8serialize.jstypes.jsprimitiveobject import (
+    StringJSPrimitiveObject as StringJSPrimitiveObject,
+)
+from v8serialize.jstypes.jsprimitiveobject import (
+    TrueJSPrimitiveObject as TrueJSPrimitiveObject,
+)
+from v8serialize.jstypes.jsprimitiveobject import (
+    UnknownJSPrimitiveObject as UnknownJSPrimitiveObject,
+)
 from v8serialize.jstypes.jsregexp import JSRegExp as JSRegExp
 from v8serialize.jstypes.jsset import JSSet as JSSet
 from v8serialize.jstypes.jsundefined import JSUndefined as JSUndefined

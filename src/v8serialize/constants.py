@@ -761,13 +761,19 @@ JS_ARRAY_BUFFER_TAGS: Final = TagConstraint[ArrayBufferTags](
     ),
 )
 
-PrimitiveObjectTag = Literal[
+PrimitiveObjectTag: TypeAlias = Literal[
     SerializationTag.kTrueObject,
     SerializationTag.kFalseObject,
     SerializationTag.kNumberObject,
     SerializationTag.kBigIntObject,
     SerializationTag.kStringObject,
 ]
+"""
+The type of the [SerializationTag] values in [JS_PRIMITIVE_OBJECT_TAGS]
+
+[JS_PRIMITIVE_OBJECT_TAGS]: `v8serialize.constants.JS_PRIMITIVE_OBJECT_TAGS`
+[SerializationTag]: `v8serialize.constants.SerializationTag`
+"""
 
 JS_PRIMITIVE_OBJECT_TAGS = TagConstraint[PrimitiveObjectTag](
     name="Primitive wrapper objects",
@@ -781,6 +787,13 @@ JS_PRIMITIVE_OBJECT_TAGS = TagConstraint[PrimitiveObjectTag](
         }
     ),
 )
+"""
+[SerializationTag] values that represent wrapped primitive values.
+
+These are primitive values wrapped in an object on the heap.
+
+[SerializationTag]: `v8serialize.constants.SerializationTag`
+"""
 
 StringTag = Literal[
     SerializationTag.kUtf8String,
