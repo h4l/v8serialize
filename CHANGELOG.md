@@ -13,6 +13,13 @@ and this project adheres to
 - Marked SerializationFeature.Float16Array as released from V8 13.1.201 (was
   marked as unreleased). ([#3](https://github.com/h4l/v8serialize/pull/3))
 
+### Changed
+
+- The API docs now include type annotations in the textual function signatures.
+  Previously types were only shown in the table of parameters. Overloaded
+  functions with multiple signatures are not shown, only the catch-all signature
+  is (this is a limitation of quartodoc).
+
 ## [0.1.0] - 2024-09-24
 
 ### Added

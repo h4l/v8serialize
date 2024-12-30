@@ -65,6 +65,10 @@ quartodoc:
   sidebar: "_sidebar.yml"
   package: v8serialize
   parser: numpy
+  renderer:
+    # Options: https://machow.github.io/quartodoc/api/MdRenderer.html
+    style: markdown
+    show_signature_annotations: true
   render_interlinks: true
   sections:
     - title: V8 Serialization format
