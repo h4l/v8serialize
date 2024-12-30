@@ -78,6 +78,7 @@ from v8serialize.extensions import NodeJsArrayBufferViewHostObjectHandler
 from v8serialize.jstypes import JSHole, JSObject, JSUndefined
 from v8serialize.jstypes._v8 import V8SharedObjectReference, V8SharedValueId
 from v8serialize.jstypes.jsarray import JSArray
+from v8serialize.jstypes.jsbigint import JSBigInt
 from v8serialize.jstypes.jsbuffers import (
     JSArrayBuffer,
     JSArrayBufferTransfer,
@@ -391,7 +392,8 @@ class ReadableTagStream:
             result = JSPrimitiveObject(self.read_double(tag=False))
         elif tag is SerializationTag.kBigIntObject:
             result = JSPrimitiveObject(
-                self.read_bigint(tag=False), tag=SerializationTag.kBigIntObject
+                JSBigInt(self.read_bigint(tag=False)),
+                tag=SerializationTag.kBigIntObject,
             )
         elif tag is SerializationTag.kStringObject:
             result = JSPrimitiveObject(self.read_string_utf8(tag=False))
@@ -1204,7 +1206,6 @@ class TagReader(DecodeStepObject):
         r(SerializationTag.kOneByteString, read_stream(ReadableTagStream.read_string_onebyte))  # noqa: E501
         r(SerializationTag.kTwoByteString, read_stream(ReadableTagStream.read_string_twobyte))  # noqa: E501
         r(SerializationTag.kUtf8String, read_stream(ReadableTagStream.read_string_utf8))
-        r(SerializationTag.kBigInt, read_stream(ReadableTagStream.read_bigint))
         r(SerializationTag.kInt32, read_stream(ReadableTagStream.read_int32))
         r(SerializationTag.kUint32, read_stream(ReadableTagStream.read_uint32))
 
@@ -1226,6 +1227,7 @@ class TagReader(DecodeStepObject):
         r(SerializationTag.kWasmModuleTransfer, TagReader.deserialize_unsupported_wasm)
         r(SerializationTag.kWasmMemoryTransfer, TagReader.deserialize_unsupported_wasm)
         r(SerializationTag.kHostObject, TagReader.deserialize_host_object)
+        r(SerializationTag.kBigInt, TagReader.deserialize_js_bigint)
 
         # fmt: on
 
@@ -1411,6 +1413,11 @@ class TagReader(DecodeStepObject):
         self, tag: Literal[SerializationTag.kDate], ctx: DecodeContext
     ) -> datetime:
         return ctx.stream.read_js_date(tz=self.default_timezone).object
+
+    def deserialize_js_bigint(
+        self, tag: Literal[SerializationTag.kBigInt], ctx: DecodeContext
+    ) -> JSBigInt:
+        return JSBigInt(ctx.stream.read_bigint())
 
 
 default_decode_steps: Final[Sequence[DecodeStep]] = (TagReader(),)

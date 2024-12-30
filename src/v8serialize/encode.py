@@ -63,6 +63,7 @@ from v8serialize.jstypes import JSObject
 from v8serialize.jstypes._v8 import V8SharedObjectReference
 from v8serialize.jstypes.jsarray import JSArray
 from v8serialize.jstypes.jsarrayproperties import JSHoleEnum, JSHoleType
+from v8serialize.jstypes.jsbigint import JSBigInt
 from v8serialize.jstypes.jsbuffers import (
     BaseJSArrayBuffer,
     JSArrayBuffer,
@@ -882,11 +883,17 @@ class TagWriter(EncodeStepObject):
         elif value in FLOAT64_SAFE_INT_RANGE:
             ctx.stream.write_double(value)
         else:
-            # Can't use bigints for object keys, so write large ints as strings
-            if ctx.stream.allowed_tags is JS_OBJECT_KEY_TAGS:
-                ctx.stream.write_string_onebyte(str(value))  # onebyte always OK for int
-            else:
-                ctx.stream.write_bigint(value)
+            self.serialize_bigint(value, ctx, next)
+
+    @encode.register(JSBigInt)
+    def serialize_bigint(
+        self, value: int, /, ctx: EncodeContext, next: EncodeNextFn
+    ) -> None:
+        # Can't use bigints for object keys, so write large ints as strings
+        if ctx.stream.allowed_tags is JS_OBJECT_KEY_TAGS:
+            ctx.stream.write_string_onebyte(str(value))  # onebyte always OK for int
+        else:
+            ctx.stream.write_bigint(value)
 
     @encode.register(JSHoleEnum)
     def serialize_hole(
