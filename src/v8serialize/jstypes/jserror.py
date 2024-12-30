@@ -168,7 +168,7 @@ class JSError(AnyJSError, V8SerializeError):
         self.stack = stack
         self.cause = cause
 
-    @property  # type: ignore[override]
+    @property
     def message(self) -> str:
         """The JavaScript Error's message."""
         return self.__message
