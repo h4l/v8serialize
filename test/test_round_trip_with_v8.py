@@ -9,13 +9,13 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
+from typing_extensions import Generator, Self
 
 import httpx
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 from packaging.version import InvalidVersion, Version
-from typing_extensions import Generator, Self
 
 from v8serialize._pycompat.enum import StrEnum
 from v8serialize._versions import parse_lenient_version

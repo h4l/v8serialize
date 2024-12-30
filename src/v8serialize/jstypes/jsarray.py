@@ -9,9 +9,8 @@ from v8serialize.jstypes.jsobject import JSObject
 
 if TYPE_CHECKING:
     # We use TypeVar's default param which isn't in stdlib yet.
-    from typing_extensions import TypeGuard, TypeVar
-
     from _typeshed import SupportsKeysAndGetItem
+    from typing_extensions import TypeGuard, TypeVar
 
     T = TypeVar("T", default=object)  # TODO: does default help in practice?
 

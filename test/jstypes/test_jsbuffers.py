@@ -7,9 +7,9 @@ import sys
 from array import array
 from dataclasses import FrozenInstanceError
 from typing import TYPE_CHECKING
+from typing_extensions import Literal
 
 import pytest
-from typing_extensions import Literal
 
 from v8serialize._pycompat.re import RegexFlag
 from v8serialize.constants import ArrayBufferViewTag

@@ -3,11 +3,11 @@ from __future__ import annotations
 import math
 from datetime import datetime
 from typing import Callable, cast
+from typing_extensions import Literal
 
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
-from typing_extensions import Literal
 
 from v8serialize._pycompat.typing import get_buffer
 from v8serialize.constants import (

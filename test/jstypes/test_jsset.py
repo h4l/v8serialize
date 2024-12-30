@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from math import isnan
-from test.strategies import values_and_objects as mk_values_and_objects
 
 from hypothesis import given
 from hypothesis import strategies as st
 
+from test.strategies import values_and_objects as mk_values_and_objects
 from v8serialize.jstypes._equality import same_value_zero
 from v8serialize.jstypes._v8 import V8SharedObjectReference, V8SharedValueId
 from v8serialize.jstypes.jsset import JSSet

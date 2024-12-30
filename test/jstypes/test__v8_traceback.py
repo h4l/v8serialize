@@ -2,16 +2,16 @@ from __future__ import annotations
 
 import re
 import sys
-from test.jstypes._v8_traceback_error_fixtures import (
-    ErrorScenario,
-    call_and_capture_tbe,
-)
 from typing import Callable, cast
 from typing_extensions import Never
 
 import pytest
 from pytest_insta import SnapshotFixture
 
+from test.jstypes._v8_traceback_error_fixtures import (
+    ErrorScenario,
+    call_and_capture_tbe,
+)
 from v8serialize.jstypes._v8traceback import format_exception_for_v8
 
 FmtExc = Callable[[Callable[[], Never]], str]

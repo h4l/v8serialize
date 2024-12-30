@@ -30,9 +30,8 @@ from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._typing import ElementsView, Order, SparseMutableSequence
 
 if TYPE_CHECKING:
-    from typing_extensions import Self, TypeAlias, TypeGuard
-
     from _typeshed import SupportsItems, SupportsKeysAndGetItem
+    from typing_extensions import Self, TypeAlias, TypeGuard
 
 _KT = TypeVar("_KT")
 KT = TypeVar("KT", bound="int | str")

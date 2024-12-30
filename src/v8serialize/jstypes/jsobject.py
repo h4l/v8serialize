@@ -21,9 +21,8 @@ from v8serialize.jstypes.jsarrayproperties import (
 
 if TYPE_CHECKING:
     # We use TypeVar's default param which isn't in stdlib yet.
-    from typing_extensions import TypeVar
-
     from _typeshed import SupportsKeysAndGetItem
+    from typing_extensions import TypeVar
 
     T = TypeVar("T", default=object)  # TODO: does default help in practice?
 

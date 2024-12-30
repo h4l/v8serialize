@@ -46,14 +46,13 @@ from v8serialize._values import (
     ArrayBufferTransferConstructor as ArrayBufferTransferConstructor,
 )
 from v8serialize._values import ArrayBufferViewConstructor as ArrayBufferViewConstructor
-from v8serialize._values import BufferT
+from v8serialize._values import BufferT, ViewT
 from v8serialize._values import JSErrorBuilder as JSErrorBuilder
 from v8serialize._values import (
     SharedArrayBufferConstructor as SharedArrayBufferConstructor,
 )
 from v8serialize._values import SharedArrayBufferId as SharedArrayBufferId
 from v8serialize._values import TransferId as TransferId
-from v8serialize._values import ViewT
 from v8serialize.constants import (
     INT32_RANGE,
     JS_ARRAY_BUFFER_TAGS,
@@ -94,9 +93,8 @@ from v8serialize.jstypes.jsregexp import JSRegExp
 from v8serialize.jstypes.jsset import JSSet
 
 if TYPE_CHECKING:
-    from typing_extensions import Never, TypeAlias
-
     from _typeshed import SupportsRead
+    from typing_extensions import Never, TypeAlias
 
 T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)

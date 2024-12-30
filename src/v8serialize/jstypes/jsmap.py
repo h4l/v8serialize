@@ -12,9 +12,8 @@ from v8serialize.jstypes import _repr
 from v8serialize.jstypes._equality import JSSameValueZero, same_value_zero
 
 if TYPE_CHECKING:
-    from typing_extensions import TypeGuard, TypeVar
-
     from _typeshed import SupportsKeysAndGetItem
+    from typing_extensions import TypeGuard, TypeVar
 
     KT = TypeVar("KT", default=object)
     VT = TypeVar("VT", default=object)
