@@ -54,6 +54,7 @@ from v8serialize._values import (
 from v8serialize._values import SharedArrayBufferId as SharedArrayBufferId
 from v8serialize._values import TransferId as TransferId
 from v8serialize.constants import (
+    FLOAT64_SAFE_INT_RANGE,
     INT32_RANGE,
     JS_ARRAY_BUFFER_TAGS,
     JS_CONSTANT_TAGS,
@@ -1202,7 +1203,6 @@ class TagReader(DecodeStepObject):
         # fmt: off
 
         # primitives — just read the stream directly, no handling needed
-        r(SerializationTag.kDouble, read_stream(ReadableTagStream.read_double))
         r(SerializationTag.kOneByteString, read_stream(ReadableTagStream.read_string_onebyte))  # noqa: E501
         r(SerializationTag.kTwoByteString, read_stream(ReadableTagStream.read_string_twobyte))  # noqa: E501
         r(SerializationTag.kUtf8String, read_stream(ReadableTagStream.read_string_utf8))
@@ -1228,6 +1228,7 @@ class TagReader(DecodeStepObject):
         r(SerializationTag.kWasmMemoryTransfer, TagReader.deserialize_unsupported_wasm)
         r(SerializationTag.kHostObject, TagReader.deserialize_host_object)
         r(SerializationTag.kBigInt, TagReader.deserialize_js_bigint)
+        r(SerializationTag.kDouble, TagReader.deserialize_js_double)
 
         # fmt: on
 
@@ -1418,6 +1419,14 @@ class TagReader(DecodeStepObject):
         self, tag: Literal[SerializationTag.kBigInt], ctx: DecodeContext
     ) -> JSBigInt:
         return JSBigInt(ctx.stream.read_bigint())
+
+    def deserialize_js_double(
+        self, tag: Literal[SerializationTag.kDouble], ctx: DecodeContext
+    ) -> int | float:
+        value = ctx.stream.read_double()
+        if value.is_integer() and (intval := int(value)) in FLOAT64_SAFE_INT_RANGE:
+            return intval
+        return value
 
 
 default_decode_steps: Final[Sequence[DecodeStep]] = (TagReader(),)
