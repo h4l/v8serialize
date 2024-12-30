@@ -53,7 +53,6 @@ interlinks:
     packaging:
       url: https://packaging.pypa.io/en/stable/
 
-
 # tell quarto to read the sidebar file
 metadata-files:
   - _sidebar.yml
@@ -77,7 +76,7 @@ quartodoc:
         include_empty: true
         # dynamic: true
       contents:
-        - path: 'encoding_decoding'
+        - path: "encoding_decoding"
           kind: page
           summary:
             name: Encoding & Decoding
@@ -89,7 +88,7 @@ quartodoc:
             - Encoder
             - Decoder
 
-        - path: 'customised_encoding'
+        - path: "customised_encoding"
           kind: page
           summary:
             name: Customized Encoding
@@ -103,7 +102,7 @@ quartodoc:
             - encode.WritableTagStream
             - encode.TagConstraintRemover
             - encode.HostObjectSerializer
-        - path: 'customized_decoding'
+        - path: "customized_decoding"
           kind: page
           summary:
             name: Customized Decoding
@@ -119,7 +118,7 @@ quartodoc:
             - decode.TagReaderRegistry
             - decode.read_stream
 
-        - path: 'exceptions'
+        - path: "exceptions"
           kind: page
           summary:
             name: Exceptions
@@ -134,7 +133,7 @@ quartodoc:
             - UnhandledTagDecodeV8SerializeError
             - IllegalCyclicReferenceV8SerializeError
 
-        - path: 'types_protocols'
+        - path: "types_protocols"
           kind: page
           summary:
             name: Types & Protocols
@@ -186,7 +185,7 @@ quartodoc:
         include_empty: true
       contents:
         - kind: page
-          path: 'javascript_buffers'
+          path: "javascript_buffers"
           summary:
             name: ArrayBuffer, TypedArray, DataView
             desc: |
@@ -233,14 +232,14 @@ quartodoc:
             - jstypes.JSSharedArrayBuffer
             - jstypes.JSArrayBufferTransfer
         - kind: page
-          path: 'javascript_date'
+          path: "javascript_date"
           summary:
             name: Date
             desc: |
               Python equivalent of [JavaScript's Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date) is [](`datetime.datetime`).
           contents: []
         - kind: page
-          path: 'javascript_error'
+          path: "javascript_error"
           summary:
             name: Error
             desc: |
@@ -249,7 +248,7 @@ quartodoc:
             - jstypes.JSErrorData
             - jstypes.JSError
         - kind: page
-          path: 'javascript_map_set'
+          path: "javascript_map_set"
           summary:
             name: Map & Set
             desc: |
@@ -258,7 +257,7 @@ quartodoc:
             - jstypes.JSMap
             - jstypes.JSSet
         - kind: page
-          path: 'javascript_object'
+          path: "javascript_object"
           summary:
             name: Object & Array
             desc: |
@@ -268,7 +267,7 @@ quartodoc:
             - jstypes.JSArray
             - jstypes.JSHole
         - kind: page
-          path: 'javascript_primitives'
+          path: "javascript_primitives"
           summary:
             name: Primitives
             desc: |
@@ -277,7 +276,7 @@ quartodoc:
             - jstypes.JSUndefined
             - jstypes.JSPrimitiveObject
         - kind: page
-          path: 'javascript_regexp'
+          path: "javascript_regexp"
           summary:
             name: RegExp
             desc: |
@@ -285,7 +284,7 @@ quartodoc:
           contents:
             - jstypes.JSRegExp
         - kind: page
-          path: 'javascript_utils'
+          path: "javascript_utils"
           summary:
             name: Utilities
             desc: Functions associated with `v8codec.jstypes`.
@@ -295,7 +294,6 @@ quartodoc:
             - jstypes.JSReprSettingsNotRestored
             - jstypes.same_value_zero
             - jstypes.JSSameValueZero
-
 
     - title: Constants & Enums
       desc: V8 serialization format and JavaScript constants.
@@ -349,7 +347,7 @@ quartodoc:
       desc: Platform-specific HostObject support.
       contents:
         - kind: page
-          path: 'extensions_nodejs'
+          path: "extensions_nodejs"
           summary:
             name: Node.JS Buffers
             desc: |
