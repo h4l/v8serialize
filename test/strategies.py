@@ -11,6 +11,7 @@ from hypothesis import strategies as st
 
 from v8serialize._values import SharedArrayBufferId, TransferId
 from v8serialize.constants import (
+    FLOAT64_SAFE_INT_RANGE,
     MAX_ARRAY_LENGTH,
     JSErrorName,
     JSRegExpFlag,
@@ -23,6 +24,7 @@ from v8serialize.jstypes._normalise_property_key import normalise_property_key
 from v8serialize.jstypes._v8 import V8SharedObjectReference
 from v8serialize.jstypes.jsarray import JSArray
 from v8serialize.jstypes.jsarrayproperties import JSHole
+from v8serialize.jstypes.jsbigint import JSBigInt
 from v8serialize.jstypes.jsbuffers import (
     ArrayBufferViewStructFormat,
     DataType,
@@ -402,7 +404,22 @@ def js_sets(
     )
 
 
-float_safe_integers = st.integers(min_value=-(2**53 - 1), max_value=2**53 - 1)
+float_safe_integers = st.integers(
+    min_value=FLOAT64_SAFE_INT_RANGE.start, max_value=FLOAT64_SAFE_INT_RANGE.stop - 1
+)
+"""int values in the range of integers that float64 can exactly represent."""
+
+float_unsafe_integers = st.integers(
+    max_value=FLOAT64_SAFE_INT_RANGE.start - 1
+) | st.integers(min_value=FLOAT64_SAFE_INT_RANGE.stop)
+"""int values outside the range of integers that float64 can exactly represent."""
+
+float_unsafe_floats = st.floats(max_value=FLOAT64_SAFE_INT_RANGE.start - 1) | st.floats(
+    min_value=FLOAT64_SAFE_INT_RANGE.stop
+)
+"""float values outside the range of integers that float64 can exactly represent."""
+
+js_big_ints = st.builds(JSBigInt, st.integers())
 
 js_string_objects = st.builds(
     JSPrimitiveObject, value=st.text(), tag=st.just(SerializationTag.kStringObject)
@@ -418,7 +435,7 @@ def js_number_objects(allow_nan: bool = True) -> st.SearchStrategy[int | float]:
 
 
 js_bigint_objects = st.builds(
-    JSPrimitiveObject, value=st.integers(), tag=st.just(SerializationTag.kBigIntObject)
+    JSPrimitiveObject, value=js_big_ints, tag=st.just(SerializationTag.kBigIntObject)
 )
 js_true_objects = st.builds(
     JSPrimitiveObject, value=st.just(True), tag=st.just(SerializationTag.kTrueObject)
@@ -449,6 +466,7 @@ def any_atomic(
         # NaN breaks equality when nested inside objects. We test with nan in
         # test_codec_rt_double.
         st.floats(allow_nan=False),
+        js_big_ints,
         st.text(),
         st.just(JSUndefined),
         st.just(None),

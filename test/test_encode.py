@@ -6,9 +6,14 @@ from datetime import datetime
 import pytest
 from packaging.version import Version
 
+from test.utils import typeval
 from v8serialize._pycompat.exceptions import has_notes
 from v8serialize._references import IllegalCyclicReferenceV8SerializeError
-from v8serialize.constants import JSRegExpFlag, SerializationFeature
+from v8serialize.constants import (
+    FLOAT64_SAFE_INT_RANGE,
+    JSRegExpFlag,
+    SerializationFeature,
+)
 from v8serialize.decode import loads
 from v8serialize.encode import (
     DefaultEncodeContext,
@@ -22,6 +27,7 @@ from v8serialize.encode import (
 )
 from v8serialize.jstypes import JSRegExp
 from v8serialize.jstypes.jsarray import JSArray
+from v8serialize.jstypes.jsbigint import JSBigInt
 from v8serialize.jstypes.jsbuffers import JSArrayBuffer, JSFloat16Array
 from v8serialize.jstypes.jserror import JSError
 from v8serialize.jstypes.jsmap import JSMap
@@ -35,7 +41,11 @@ from v8serialize.jstypes.jsundefined import JSUndefined
     [
         (1, 1),
         (1.5, 1.5),
-        (2**100, 2**100),
+        (FLOAT64_SAFE_INT_RANGE.stop - 1, FLOAT64_SAFE_INT_RANGE.stop - 1),
+        (float(FLOAT64_SAFE_INT_RANGE.stop - 1), FLOAT64_SAFE_INT_RANGE.stop - 1),
+        (FLOAT64_SAFE_INT_RANGE.stop, JSBigInt(FLOAT64_SAFE_INT_RANGE.stop)),
+        (JSBigInt(1), JSBigInt(1)),
+        (2**100, JSBigInt(2**100)),
         (True, True),
         (False, False),
         (None, None),
@@ -68,7 +78,7 @@ def test_python_collections(py_value: object, js_value: object) -> None:
     serialized = dumps(py_value)
     deserialized = loads(serialized)
 
-    assert deserialized == js_value
+    assert typeval(deserialized) == typeval(js_value)
 
 
 def test_feature_float16__cannot_write_float16array_when_disabled() -> None:

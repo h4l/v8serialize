@@ -9,8 +9,10 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+from test.utils import typeval
 from v8serialize._pycompat.typing import get_buffer
 from v8serialize.constants import (
+    JS_NUMBER_TAGS,
     JS_PRIMITIVE_OBJECT_TAGS,
     JSErrorName,
     SerializationFeature,
@@ -29,6 +31,7 @@ from v8serialize.jstypes._normalise_property_key import normalise_property_key
 from v8serialize.jstypes._v8 import V8SharedObjectReference
 from v8serialize.jstypes.jsarray import JSArray
 from v8serialize.jstypes.jsarrayproperties import JSHole, JSHoleType
+from v8serialize.jstypes.jsbigint import JSBigInt
 from v8serialize.jstypes.jsbuffers import (
     ArrayBufferViewStructFormat,
     JSArrayBuffer,
@@ -49,8 +52,12 @@ from .strategies import (
     any_atomic,
     any_object,
     dense_js_arrays,
+    float_safe_integers,
+    float_unsafe_floats,
+    float_unsafe_integers,
     js_array_buffer_views,
     js_array_buffers,
+    js_big_ints,
     js_error_data,
     js_maps,
     js_objects,
@@ -181,6 +188,54 @@ def test_codec_rt_uint32(value: int) -> None:
     assert rts.eof
 
 
+@given(value=js_big_ints)
+def test_codec_rt_number_rules__jsbigint_is_bigint(
+    value: JSBigInt, create_rw_ctx: CreateContexts
+) -> None:
+    encode_ctx, decode_ctx = create_rw_ctx()
+    encode_ctx.encode_object(value)
+    decode_ctx.stream.read_tag(consume=False, tag=SerializationTag.kBigInt)
+    result = decode_ctx.decode_object()
+    assert typeval(value) == typeval(result)
+    assert decode_ctx.stream.eof
+
+
+@given(value=float_safe_integers)
+def test_codec_rt_number_rules__float_safe_int_is_int(
+    value: int, create_rw_ctx: CreateContexts
+) -> None:
+    encode_ctx, decode_ctx = create_rw_ctx()
+    encode_ctx.encode_object(value)
+    decode_ctx.stream.read_tag(consume=False, tag=JS_NUMBER_TAGS)
+    result = decode_ctx.decode_object()
+    assert typeval(result) == (int, value)
+    assert decode_ctx.stream.eof
+
+
+@given(value=float_unsafe_integers)
+def test_codec_rt_number_rules__float_unsafe_int_is_bigint(
+    value: int, create_rw_ctx: CreateContexts
+) -> None:
+    encode_ctx, decode_ctx = create_rw_ctx()
+    encode_ctx.encode_object(value)
+    decode_ctx.stream.read_tag(consume=False, tag=SerializationTag.kBigInt)
+    result = decode_ctx.decode_object()
+    assert typeval(result) == (JSBigInt, value)
+    assert decode_ctx.stream.eof
+
+
+@given(value=float_unsafe_floats)
+def test_codec_rt_number_rules__float_unsafe_float_is_float(
+    value: float, create_rw_ctx: CreateContexts
+) -> None:
+    encode_ctx, decode_ctx = create_rw_ctx()
+    encode_ctx.encode_object(value)
+    decode_ctx.stream.read_tag(consume=False, tag=SerializationTag.kDouble)
+    result = decode_ctx.decode_object()
+    assert typeval(result) == (float, value)
+    assert decode_ctx.stream.eof
+
+
 all_constants = st.sampled_from([JSHole, JSUndefined, None, True, False])
 """JS Constant values, including JSHole."""
 
@@ -197,8 +252,16 @@ def test_codec_rt_constants(
     assert decode_ctx.stream.eof
 
 
-@given(st.one_of(st.booleans(), st.text(), st.floats(allow_nan=False), st.integers()))
-def test_codec_rt_primitive_object(value: bool | str | float | int) -> None:
+@given(
+    st.one_of(
+        st.booleans(),
+        st.text(),
+        st.floats(allow_nan=False),
+        st.integers(),
+        js_big_ints,
+    )
+)
+def test_codec_rt_primitive_object(value: bool | str | float | int | JSBigInt) -> None:
     wrapped = JSPrimitiveObject(value)
     wts = WritableTagStream()
     wts.write_js_primitive_object(wrapped)
@@ -206,6 +269,7 @@ def test_codec_rt_primitive_object(value: bool | str | float | int) -> None:
     assert rts.read_tag(consume=False, tag=JS_PRIMITIVE_OBJECT_TAGS)
     serialized_id, result = rts.read_js_primitive_object()
     assert result == wrapped
+    assert type(result.value) is type(wrapped.value)
     assert rts.eof
 
 

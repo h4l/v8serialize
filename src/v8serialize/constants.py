@@ -668,6 +668,29 @@ class TagConstraint(FrozenAfterInitDataclass, Generic[TagT_co]):
         return f"{self.name}: {self.allowed_tag_names}"
 
 
+NumberTag = Literal[
+    SerializationTag.kInt32,
+    SerializationTag.kDouble,
+    SerializationTag.kUint32,
+    SerializationTag.kNumberObject,
+]
+
+JS_NUMBER_TAGS: Final = TagConstraint[NumberTag](
+    name="JavaScript Numbers",
+    allowed_tags=frozenset(
+        {
+            SerializationTag.kInt32,
+            SerializationTag.kDouble,
+            SerializationTag.kUint32,
+            SerializationTag.kNumberObject,
+        }
+    ),
+)
+"""Tags that are allowed in the context of a JavaScript Number value.
+
+Does not include JavaScript bigint.
+"""
+
 ObjectKeyTag = Literal[
     SerializationTag.kInt32,
     SerializationTag.kDouble,
