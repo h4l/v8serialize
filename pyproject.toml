@@ -33,10 +33,6 @@ jupyter = "^1.1.1"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.isort]
-profile = "black"
-extra_standard_library = ["typing_extensions"]
-
 [tool.mypy]
 strict = true
 
@@ -62,6 +58,7 @@ select = [
   "F",
   "FA",  # flake8-future-annotations
   "PYI", # flake8-pyi
+  "I",   # isort
 ]
 ignore = [
   "PYI041", # prefer "float" over "int | float". They are not the same!
@@ -75,3 +72,6 @@ ignore = [
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
+
+[tool.ruff.lint.isort]
+extra-standard-library = ["typing_extensions", "_typeshed"]
