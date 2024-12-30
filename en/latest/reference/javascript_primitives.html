@@ -368,8 +368,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#v8serialize.jstypes.JSUndefined" id="toc-v8serialize.jstypes.JSUndefined" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSUndefined">jstypes.JSUndefined</a></li>
   <li><a href="#v8serialize.jstypes.JSPrimitiveObject" id="toc-v8serialize.jstypes.JSPrimitiveObject" class="nav-link" data-scroll-target="#v8serialize.jstypes.JSPrimitiveObject">jstypes.JSPrimitiveObject</a>
   <ul class="collapse">
+  <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a></li>
   <li><a href="#attributes" id="toc-attributes" class="nav-link" data-scroll-target="#attributes">Attributes</a></li>
   </ul></li>
+  <li><a href="#v8serialize.jstypes.PrimitiveObjectValue" id="toc-v8serialize.jstypes.PrimitiveObjectValue" class="nav-link" data-scroll-target="#v8serialize.jstypes.PrimitiveObjectValue">jstypes.PrimitiveObjectValue</a></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/h4l/v8serialize/edit/main/reference/javascript_primitives.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/h4l/v8serialize/blob/main/reference/javascript_primitives.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li><li><a href="https://github.com/h4l/v8serialize/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
@@ -390,7 +392,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="v8serialize.jstypes.JSPrimitiveObject" class="level1">
 <h1>jstypes.JSPrimitiveObject</h1>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSPrimitiveObject(<span class="va">self</span>, value: T, tag: PrimitiveObjectTag <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>jstypes.JSPrimitiveObject(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    value: PrimitiveObjectValue <span class="op">|</span> <span class="bu">int</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    tag: PrimitiveObjectTag <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Python equivalent of a wrapped/boxed JavaScript primitive.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -412,6 +418,73 @@ Tip
 <li>It allows primitive values to be serialized once and referenced multiple times in a V8 serialized data stream. This could be used to de-duplicate strings or bigints.</li>
 <li>It allows data streams to be round-tripped exactly.</li>
 </ul>
+<hr>
+<p>Each <code>tag</code> has a single <code>value</code> type:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th><code>tag</code></th>
+<th>JavaScript</th>
+<th>Python <code>value</code></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="../reference/v8_constants.html#v8serialize.constants.SerializationTag.kTrueObject">kTrueObject</a></td>
+<td><code>true</code></td>
+<td><code>True</code></td>
+</tr>
+<tr class="even">
+<td><a href="../reference/v8_constants.html#v8serialize.constants.SerializationTag.kFalseObject">kFalseObject</a></td>
+<td><code>false</code></td>
+<td><code>False</code></td>
+</tr>
+<tr class="odd">
+<td><a href="../reference/v8_constants.html#v8serialize.constants.SerializationTag.kNumberObject">kNumberObject</a></td>
+<td><code>number</code></td>
+<td><code>float</code></td>
+</tr>
+<tr class="even">
+<td><a href="../reference/v8_constants.html#v8serialize.constants.SerializationTag.kBigIntObject">kBigIntObject</a></td>
+<td><code>bigint</code></td>
+<td><code>JSBigInt</code></td>
+</tr>
+<tr class="odd">
+<td><a href="../reference/v8_constants.html#v8serialize.constants.SerializationTag.kStringObject">kStringObject</a></td>
+<td><code>string</code></td>
+<td><code>str</code></td>
+</tr>
+</tbody>
+</table>
+<p>The constructor infers the tag automatically given a value of one of these Python types.</p>
+<p>An <code>int</code> <code>value</code> is inferred as <a href="../reference/v8_constants.html#v8serialize.constants.SerializationTag.kNumberObject">kNumberObject</a> if it’s in <a href="../reference/javascript_constants.html#v8serialize.constants.FLOAT64_SAFE_INT_RANGE">FLOAT64_SAFE_INT_RANGE</a>, otherwise <a href="../reference/v8_constants.html#v8serialize.constants.SerializationTag.kBigIntObject">kBigIntObject</a>. The <code>int</code> is converted to <code>float</code> or <code>JSBigInt</code> according to the inferred <code>tag</code>.</p>
+<section id="parameters" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>value</td>
+<td><a href="../reference/javascript_primitives.html#v8serialize.jstypes.PrimitiveObjectValue">PrimitiveObjectValue</a> | <a href="https://docs.python.org/3/library/functions.html#int">int</a></td>
+<td>The Python type representing the wrapped JavaScript primitive value.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>tag</td>
+<td><a href="../reference/v8_constants.html#v8serialize.constants.PrimitiveObjectTag">PrimitiveObjectTag</a> | None</td>
+<td>The serialization tag that identifies the type of the wrapped primitive. Inferred from the value if <code>None</code>.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="attributes" class="level2">
 <h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
 <table class="caption-top table">
@@ -432,9 +505,14 @@ Tip
 </tr>
 </tbody>
 </table>
-
-
 </section>
+</section>
+<section id="v8serialize.jstypes.PrimitiveObjectValue" class="level1">
+<h1>jstypes.PrimitiveObjectValue</h1>
+<p><code>jstypes.PrimitiveObjectValue</code></p>
+<p>The types that can be wrapped in a <a href="../reference/javascript_primitives.html#v8serialize.jstypes.JSPrimitiveObject">JSPrimitiveObject</a>.</p>
+
+
 </section>
 
 </main> <!-- /main -->
