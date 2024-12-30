@@ -12,6 +12,8 @@ and this project adheres to
 
 - Marked SerializationFeature.Float16Array as released from V8 13.1.201 (was
   marked as unreleased). ([#3](https://github.com/h4l/v8serialize/pull/3))
+- `JSBigInt` type — a Python `int` subclass that always encodes to BigInt.
+  ([#7](https://github.com/h4l/v8serialize/pull/7))
 
 ### Changed
 
@@ -19,6 +21,46 @@ and this project adheres to
   Previously types were only shown in the table of parameters. Overloaded
   functions with multiple signatures are not shown, only the catch-all signature
   is (this is a limitation of quartodoc).
+  ([#6](https://github.com/h4l/v8serialize/pull/6))
+- Adjust number encoding rules.
+
+  - The JSBigInt type added in this release always encodes to JavaScript bigint,
+    and serialized bigints always decode to JSBigInt.
+    - Previously bigint decoded to plain `int`, which meant that bigints in the
+      safe float range would not round-trip as bigint, they'd be encoded as one
+      of the int types, like Int32, or Double.
+  - JavaScript Numbers encoded as Double (float64) now decode to Python `int` if
+    they are exact integers in the range of integers that float64 can represent
+    exactly.
+    - Previously JavaScript Numbers that weren't serialized as one of the int
+      types (like Int32) were always decoded as Python `float`.
+
+  The encoding rules now are:
+
+  - Python `float` always encodes to Double/float64.
+  - Python `int` encodes to Double/float64 if it's within the float-safe range
+    but too large for the int types, like Int32.
+  - Python `int` encodes to JavaScript bigint if it's outside than the
+    float-safe range.
+  - Python `JSBigInt` always encodes to JavaScript bigint.
+
+  The decoding rules now are:
+
+  - JavaScript Double/float64 decodes to Python `float`, unless it's an exact
+    integer within the float-safe integer range, in which case it decodes as
+    Python `int`.
+  - Small int values like Int32 decode as Python `int`.
+  - JavaScript bigint values decode as Python `JSBigInt`.
+
+  So values round-trip with the same types consistently, with the exceptions of:
+
+  - large Python `int` which becomes `JSBigInt` after a round-trip.
+  - exact integer Python `float` round-trip to Python `int`
+    - This is compatible with Python's numeric type system as `int` types are
+      accepted by types requiring `float`, and the `/` and `//` operators work
+      equivalently with `int` and `float` representations of the same value.
+
+  ([#7](https://github.com/h4l/v8serialize/pull/7))
 
 ## [0.1.0] - 2024-09-24
 
