@@ -364,7 +364,13 @@ def enabled_features(
 # TODO: also test with serialize_object_references (default_encode_steps)
 encode_steps = [TagWriter()]
 decode_steps: Sequence[DecodeStep] = [
-    TagReader(host_object_deserializer=NodeJsArrayBufferViewHostObjectHandler())
+    TagReader(
+        host_object_deserializer=NodeJsArrayBufferViewHostObjectHandler(),
+        # We keep wrapped primitive objects in the output, otherwise values
+        # don't round-trip exactly, as we'd compare pre-encode wrapped
+        # primitives to post-encode unwrapped primitives.
+        js_primitive_objects=True,
+    )
 ]
 
 

@@ -85,7 +85,11 @@ def create_rw_ctx() -> CreateContexts:
             stream=WritableTagStream(features=~SerializationFeature.MaxCompatibility),
         )
         decode_ctx = DefaultDecodeContext(
-            data=encode_ctx.stream.data, decode_steps=[TagReader()]
+            data=encode_ctx.stream.data,
+            # We keep wrapped primitive objects in the output, otherwise values
+            # don't round-trip exactly, as we'd compare pre-encode wrapped
+            # primitives to post-encode unwrapped primitives.
+            decode_steps=[TagReader(js_primitive_objects=True)],
         )
         return encode_ctx, decode_ctx
 
@@ -253,7 +257,7 @@ def test_codec_rt_constants(
 
 
 @given(
-    st.one_of(
+    value=st.one_of(
         st.booleans(),
         st.text(),
         st.floats(allow_nan=False),
@@ -261,16 +265,17 @@ def test_codec_rt_constants(
         js_big_ints,
     )
 )
-def test_codec_rt_primitive_object(value: bool | str | float | int | JSBigInt) -> None:
+def test_codec_rt_primitive_object(
+    value: bool | str | float | int | JSBigInt, create_rw_ctx: CreateContexts
+) -> None:
+    encode_ctx, decode_ctx = create_rw_ctx()
     wrapped = JSPrimitiveObject(value)
-    wts = WritableTagStream()
-    wts.write_js_primitive_object(wrapped)
-    rts = ReadableTagStream(wts.data)
-    assert rts.read_tag(consume=False, tag=JS_PRIMITIVE_OBJECT_TAGS)
-    serialized_id, result = rts.read_js_primitive_object()
+    encode_ctx.stream.write_js_primitive_object(wrapped)
+    assert decode_ctx.stream.read_tag(consume=False, tag=JS_PRIMITIVE_OBJECT_TAGS)
+    serialized_id, result = decode_ctx.stream.read_js_primitive_object(decode_ctx)
     assert result == wrapped
     assert type(result.value) is type(wrapped.value)
-    assert rts.eof
+    assert decode_ctx.stream.eof
 
 
 @given(value=naive_timestamp_datetimes)

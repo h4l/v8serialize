@@ -477,6 +477,7 @@ def any_atomic(
             allow_linear=allow_theoretical,
             allow_unicode_sets=SerializationFeature.RegExpUnicodeSets in features,
         ),
+        js_primitive_objects(allow_nan=False),
         # Use naive datetimes for general tests to avoid needing to normalise tz.
         # (Can't serialize tz, so aware datetimes come back as naive or a fixed tz;
         # epoch timestamp always matches though.)
