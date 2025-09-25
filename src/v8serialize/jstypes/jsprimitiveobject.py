@@ -46,6 +46,9 @@ class JSPrimitiveObject(Generic[T_co, TagT_co], metaclass=ABCMeta):
     :::{.callout-tip}
     This is a low-level type that won't occur in decoded data by default, and
     can be ignored.
+
+    If you *do* want it to occur in decoded data, pass the
+    `js_primitive_objects=True` option to [`loads()`] or [`TagReader`].
     :::
 
     JavaScript primitives like `string` and `number` have object wrapper types
@@ -64,6 +67,7 @@ class JSPrimitiveObject(Generic[T_co, TagT_co], metaclass=ABCMeta):
         times in a V8 serialized data stream. This could be used to de-duplicate
         strings or bigints.
     * It allows data streams to be round-tripped exactly.
+
 
     ---
     Each `tag` has a single `value` type:
@@ -89,6 +93,8 @@ class JSPrimitiveObject(Generic[T_co, TagT_co], metaclass=ABCMeta):
     [kBigIntObject]: `v8serialize.constants.SerializationTag.kBigIntObject`
     [kStringObject]: `v8serialize.constants.SerializationTag.kStringObject`
     [FLOAT64_SAFE_INT_RANGE]: `v8serialize.constants.FLOAT64_SAFE_INT_RANGE`
+    [`loads()`]: `v8serialize.decode.loads`
+    [`TagReader`]: `v8serialize.decode.TagReader`
 
     Parameters
     ----------

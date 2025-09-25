@@ -1123,6 +1123,7 @@ class TagReader(DecodeStepObject):
     [JSError.builder]: `v8serialize.jstypes.JSError.builder`
     [datetime]: `datetime.datetime`
     [desc]: `v8serialize.loads`
+    [JSPrimitiveObject]: `v8serialize.jstypes.JSPrimitiveObject`
 
     Parameters
     ----------
@@ -1140,6 +1141,10 @@ class TagReader(DecodeStepObject):
     js_constants
         A dict mapping tags from [JS_CONSTANT_TAGS] to the values to represent
         them as. Default: see [JS_CONSTANT_TAGS].
+    js_primitive_objects
+        If `True`, wrapped/boxed primitive values are decoded as
+        [JSPrimitiveObject]. If `False`, wrapped/boxed primitives are unwrapped
+        to native Python types. Default: `False`.
     host_object_deserializer
         A [HostObjectDeserializer] to load [HostObject] extension tags.
         Default: see [desc].
@@ -1156,6 +1161,7 @@ class TagReader(DecodeStepObject):
     js_object_type: JSObjectType
     js_array_type: JSArrayType
     js_constants: Mapping[ConstantTags, object]
+    js_primitive_objects: bool
     host_object_deserializer: HostObjectDeserializer[object] | None
     js_error_builder: JSErrorBuilder[object]
     default_timezone: tzinfo | None
@@ -1168,6 +1174,7 @@ class TagReader(DecodeStepObject):
         js_object_type: JSObjectType | None = None,
         js_array_type: JSArrayType | None = None,
         js_constants: Mapping[ConstantTags, object] | None = None,
+        js_primitive_objects: bool | None = None,
         host_object_deserializer: HostObjectDeserializer[object] | None = None,
         js_error_builder: JSErrorBuilder[object] | None = None,
         default_timezone: tzinfo | None = None,
@@ -1176,6 +1183,7 @@ class TagReader(DecodeStepObject):
         self.jsset_type = jsset_type or JSSet
         self.js_object_type = js_object_type or JSObject
         self.js_array_type = js_array_type or JSArray
+        self.js_primitive_objects = bool(js_primitive_objects)
         self.host_object_deserializer = host_object_deserializer
         self.js_error_builder = js_error_builder or JSError.builder
         self.default_timezone = default_timezone
@@ -1379,6 +1387,10 @@ class TagReader(DecodeStepObject):
         self, tag: PrimitiveObjectTag, ctx: DecodeContext
     ) -> object:
         serialized_id, obj = ctx.stream.read_js_primitive_object(tag)
+
+        if self.js_primitive_objects:
+            return obj
+
         # Unwrap objects so they act like regular strings/numbers/bools.
         # (Alternatively, we could make the wrapper types subclasses of their
         # wrapped value type and keep the wrapper.)
@@ -1536,6 +1548,7 @@ def loads(
     js_object_type: JSObjectType | None = None,
     js_array_type: JSArrayType | None = None,
     js_constants: Mapping[ConstantTags, object] | None = None,
+    js_primitive_objects: bool | None = None,
     host_object_deserializer: HostObjectDeserializer[object] | None = None,
     js_error_builder: JSErrorBuilder[object] | None = None,
     default_timezone: tzinfo | None = None,
@@ -1552,6 +1565,7 @@ def loads(
     js_object_type: JSObjectType | None = None,
     js_array_type: JSArrayType | None = None,
     js_constants: Mapping[ConstantTags, object] | None = None,
+    js_primitive_objects: bool | None = None,
     host_object_deserializer: HostObjectDeserializer[object] | None = None,
     js_error_builder: JSErrorBuilder[object] | None = None,
     default_timezone: tzinfo | None = None,
@@ -1586,6 +1600,7 @@ def loads(
     [JSError.builder]: `v8serialize.jstypes.JSError.builder`
     [datetime]: `datetime.datetime`
     [desc]: `v8serialize.loads`
+    [JSPrimitiveObject]: `v8serialize.jstypes.JSPrimitiveObject`
 
     Parameters
     ----------
@@ -1609,6 +1624,10 @@ def loads(
     js_constants
         A dict mapping tags from [JS_CONSTANT_TAGS] to the values to represent
         them as. Default: see [JS_CONSTANT_TAGS].
+    js_primitive_objects
+        If `True`, wrapped/boxed primitive values are decoded as
+        [JSPrimitiveObject]. If `False`, wrapped/boxed primitives are unwrapped
+        to native Python types. Default: `False`.
     host_object_deserializer
         A [HostObjectDeserializer] to load [HostObject] extension tags.
         Default: see [desc].
@@ -1683,6 +1702,7 @@ def loads(
             and js_object_type is None
             and js_array_type is None
             and js_constants is None
+            and js_primitive_objects is None
             and host_object_deserializer is None
             and js_error_builder is None
             and default_timezone is None
@@ -1708,6 +1728,7 @@ def loads(
         js_object_type=js_object_type,
         js_array_type=js_array_type,
         js_constants=js_constants,
+        js_primitive_objects=js_primitive_objects,
         host_object_deserializer=host_object_deserializer,
         js_error_builder=js_error_builder,
         default_timezone=default_timezone,

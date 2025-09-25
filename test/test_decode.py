@@ -113,6 +113,16 @@ def test_loads_options__tagreader() -> None:
     assert type(jsmap) is JSMap
 
 
+def test_loads_options__js_primitive_objects() -> None:
+    string_obj = JSPrimitiveObject("foo")
+    assert string_obj != "foo"  # type: ignore[comparison-overlap]
+
+    assert loads(dumps(string_obj), js_primitive_objects=True) == string_obj
+    assert loads(dumps(string_obj), js_primitive_objects=False) == "foo"
+    assert loads(dumps(string_obj), js_primitive_objects=None) == "foo"
+    assert loads(dumps(string_obj)) == "foo"
+
+
 def test_load_v13_arraybufferview() -> None:
     # Format v13 is the oldest version it makes sense to support, introduced in
     # 2017 and used in Node.js 16. It serializes ArrayBufferView without flags
