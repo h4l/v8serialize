@@ -28,6 +28,7 @@ from v8serialize.jstypes.jsarray import JSArray
 from v8serialize.jstypes.jsbuffers import JSArrayBuffer, JSUint8Array, JSUint32Array
 from v8serialize.jstypes.jserror import JSError, JSErrorData
 from v8serialize.jstypes.jsmap import JSMap
+from v8serialize.jstypes.jsprimitiveobject import JSPrimitiveObject
 
 
 @given(st.integers(min_value=1))
@@ -52,6 +53,10 @@ def test_decode_varint__truncated(n: int) -> None:
         # s = new Set([1]); v8.serialize(new Map([['a', s], ['b', s]]))
         #   .toString('base64')
         ("/w87IgFhJ0kCLAEiAWJeAToE", {"a": {1}, "b": {1}}),  # TODO: verify identity
+        # v8.serialize([new String("📦")]).toString("base64")
+        # We were decoding wrapped primitive object strings incorrectly, see:
+        # https://github.com/h4l/v8serialize/issues/8
+        ("/w9BAXMAYwQ92ObcJAAB", JSArray(["📦"])),
     ],
 )
 def test_loads(serialized: str, expected: object) -> None:
