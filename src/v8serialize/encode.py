@@ -367,7 +367,9 @@ class WritableTagStream:
         self.write_tag(tag)
         if tag is SerializationTag.kStringObject:
             assert isinstance(value, str)
-            self.write_string_utf8(value, tag=None)
+            # We can write any of the string formats here, but just UTF-8
+            # seems fine.
+            self.write_string_utf8(value)
         elif (
             tag is SerializationTag.kTrueObject or tag is SerializationTag.kFalseObject
         ):

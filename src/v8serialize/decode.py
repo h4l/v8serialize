@@ -377,7 +377,7 @@ class ReadableTagStream:
         self.throw(f"Serialized value is out of {UINT32_RANGE} for UInt32: {value}")
 
     def read_js_primitive_object(
-        self, tag: PrimitiveObjectTag | None = None
+        self, ctx: DecodeContext, *, tag: PrimitiveObjectTag | None = None
     ) -> tuple[SerializedId, JSPrimitiveObject]:
         if tag and tag not in JS_PRIMITIVE_OBJECT_TAGS:
             raise ValueError("tag must be a primitive object tag")
@@ -397,7 +397,9 @@ class ReadableTagStream:
                 tag=SerializationTag.kBigIntObject,
             )
         elif tag is SerializationTag.kStringObject:
-            result = JSPrimitiveObject(self.read_string_utf8(tag=False))
+            value = ctx.decode_object(tag=self.read_tag(tag=JS_STRING_TAGS))
+            assert isinstance(value, str)
+            result = JSPrimitiveObject(value)
         else:
             raise AssertionError(f"Unreachable: {tag}")
         return self.objects.record_reference(result), result
@@ -1386,7 +1388,7 @@ class TagReader(DecodeStepObject):
     def deserialize_js_primitive_object(
         self, tag: PrimitiveObjectTag, ctx: DecodeContext
     ) -> object:
-        serialized_id, obj = ctx.stream.read_js_primitive_object(tag)
+        serialized_id, obj = ctx.stream.read_js_primitive_object(ctx, tag=tag)
 
         if self.js_primitive_objects:
             return obj
