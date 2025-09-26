@@ -265,7 +265,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>For more details, see <a href="../tutorials/js_to_py.html">the tutorials</a>.</p>
 <section id="serialize-with-python" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="serialize-with-python"><span class="header-section-number">1</span> Serialize with Python</h2>
-<div id="9fb91a0c" class="cell" data-execution_count="1">
+<div id="c14f0991" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> base64 <span class="im">import</span> b64encode</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> datetime <span class="im">import</span> datetime, UTC</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re</span>
@@ -292,13 +292,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(b64encode(serialized).decode())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>/w9BDFMUc3RyaW5ncyDwn6e18J+ntvCfqqFVezBfQQNBAlUAUwFhJAACQQJVAVMBYiQAAkECVZWa7zpTBnNwYXJzZSQAAiQAA29TA21zZ1MCSGl7AUIDwP/uWiIAAAAAAAAAAAAAAAAAAAAAATtTBG1hcHNUOgInUwRzZXRzUwN5ZXMsAlJTBV5cdyskgAJEAABAHyXMeEIkAAw=</code></pre>
+<pre><code>/w9BDFMUc3RyaW5ncyDwn6e18J+ntvCfqqFVezBfQQNBAlUAUwFhJAACQQJVAVMBYiQAAkECVZWa7zpTBnNwYXJzZSQAAiQAA29TA21zZ1MCSGl7AUIDwP/uWiIAAAAAAAAAAAAAAAAAAAAAATtTBG1hcHNUOgInUwN5ZXNTBHNldHMsAlJTBV5cdyskgAJEAABAHyXMeEIkAAw=</code></pre>
 </div>
 </div>
 </section>
 <section id="deserialize-with-python" class="level2" data-number="2">
 <h2 data-number="2" class="anchored" data-anchor-id="deserialize-with-python"><span class="header-section-number">2</span> Deserialize with Python</h2>
-<div id="7f8acd26" class="cell" data-execution_count="2">
+<div id="bb3abf83" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> base64 <span class="im">import</span> b64decode</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> v8serialize <span class="im">import</span> loads</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
