@@ -704,10 +704,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    js_object_type: JSObjectType <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
 <span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    js_array_type: JSArrayType <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
 <span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    js_constants: Mapping[ConstantTags, <span class="bu">object</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    host_object_deserializer: HostObjectDeserializer[<span class="bu">object</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    js_error_builder: JSErrorBuilder[<span class="bu">object</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    default_timezone: tzinfo <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    js_primitive_objects: <span class="bu">bool</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    host_object_deserializer: HostObjectDeserializer[<span class="bu">object</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    js_error_builder: JSErrorBuilder[<span class="bu">object</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    default_timezone: tzinfo <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Controls how V8 serialization data is converted to Python values when deserializing.</p>
 <p>Customise the way JavaScript values are represented in Python by creating a <code>TagReader</code> instance with non-default options, and passing it to the <code>decode_steps</code> option of <code>v8serialize.loads()</code> or <code>v8serialize.Decoder()</code></p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">
@@ -759,18 +760,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
+<td>js_primitive_objects</td>
+<td><a href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</td>
+<td>If <code>True</code>, wrapped/boxed primitive values are decoded as <a href="../reference/javascript_primitives.html#v8serialize.jstypes.JSPrimitiveObject">JSPrimitiveObject</a>. If <code>False</code>, wrapped/boxed primitives are unwrapped to native Python types. Default: <code>False</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
 <td>host_object_deserializer</td>
 <td><a href="../reference/types_protocols.html#v8serialize.decode.HostObjectDeserializer">HostObjectDeserializer</a>[<a href="https://docs.python.org/3/library/functions.html#object">object</a>] | None</td>
 <td>A <a href="../reference/types_protocols.html#v8serialize.decode.HostObjectDeserializer">HostObjectDeserializer</a> to load <a href="../reference/v8_constants.html#v8serialize.constants.SerializationTag.kHostObject">HostObject</a> extension tags. Default: see <a href="../reference/encoding_decoding.html#v8serialize.loads">desc</a>.</td>
 <td><code>None</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>js_error_builder</td>
 <td><a href="../reference/types_protocols.html#v8serialize.decode.JSErrorBuilder">JSErrorBuilder</a>[<a href="https://docs.python.org/3/library/functions.html#object">object</a>] | None</td>
 <td>A JSErrorBuilder to create Error representations. Default: <a href="../reference/javascript_error.html#v8serialize.jstypes.JSError.builder">JSError.builder</a></td>
 <td><code>None</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>default_timezone</td>
 <td><a href="https://docs.python.org/3/library/datetime.html#datetime.tzinfo">tzinfo</a> | None</td>
 <td>The timezone to use when creating <a href="https://docs.python.org/3/library/datetime.html#datetime.datetime">datetime</a> to represent Date. Default: datetimes have no timezone.</td>
@@ -814,14 +821,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td></td>
 </tr>
 <tr class="odd">
-<td><a href="#v8serialize.decode.TagReader.jsmap_type">jsmap_type</a></td>
+<td><a href="#v8serialize.decode.TagReader.js_primitive_objects">js_primitive_objects</a></td>
 <td></td>
 </tr>
 <tr class="even">
-<td><a href="#v8serialize.decode.TagReader.jsset_type">jsset_type</a></td>
+<td><a href="#v8serialize.decode.TagReader.jsmap_type">jsmap_type</a></td>
 <td></td>
 </tr>
 <tr class="odd">
+<td><a href="#v8serialize.decode.TagReader.jsset_type">jsset_type</a></td>
+<td></td>
+</tr>
+<tr class="even">
 <td><a href="#v8serialize.decode.TagReader.tag_readers">tag_readers</a></td>
 <td></td>
 </tr>

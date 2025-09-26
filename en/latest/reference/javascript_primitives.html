@@ -418,6 +418,7 @@ Tip
 </div>
 <div class="callout-body-container callout-body">
 <p>This is a low-level type that won’t occur in decoded data by default, and can be ignored.</p>
+<p>If you <em>do</em> want it to occur in decoded data, pass the <code>js_primitive_objects=True</code> option to <a href="../reference/encoding_decoding.html#v8serialize.loads"><code>loads()</code></a> or <a href="../reference/customized_decoding.html#v8serialize.decode.TagReader"><code>TagReader</code></a>.</p>
 </div>
 </div>
 <p>JavaScript primitives like <code>string</code> and <code>number</code> have object wrapper types like <code>String</code> and <code>Number</code> which are used when calling methods on primitives. <code>JSPrimitiveObject</code> represents primitives wrapped in this way.</p>
