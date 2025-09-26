@@ -8,6 +8,65 @@ and this project adheres to
 
 ## [Unreleased]
 
+> [!IMPORTANT]
+>
+> This version made some backwards-incompatible changes, but they are not likely
+> to affect typical users, unless they're explicitly creating and persisting
+> `JSPrimitiveObject` or customising decoding.
+
+<details>
+<summary><h3>Backwards-incompatible changes<h3></summary>
+
+#### Encoding/decoding primitive string objects
+
+The encoding/decoding of primitive string objects was incorrect in 0.1.0 and has
+changed to match the current V8 serialisation format (see the fixed section).
+The backwards compatibility impact of this is that `JSPrimitiveObject` values
+containing strings serialized by `v8serialize` in 0.1.0 are not deserializable
+in this version.
+
+These objects are not created by default, so to be affected, code would need to
+have explicitly created and serialised instances and persisted the serialised
+representation to be loaded by this version.
+
+Instances of this value sent to or received from real V8 implementations are not
+affected in a backwards-incompatible way, as values would fail to decode in
+either direction because of the mutually-incompatible encoding.
+
+#### API changes
+
+The `v8serialize.decode.ReadableTagStream.read_js_primitive_object` method now
+requires a `ctx: DecodeContext` argument, as many other methods on this type do.
+This was required to fix [#8].
+
+</details>
+
+[#8]: https://github.com/h4l/v8serialize/issues/8
+
+### Fixed
+
+- [Wrapped/boxed string values][MDN Primitive] (JavaScript `new String("x")` /
+  Python `JSPrimitiveObject("x")`, (used to distinguish `new String("x")` from
+  `"x"`)) are now encoded/decoded correctly. Previously they were incorrectly
+  being encoded/decoded using an obsolete version of the V8 serialization
+  format, earlier than the currently-used format, and earlier than the minimum
+  version `v8serialize` supports. ([#8])
+
+### Added
+
+- Support for round-tripping wrapped/boxed JavaScript primitive type objects.
+
+  The `loads()` function and `TagReader` class now take a `js_primitive_objects`
+  bool option (defaulting `False`) that uses `JSPrimitiveObject` values in
+  decoded values rather than their unwrapped primitive value.
+
+[MDN Primitive]: https://developer.mozilla.org/en-US/docs/Glossary/Primitive
+
+## [0.2.0-alpha.0] - 2024-12-30
+
+I never tagged & published a stable release of this alpha release, I forgot as I
+was installing the project from git and then working on other things, sorry!
+
 ### Added
 
 - Marked SerializationFeature.Float16Array as released from V8 13.1.201 (was
@@ -59,8 +118,7 @@ and this project adheres to
     - This is compatible with Python's numeric type system as `int` types are
       accepted by types requiring `float`, and the `/` and `//` operators work
       equivalently with `int` and `float` representations of the same value.
-
-  ([#7](https://github.com/h4l/v8serialize/pull/7))
+      ([#7](https://github.com/h4l/v8serialize/pull/7))
 
 ## [0.1.0] - 2024-09-24
 
@@ -70,3 +128,4 @@ and this project adheres to
 
 [unreleased]: https://github.com/h4l/v8serialize/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/h4l/v8serialize/releases/tag/v0.1.0
+[0.2.0-alpha.0]: https://github.com/h4l/v8serialize/releases/tag/v0.2.0-alpha.0
