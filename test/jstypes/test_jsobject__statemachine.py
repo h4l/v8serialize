@@ -166,21 +166,21 @@ class JSObjectComparisonMachine(RuleBasedStateMachine):
 
     @rule(name=st.runner().flatmap(get_existant_property_names))
     @precondition(properties_not_empty)
-    def getitem_property_existant(self, name: str) -> None:
+    def getitem_property_existent(self, name: str) -> None:
         assert name in self.reference_properties
 
         assert self.reference_properties[name] == self.actual[name]
 
         # Verify that names that are also ints are treated as name properties
-        try:
-            index = int(name)
-        except ValueError:
+        index = normalise_property_key(name)
+        if not isinstance(index, int):
             return
+
         assert index not in self.reference_array
         assert self.reference_properties[name] == self.actual[index]
 
     @rule(name=st.runner().flatmap(get_nonexistant_property_names))
-    def getitem_properties_non_existant(self, name: str) -> None:
+    def getitem_properties_non_existent(self, name: str) -> None:
         assert name not in self.reference_properties
 
         with pytest.raises(NormalizedKeyError) as exc_info:
@@ -189,9 +189,8 @@ class JSObjectComparisonMachine(RuleBasedStateMachine):
         assert exc_info.value.raw_key == name
 
         # Verify that names that are also ints are treated as name properties
-        try:
-            index = int(name)
-        except ValueError:
+        index = normalise_property_key(name)
+        if not isinstance(index, int):
             return
 
         with pytest.raises(NormalizedKeyError) as exc_info:
