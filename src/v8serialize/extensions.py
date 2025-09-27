@@ -8,10 +8,12 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from v8serialize._enums import frozen
-from v8serialize._errors import DecodeV8SerializeError
-from v8serialize.constants import ArrayBufferViewTag
-from v8serialize.decode import HostObjectDeserializerObj
-from v8serialize.encode import HostObjectSerializerObj
+from v8serialize._errors import (
+    DecodeV8SerializeError,
+    FeatureNotEnabledEncodeV8SerializeError,
+)
+from v8serialize._values import HostObjectDeserializerObj, HostObjectSerializerObj
+from v8serialize.constants import ArrayBufferViewTag, SerializationFeature
 from v8serialize.jstypes.jsbuffers import (
     ArrayBufferViewStructFormat,
     JSArrayBuffer,
@@ -113,6 +115,20 @@ class NodeJsArrayBufferViewHostObjectHandler(
         --------
         [`serialize_js_array_buffer_views_as_nodejs_host_object`]
         """
+        # Support for Float16Array was added in node 24:
+        # https://github.com/nodejs/node/commit/ac7fea6a1239feb9bc8c25281860aeb0e5864bc3
+        # We only encode it if the feature is enabled (but always read it).
+        # Same applies when encoding/decoding buffers via the vanilla V8
+        # serialization format, see WritableTagStream.write_js_array_buffer_view
+        if _is_float16array_without_feature_enabled(
+            view_tag=value.view_tag, enabled_features=stream.features
+        ):
+            raise FeatureNotEnabledEncodeV8SerializeError(
+                "Cannot write Float16Array when the Float16Array "
+                "SerializationFeature is not enabled",
+                feature_required=SerializationFeature.Float16Array,
+            )
+
         # The backing buffer is not shared as a whole, just the portion
         # referenced by the view.
         buffer_format = NodeBufferFormat(value.view_tag)
@@ -126,6 +142,16 @@ class NodeJsArrayBufferViewHostObjectHandler(
 _node_js_array_buffer_view_host_object_handler = (
     NodeJsArrayBufferViewHostObjectHandler()
 )
+
+
+def _is_float16array_without_feature_enabled(
+    view_tag: ArrayBufferViewTag, enabled_features: SerializationFeature
+) -> bool:
+    """Check if a Float16Array cannot be written due to its feature not being enabled."""  # noqa: E501
+    return (
+        view_tag == ArrayBufferViewTag.kFloat16Array
+        and SerializationFeature.Float16Array not in enabled_features
+    )
 
 
 def serialize_js_array_buffer_views_as_nodejs_host_object(
@@ -146,8 +172,12 @@ def serialize_js_array_buffer_views_as_nodejs_host_object(
     `NodeJsArrayBufferViewHostObjectHandler` must be used to read Node.JS's
     custom encoding).
     """
-    if isinstance(value, (JSDataView, JSTypedArray)) and NodeBufferFormat.supports(
-        value.view_tag
+    if (
+        isinstance(value, (JSDataView, JSTypedArray))
+        and NodeBufferFormat.supports(value.view_tag)
+        and not _is_float16array_without_feature_enabled(
+            view_tag=value.view_tag, enabled_features=ctx.stream.features
+        )
     ):
         ctx.stream.write_host_object(
             value, serializer=_node_js_array_buffer_view_host_object_handler
@@ -188,6 +218,7 @@ class NodeBufferFormat(ViewFormat, Enum):
     FastBuffer = 10, ArrayBufferViewStructFormat.Uint8Array
     BigInt64Array = 11, ArrayBufferViewStructFormat.BigInt64Array
     BigUint64Array = 12, ArrayBufferViewStructFormat.BigUint64Array
+    Float16Array = 13, ArrayBufferViewStructFormat.Float16Array
 
     @staticmethod
     @functools.lru_cache  # noqa: B019 # OK because static method

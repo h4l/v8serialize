@@ -545,14 +545,7 @@ def test_codec_rt_object__encodes_python_binary_types_as_array_buffers(
 
 @given(
     value=js_array_buffer_views(
-        view_formats=st.sampled_from(
-            sorted(
-                set(ArrayBufferViewStructFormat)
-                # The NodeJS format doesn't support Float16Array
-                - {ArrayBufferViewStructFormat.Float16Array},
-                key=lambda s: s.view_tag,
-            )
-        ),
+        view_formats=st.sampled_from(ArrayBufferViewStructFormat),
         backing_buffers=normal_js_array_buffers,
     )
 )

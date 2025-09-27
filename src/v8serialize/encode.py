@@ -625,7 +625,7 @@ class WritableTagStream:
         ):
             raise FeatureNotEnabledEncodeV8SerializeError(
                 "Cannot write Float16Array when the Float16Array "
-                "SerializationFeature is not enabled.",
+                "SerializationFeature is not enabled",
                 feature_required=SerializationFeature.Float16Array,
             )
         self.objects.record_reference(buffer_view if identity is None else identity)
