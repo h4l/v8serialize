@@ -119,6 +119,9 @@ AnyArrayBufferData: TypeAlias = (
 """Any of the 3 ArrayBuffer types."""
 
 BufferT = TypeVar("BufferT")
+BufferT1 = TypeVar("BufferT1")
+BufferT2 = TypeVar("BufferT2")
+BufferT3 = TypeVar("BufferT3")
 BufferT_co = TypeVar("BufferT_co", covariant=True)
 BufferT_con = TypeVar("BufferT_con", contravariant=True)
 ViewT = TypeVar("ViewT")

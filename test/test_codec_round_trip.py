@@ -10,7 +10,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from test.utils import typeval
-from v8serialize._pycompat.typing import get_buffer
+from v8serialize._pycompat.typing import ReadableBinary, get_buffer
 from v8serialize.constants import (
     JS_NUMBER_TAGS,
     JS_PRIMITIVE_OBJECT_TAGS,
@@ -456,7 +456,7 @@ def test_codec_rt_js_array_buffer(
     }
     result: JSArrayBuffer | JSSharedArrayBuffer | JSArrayBufferTransfer = (
         decode_ctx.stream.read_js_array_buffer(
-            array_buffer=JSArrayBuffer,
+            array_buffer=JSArrayBuffer[ReadableBinary],
             shared_array_buffer=JSSharedArrayBuffer,
             array_buffer_transfer=JSArrayBufferTransfer,
         )

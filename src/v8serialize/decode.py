@@ -46,7 +46,7 @@ from v8serialize._values import (
     ArrayBufferTransferConstructor as ArrayBufferTransferConstructor,
 )
 from v8serialize._values import ArrayBufferViewConstructor as ArrayBufferViewConstructor
-from v8serialize._values import BufferT, ViewT
+from v8serialize._values import BufferT, BufferT1, BufferT2, BufferT3, ViewT
 from v8serialize._values import JSErrorBuilder as JSErrorBuilder
 from v8serialize._values import (
     SharedArrayBufferConstructor as SharedArrayBufferConstructor,
@@ -685,17 +685,17 @@ class ReadableTagStream:
     def read_js_array_buffer(
         self,
         *,
-        array_buffer: ArrayBufferConstructor[BufferT],
-        shared_array_buffer: SharedArrayBufferConstructor[BufferT],
-        array_buffer_transfer: ArrayBufferTransferConstructor[BufferT],
+        array_buffer: ArrayBufferConstructor[BufferT1],
+        shared_array_buffer: SharedArrayBufferConstructor[BufferT2],
+        array_buffer_transfer: ArrayBufferTransferConstructor[BufferT3],
         tag: ArrayBufferTags | None = None,
-    ) -> BufferT:
+    ) -> BufferT1 | BufferT2 | BufferT3:
         if tag is None:
             tag = self.read_tag(tag=JS_ARRAY_BUFFER_TAGS)
         elif tag not in JS_ARRAY_BUFFER_TAGS:
             raise ValueError("tag must be an array buffer tag")
 
-        buffer: BufferT
+        buffer: BufferT1 | BufferT2 | BufferT3
         if tag is SerializationTag.kArrayBuffer:
             buffer = self._read_js_array_buffer(array_buffer=array_buffer)
         elif tag is SerializationTag.kResizableArrayBuffer:
@@ -1330,7 +1330,7 @@ class TagReader(DecodeStepObject):
     ):
         buffer: JSArrayBuffer | JSSharedArrayBuffer | JSArrayBufferTransfer = (
             ctx.stream.read_js_array_buffer(
-                array_buffer=JSArrayBuffer,
+                array_buffer=JSArrayBuffer[ReadableBinary],
                 shared_array_buffer=JSSharedArrayBuffer,
                 array_buffer_transfer=JSArrayBufferTransfer,
                 tag=tag,
