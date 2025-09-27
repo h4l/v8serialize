@@ -8,7 +8,9 @@ and this project adheres to
 
 ## [Unreleased]
 
-Nothing yet.
+### Backwards-incompatible changes
+
+- Removed support for Python 3.9 (which is out of support from 1st October 2025)
 
 ## [0.3.0] — 2025-09-26
 

@@ -4,7 +4,7 @@ group "default" {
 
 // TODO: integration
 
-py_versions = ["3.9", "3.10", "3.11", "3.12", "3.13"]
+py_versions = ["3.10", "3.11", "3.12", "3.13"]
 
 target "test" {
     name = "test_py${replace(py, ".", "")}"
