@@ -689,7 +689,7 @@ class ReadableTagStream:
         shared_array_buffer: SharedArrayBufferConstructor[BufferT],
         array_buffer_transfer: ArrayBufferTransferConstructor[BufferT],
         tag: ArrayBufferTags | None = None,
-    ) -> BufferT | ViewT:
+    ) -> BufferT:
         if tag is None:
             tag = self.read_tag(tag=JS_ARRAY_BUFFER_TAGS)
         elif tag not in JS_ARRAY_BUFFER_TAGS:
