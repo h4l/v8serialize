@@ -662,8 +662,8 @@ class WritableTagStream:
         self, buffer_view: AnyArrayBufferView, *, identity: object | None = None
     ) -> None:
         if (
-            SerializationFeature.Float16Array not in self.features
-            and buffer_view.view_tag == ArrayBufferViewTag.kFloat16Array
+            buffer_view.view_tag == ArrayBufferViewTag.kFloat16Array
+            and SerializationFeature.Float16Array not in self.features
         ):
             raise FeatureNotEnabledEncodeV8SerializeError(
                 "Cannot write Float16Array when the Float16Array "
