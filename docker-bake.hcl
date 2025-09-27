@@ -4,15 +4,25 @@ group "default" {
 
 // TODO: integration
 
+function "python_image_tag" {
+  params = [version]
+  result = version == "latest" ? "slim" : "${version}-slim"
+}
+
+function "version_name" {
+  params = [version]
+  result = replace(version, ".", "")
+}
+
 py_versions = ["3.10", "3.11", "3.12", "3.13"]
 
 target "test" {
-    name = "test_py${replace(py, ".", "")}"
+    name = "test_py${version_name(py_version)}"
     matrix = {
-        py = py_versions,
+        py_version = py_versions,
     }
     args = {
-        PYTHON_VER = py == "latest" ? "slim" : "${py}-slim"
+        PYTHON_VER = python_image_tag(py_version)
     }
     target = "test"
     no-cache-filter = ["test"]
@@ -20,12 +30,12 @@ target "test" {
 }
 
 target "test_package" {
-    name = "test_package_py${replace(py, ".", "")}"
+    name = "test_package_py${version_name(py_version)}"
     matrix = {
-        py = py_versions,
+        py_version = py_versions,
     }
     args = {
-        PYTHON_VER = py == "latest" ? "slim" : "${py}-slim"
+        PYTHON_VER = python_image_tag(py_version)
     }
     target = "test-package"
     no-cache-filter = ["test-package"]
@@ -46,13 +56,13 @@ target "lint" {
 }
 
 target "dev" {
-    name = "dev_py${replace(py, ".", "")}"
+    name = "dev_py${version_name(py_version)}"
     matrix = {
-        py = py_versions,
+        py_version = py_versions,
     }
-    inherits = ["test_py${replace(py, ".", "")}"]
+    inherits = ["test_py${version_name(py_version)}"]
     no-cache-filter = []
     output = []
     target = "poetry"
-    tags = ["v8serialize-dev:py${replace(py, ".", "")}"]
+    tags = ["v8serialize-dev:py${version_name(py_version)}"]
 }
