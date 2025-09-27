@@ -39,13 +39,17 @@ if TYPE_CHECKING:
     from typing_extensions import Buffer, Self, TypeAlias, TypeVar
 
     AnyBuffer: TypeAlias = "ReadableBinary | Buffer"
-    AnyBufferT = TypeVar("AnyBufferT", bound=AnyBuffer, default=AnyBuffer)
-    BufferT = TypeVar("BufferT", bound=ReadableBinary, default=ReadableBinary)
+    AnyBufferT_co = TypeVar(
+        "AnyBufferT_co", bound=AnyBuffer, default=AnyBuffer, covariant=True
+    )
+    BufferT_co = TypeVar(
+        "BufferT_co", bound=ReadableBinary, default=ReadableBinary, covariant=True
+    )
 else:
     from typing import TypeVar
 
-    AnyBufferT = TypeVar("AnyBufferT")
-    BufferT = TypeVar("BufferT")
+    AnyBufferT_co = TypeVar("AnyBufferT_co")
+    BufferT_co = TypeVar("BufferT_co", covariant=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,9 +62,9 @@ class BaseJSArrayBuffer(ABC):
 @dataclass(frozen=True, init=False, slots=True)
 class JSArrayBuffer(
     AnyArrayBuffer,
-    AbstractContextManager["JSArrayBuffer[BufferT]"],
+    AbstractContextManager["JSArrayBuffer[BufferT_co]"],
     ABC,
-    Generic[BufferT],
+    Generic[BufferT_co],
 ):
     """
     Python equivalent of [JavaScript's ArrayBuffer][ArrayBuffer].
@@ -93,7 +97,7 @@ Reference/Global_Objects/ArrayBuffer
         Whether to allow the buffer data to be modified. Default: `False`
     """
 
-    _data: BufferT
+    _data: BufferT_co  # type: ignore[misc,unused-ignore]
     max_byte_length: int
     """The maximum size that `resize()` can expand this buffer to."""
     resizable: bool
@@ -216,7 +220,7 @@ Reference/Global_Objects/ArrayBuffer
         """The buffer's binary data."""
         return self.__buffer__(BufferFlags.SIMPLE)
 
-    def __enter__(self) -> JSArrayBuffer[BufferT]:
+    def __enter__(self) -> JSArrayBuffer[BufferT_co]:
         return self
 
     def __exit__(
@@ -295,8 +299,15 @@ if TYPE_CHECKING:
     JSArrayBufferT = TypeVar(
         "JSArrayBufferT", bound=AnyArrayBufferData, default=AnyArrayBufferData
     )
+    JSArrayBufferT_co = TypeVar(
+        "JSArrayBufferT_co",
+        bound=AnyArrayBufferData,
+        default=AnyArrayBufferData,
+        covariant=True,
+    )
 else:
     JSArrayBufferT = TypeVar("JSArrayBufferT")
+    JSArrayBufferT_co = TypeVar("JSArrayBufferT_co")
 
 
 @frozen
@@ -427,7 +438,7 @@ class DataFormat:
 
 
 @dataclass(frozen=True, slots=True)
-class JSArrayBufferView(Generic[JSArrayBufferT, AnyBufferT]):
+class JSArrayBufferView(Generic[JSArrayBufferT_co, AnyBufferT_co]):
     """A view to a range of a byte buffer.
 
     This constructor is more lenient than from_bytes() in that it does not
@@ -444,7 +455,7 @@ class JSArrayBufferView(Generic[JSArrayBufferT, AnyBufferT]):
     disallow creating currently-out-of-range views.
     """
 
-    backing_buffer: JSArrayBufferT
+    backing_buffer: JSArrayBufferT_co  # type: ignore[misc,unused-ignore]
     """The byte buffer this view exposes a range of."""
     item_offset: int = field(default=0)
     """The start of the view's backing_buffer range."""
@@ -514,7 +525,7 @@ class JSArrayBufferView(Generic[JSArrayBufferT, AnyBufferT]):
         item_offset = byte_offset // itemsize
         item_length = None if byte_length is None else byte_length // itemsize
         view = cls(
-            backing_buffer,
+            backing_buffer,  # type: ignore[arg-type]
             item_offset=item_offset,
             item_length=item_length,
             readonly=readonly,
@@ -590,7 +601,7 @@ the itemsize when the view does not have an explicit byte_length"""
     @abstractmethod
     def get_buffer(
         self, *, readonly: Literal[True] | None = None
-    ) -> ContextManager[AnyBufferT]: ...
+    ) -> ContextManager[AnyBufferT_co]: ...
 
     def __get_buffer_as_memoryview(
         self, *, readonly: Literal[True] | None = None
@@ -654,7 +665,7 @@ the itemsize when the view does not have an explicit byte_length"""
         if self is value:
             return True
         if isinstance(value, JSArrayBufferView):
-            value = cast("JSArrayBufferView[AnyArrayBufferData, AnyBufferT]", value)
+            value = cast("JSArrayBufferView[AnyArrayBufferData, AnyBufferT_co]", value)
             try:
                 with (
                     self.get_buffer(readonly=True) as self_data,
@@ -702,17 +713,19 @@ TypedViewTag = Literal[
 ]
 
 if TYPE_CHECKING:
-    ViewTagT = TypeVar("ViewTagT", bound=TypedViewTag, default=TypedViewTag)
+    ViewTagT_co = TypeVar(
+        "ViewTagT_co", bound=TypedViewTag, default=TypedViewTag, covariant=True
+    )
     ElementT = TypeVar("ElementT", bound="int | float", default="int | float")
 else:
-    ViewTagT = TypeVar("ViewTagT")
+    ViewTagT_co = TypeVar("ViewTagT_co")
     ElementT = TypeVar("ElementT")
 
 
 class JSTypedArray(
-    JSArrayBufferView[JSArrayBufferT, "memoryview[Any]"],
+    JSArrayBufferView[JSArrayBufferT_co, "memoryview[Any]"],
     AnyArrayBufferView,
-    Generic[JSArrayBufferT, ViewTagT],
+    Generic[JSArrayBufferT_co, ViewTagT_co],
 ):
     """
     Python equivalent of [JavaScript's TypedArray].
@@ -757,14 +770,16 @@ JavaScript/Reference/Global_Objects/TypedArray
         return self.data_format.cast(self.get_buffer_as_memoryview(readonly=readonly))
 
 
-class JSInt8Array(JSTypedArray[JSArrayBufferT, Literal[ArrayBufferViewTag.kInt8Array]]):
+class JSInt8Array(
+    JSTypedArray[JSArrayBufferT_co, Literal[ArrayBufferViewTag.kInt8Array]]
+):
     element_type = int
     view_tag = ArrayBufferViewTag.kInt8Array
     data_format = DataFormat.resolve(data_type=DataType.SignedInt, byte_length=1)
 
 
 class JSUint8Array(
-    JSTypedArray[JSArrayBufferT, Literal[ArrayBufferViewTag.kUint8Array]]
+    JSTypedArray[JSArrayBufferT_co, Literal[ArrayBufferViewTag.kUint8Array]]
 ):
     element_type = int
     view_tag = ArrayBufferViewTag.kUint8Array
@@ -772,7 +787,7 @@ class JSUint8Array(
 
 
 class JSUint8ClampedArray(
-    JSTypedArray[JSArrayBufferT, Literal[ArrayBufferViewTag.kUint8ClampedArray]]
+    JSTypedArray[JSArrayBufferT_co, Literal[ArrayBufferViewTag.kUint8ClampedArray]]
 ):
     element_type = int
     view_tag = ArrayBufferViewTag.kUint8ClampedArray
@@ -780,7 +795,7 @@ class JSUint8ClampedArray(
 
 
 class JSInt16Array(
-    JSTypedArray[JSArrayBufferT, Literal[ArrayBufferViewTag.kInt16Array]]
+    JSTypedArray[JSArrayBufferT_co, Literal[ArrayBufferViewTag.kInt16Array]]
 ):
     element_type = int
     view_tag = ArrayBufferViewTag.kInt16Array
@@ -788,7 +803,7 @@ class JSInt16Array(
 
 
 class JSUint16Array(
-    JSTypedArray[JSArrayBufferT, Literal[ArrayBufferViewTag.kUint16Array]]
+    JSTypedArray[JSArrayBufferT_co, Literal[ArrayBufferViewTag.kUint16Array]]
 ):
     element_type = int
     view_tag = ArrayBufferViewTag.kUint16Array
@@ -796,7 +811,7 @@ class JSUint16Array(
 
 
 class JSInt32Array(
-    JSTypedArray[JSArrayBufferT, Literal[ArrayBufferViewTag.kInt32Array]]
+    JSTypedArray[JSArrayBufferT_co, Literal[ArrayBufferViewTag.kInt32Array]]
 ):
     element_type = int
     view_tag = ArrayBufferViewTag.kInt32Array
@@ -804,7 +819,7 @@ class JSInt32Array(
 
 
 class JSUint32Array(
-    JSTypedArray[JSArrayBufferT, Literal[ArrayBufferViewTag.kUint32Array]]
+    JSTypedArray[JSArrayBufferT_co, Literal[ArrayBufferViewTag.kUint32Array]]
 ):
     element_type = int
     view_tag = ArrayBufferViewTag.kUint32Array
@@ -812,7 +827,7 @@ class JSUint32Array(
 
 
 class JSFloat16Array(
-    JSTypedArray[JSArrayBufferT, Literal[ArrayBufferViewTag.kFloat16Array]]
+    JSTypedArray[JSArrayBufferT_co, Literal[ArrayBufferViewTag.kFloat16Array]]
 ):
     element_type = float
     view_tag = ArrayBufferViewTag.kFloat16Array
@@ -820,7 +835,7 @@ class JSFloat16Array(
 
 
 class JSFloat32Array(
-    JSTypedArray[JSArrayBufferT, Literal[ArrayBufferViewTag.kFloat32Array]]
+    JSTypedArray[JSArrayBufferT_co, Literal[ArrayBufferViewTag.kFloat32Array]]
 ):
     element_type = float
     view_tag = ArrayBufferViewTag.kFloat32Array
@@ -828,7 +843,7 @@ class JSFloat32Array(
 
 
 class JSFloat64Array(
-    JSTypedArray[JSArrayBufferT, Literal[ArrayBufferViewTag.kFloat64Array]]
+    JSTypedArray[JSArrayBufferT_co, Literal[ArrayBufferViewTag.kFloat64Array]]
 ):
     element_type = float
     view_tag = ArrayBufferViewTag.kFloat64Array
@@ -836,7 +851,7 @@ class JSFloat64Array(
 
 
 class JSBigInt64Array(
-    JSTypedArray[JSArrayBufferT, Literal[ArrayBufferViewTag.kBigInt64Array]]
+    JSTypedArray[JSArrayBufferT_co, Literal[ArrayBufferViewTag.kBigInt64Array]]
 ):
     element_type = int
     view_tag = ArrayBufferViewTag.kBigInt64Array
@@ -844,7 +859,7 @@ class JSBigInt64Array(
 
 
 class JSBigUint64Array(
-    JSTypedArray[JSArrayBufferT, Literal[ArrayBufferViewTag.kBigUint64Array]]
+    JSTypedArray[JSArrayBufferT_co, Literal[ArrayBufferViewTag.kBigUint64Array]]
 ):
     element_type = int
     view_tag = ArrayBufferViewTag.kBigUint64Array
@@ -1069,7 +1084,7 @@ data in bulk.
         self.write("B", byte_offset, value)
 
 
-class JSDataView(JSArrayBufferView[JSArrayBufferT, DataViewBuffer]):
+class JSDataView(JSArrayBufferView[JSArrayBufferT_co, DataViewBuffer]):
     r"""
     Python equivalent of [JavaScript's DataView].
 
