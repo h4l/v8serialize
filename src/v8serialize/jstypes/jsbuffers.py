@@ -59,9 +59,9 @@ class BaseJSArrayBuffer(ABC):
 @dataclass(frozen=True, init=False, **slots_if310())
 class JSArrayBuffer(
     AnyArrayBuffer,
-    Generic[BufferT],
     AbstractContextManager["JSArrayBuffer[BufferT]"],
     ABC,
+    Generic[BufferT],
 ):
     """
     Python equivalent of [JavaScript's ArrayBuffer][ArrayBuffer].
