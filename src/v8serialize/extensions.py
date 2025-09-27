@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 from v8serialize._enums import frozen
 from v8serialize._errors import DecodeV8SerializeError
 from v8serialize.constants import ArrayBufferViewTag
+from v8serialize.decode import HostObjectDeserializerObj
+from v8serialize.encode import HostObjectSerializerObj
 from v8serialize.jstypes.jsbuffers import (
     ArrayBufferViewStructFormat,
     JSArrayBuffer,
@@ -18,11 +20,16 @@ from v8serialize.jstypes.jsbuffers import (
 )
 
 if TYPE_CHECKING:
+    from typing_extensions import assert_type
+
     from v8serialize.decode import ReadableTagStream
     from v8serialize.encode import EncodeContext, EncodeNextFn, WritableTagStream
 
 
-class NodeJsArrayBufferViewHostObjectHandler:
+class NodeJsArrayBufferViewHostObjectHandler(
+    HostObjectSerializerObj[JSDataView | JSTypedArray],
+    HostObjectDeserializerObj[JSDataView | JSTypedArray],
+):
     """
     Support for deserializing ArrayBuffer views from NodeJS's custom serialization.
 
@@ -147,6 +154,12 @@ def serialize_js_array_buffer_views_as_nodejs_host_object(
         )
         return
     next(value)
+
+
+if TYPE_CHECKING:
+    from v8serialize.encode import EncodeStepFn
+
+    assert_type(serialize_js_array_buffer_views_as_nodejs_host_object, EncodeStepFn)
 
 
 @dataclass(unsafe_hash=True, slots=True)
