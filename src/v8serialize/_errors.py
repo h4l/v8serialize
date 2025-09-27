@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, fields
 from typing import TYPE_CHECKING, cast
 
-from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._pycompat.typing import ReadableBinary
 
 if TYPE_CHECKING:
@@ -77,7 +76,7 @@ class UnhandledTagDecodeV8SerializeError(DecodeV8SerializeError):
         return cast("SerializationTag", self.args[1])
 
 
-@dataclass(init=False, **slots_if310())
+@dataclass(init=False, slots=True)
 class NormalizedKeyError(KeyError):
     """A JSObject does not contain a property for the requested key.
 

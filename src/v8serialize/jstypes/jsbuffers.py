@@ -22,7 +22,6 @@ from typing import (
 
 from v8serialize._enums import frozen
 from v8serialize._errors import V8SerializeError
-from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._pycompat.inspect import BufferFlags
 from v8serialize._pycompat.typing import ReadableBinary, get_buffer
 from v8serialize._values import (
@@ -49,14 +48,14 @@ else:
     BufferT = TypeVar("BufferT")
 
 
-@dataclass(frozen=True, **slots_if310())
+@dataclass(frozen=True, slots=True)
 class BaseJSArrayBuffer(ABC):
     @abstractmethod
     def __buffer__(self, flags: int) -> memoryview: ...
 
 
 @BaseJSArrayBuffer.register
-@dataclass(frozen=True, init=False, **slots_if310())
+@dataclass(frozen=True, init=False, slots=True)
 class JSArrayBuffer(
     AnyArrayBuffer,
     AbstractContextManager["JSArrayBuffer[BufferT]"],
@@ -242,7 +241,7 @@ Reference/Global_Objects/ArrayBuffer
 
 
 @BaseJSArrayBuffer.register
-@dataclass(frozen=True, **slots_if310())
+@dataclass(frozen=True, slots=True)
 class JSSharedArrayBuffer(AnySharedArrayBuffer, ABC):
     """
     Python equivalent of [JavaScript's SharedArrayBuffer].
@@ -268,7 +267,7 @@ class JSSharedArrayBuffer(AnySharedArrayBuffer, ABC):
 
 
 @BaseJSArrayBuffer.register
-@dataclass(frozen=True, **slots_if310())
+@dataclass(frozen=True, slots=True)
 class JSArrayBufferTransfer(AnyArrayBufferTransfer, ABC):
     """A non-standard V8 type representing an ArrayBuffer being [transferred].
 
@@ -373,7 +372,7 @@ AnyDataType = Literal[
 ]
 
 
-@dataclass(frozen=True, **slots_if310())
+@dataclass(frozen=True, slots=True)
 class DataFormat:
     """A [struct format] for a specific data type and precision.
 
@@ -427,7 +426,7 @@ class DataFormat:
         return self.data_type.cast(view, data_format=self)
 
 
-@dataclass(frozen=True, **slots_if310())
+@dataclass(frozen=True, slots=True)
 class JSArrayBufferView(Generic[JSArrayBufferT, AnyBufferT]):
     """A view to a range of a byte buffer.
 
@@ -1103,7 +1102,7 @@ JavaScript/Reference/Global_Objects/DataView
         return DataViewBuffer(self.get_buffer_as_memoryview(readonly=readonly))
 
 
-@dataclass(unsafe_hash=True, order=True, **slots_if310())
+@dataclass(unsafe_hash=True, order=True, slots=True)
 class ViewFormat:
     view_tag: ArrayBufferViewTag
     view_type: type[JSTypedArray | JSDataView]

@@ -32,7 +32,6 @@ from v8serialize._errors import (
     UnhandledTagDecodeV8SerializeError,
     V8SerializeError,
 )
-from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._pycompat.typing import (
     Buffer,
     ReadableBinary,
@@ -155,7 +154,7 @@ else:
         object: object
 
 
-@dataclass(**slots_if310())
+@dataclass(slots=True)
 class ReadableTagStream:
     data: ReadableBinary
     pos: int = field(default=0)
@@ -869,7 +868,7 @@ class TagReaderFn(Protocol[TagT_con]):
     ) -> object: ...
 
 
-@dataclass(init=False, **slots_if310())
+@dataclass(init=False, slots=True)
 class TagReaderRegistry:
     """
     A registry of `SerializationTag`s and the functions that can read them.
@@ -1026,7 +1025,7 @@ See Also
 """
 
 
-@dataclass(init=False, **slots_if310())
+@dataclass(init=False, slots=True)
 class DefaultDecodeContext(DecodeContext):
     """
     The default implementation of [`DecodeContext`].
@@ -1105,7 +1104,7 @@ JSObjectType = Callable[[], JSObject[object]]
 JSArrayType = Callable[[], JSArray[object]]
 
 
-@dataclass(init=False, **slots_if310())
+@dataclass(init=False, slots=True)
 class TagReader(DecodeStepObject):
     """
     Controls how V8 serialization data is converted to Python values when deserializing.

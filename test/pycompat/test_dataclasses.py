@@ -6,7 +6,7 @@ from typing import Generic, TypeVar
 
 import pytest
 
-from v8serialize._pycompat.dataclasses import FrozenAfterInitDataclass, slots_if310
+from v8serialize._pycompat.dataclasses import FrozenAfterInitDataclass
 
 T = TypeVar("T")
 
@@ -15,7 +15,7 @@ T = TypeVar("T")
     sys.version_info[:2] != (3, 10), reason="Test applies only to py310"
 )
 def test_frozen_generic_dataclass() -> None:
-    @dataclass(frozen=True, **slots_if310())
+    @dataclass(frozen=True, slots=True)
     class BrokenOn310(Generic[T]):
         foo: T
 
@@ -29,7 +29,7 @@ def test_frozen_generic_dataclass() -> None:
     ):
         BrokenOn310[str](foo="")
 
-    @dataclass(**slots_if310())
+    @dataclass(slots=True)
     class OKOn310(FrozenAfterInitDataclass, Generic[T]):
         foo: T
 
@@ -37,7 +37,7 @@ def test_frozen_generic_dataclass() -> None:
 
 
 def test_FrozenAfterInitDataclass() -> None:
-    @dataclass(unsafe_hash=True, **slots_if310())
+    @dataclass(unsafe_hash=True, slots=True)
     class Example(FrozenAfterInitDataclass):
         a: int
 

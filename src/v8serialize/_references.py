@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, Generator, Generic, NewType, overload
 
 from v8serialize._errors import V8SerializeError
-from v8serialize._pycompat.dataclasses import slots_if310
 
 if TYPE_CHECKING:
     from typing_extensions import TypeVar
@@ -53,7 +52,7 @@ class IllegalCyclicReferenceV8SerializeError(ObjectReferenceV8SerializeError):
 SerializedId = NewType("SerializedId", int)
 
 
-@dataclass(init=False, **slots_if310())
+@dataclass(init=False, slots=True)
 class SerializedObjectLog:
     """References to the objects occurring in V8 serialized data.
 
@@ -147,7 +146,7 @@ class ForwardReferenceError(ReferenceError, Generic[T]):
         self.forward_reference = forward_reference
 
 
-@dataclass(init=False, **slots_if310())
+@dataclass(init=False, slots=True)
 class ForwardReference(Generic[T]):
     __value: T
 

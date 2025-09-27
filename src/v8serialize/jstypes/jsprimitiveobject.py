@@ -4,7 +4,6 @@ from abc import ABCMeta
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final, Generic, Literal, Union, overload
 
-from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize.constants import (
     FLOAT64_SAFE_INT_RANGE,
     PrimitiveObjectTag,
@@ -38,7 +37,7 @@ else:
     TagT_co = TypeVar("TagT_co", bound=PrimitiveObjectTag)
 
 
-@dataclass(frozen=True, order=True, init=False, **slots_if310())
+@dataclass(frozen=True, order=True, init=False, slots=True)
 class JSPrimitiveObject(Generic[T_co, TagT_co], metaclass=ABCMeta):
     """
     Python equivalent of a wrapped/boxed JavaScript primitive.

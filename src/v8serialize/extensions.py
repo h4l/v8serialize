@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 
 from v8serialize._enums import frozen
 from v8serialize._errors import DecodeV8SerializeError
-from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize.constants import ArrayBufferViewTag
 from v8serialize.jstypes.jsbuffers import (
     ArrayBufferViewStructFormat,
@@ -150,7 +149,7 @@ def serialize_js_array_buffer_views_as_nodejs_host_object(
     next(value)
 
 
-@dataclass(unsafe_hash=True, **slots_if310())
+@dataclass(unsafe_hash=True, slots=True)
 class ViewFormat:
     nodejs_code: int
     view_format: ArrayBufferViewStructFormat

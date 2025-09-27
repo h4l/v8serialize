@@ -26,7 +26,6 @@ from typing import (
     runtime_checkable,
 )
 
-from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._typing import ElementsView, Order, SparseMutableSequence
 
 if TYPE_CHECKING:
@@ -83,7 +82,7 @@ else:
     SparseMutableSequence.register(ArrayProperties)
 
 
-@dataclass(**slots_if310())
+@dataclass(slots=True)
 class AbstractArrayProperties(ArrayProperties[T], MutableSequence["T | JSHoleType"]):
     hole_value: ClassVar[JSHoleType] = JSHole
 
@@ -157,7 +156,7 @@ def alternating_regions(
         yield EmptyRegion(start=gap_start, length=length - gap_start)
 
 
-@dataclass(**slots_if310())
+@dataclass(slots=True)
 class EmptyRegion:
     start: int
     length: int
@@ -170,7 +169,7 @@ class EmptyRegion:
         return self.length
 
 
-@dataclass(init=False, **slots_if310())
+@dataclass(init=False, slots=True)
 class OccupiedRegion(Generic[T]):
     start: int
     length: int
@@ -229,7 +228,7 @@ def supports_sized(obj: object) -> TypeGuard[Sized]:
     return callable(getattr(obj, "__len__", None))
 
 
-@dataclass(init=False, eq=False, **slots_if310())
+@dataclass(init=False, eq=False, slots=True)
 class DenseArrayProperties(AbstractArrayProperties[T]):
     _items: list[T | JSHoleType]
     _elements_used: int
@@ -370,7 +369,7 @@ class DenseArrayProperties(AbstractArrayProperties[T]):
         return ArrayPropertiesElementsView(self, order=order)
 
 
-@dataclass(init=False, eq=False, **slots_if310())
+@dataclass(init=False, eq=False, slots=True)
 class SparseArrayProperties(AbstractArrayProperties[T]):
     _items: dict[int, T]
     _sorted_keys: list[int] | None
@@ -649,7 +648,7 @@ class SparseArrayProperties(AbstractArrayProperties[T]):
         return ArrayPropertiesElementsView(self, order=order)
 
 
-@dataclass(init=False, **slots_if310())
+@dataclass(init=False, slots=True)
 class ArrayPropertiesElementsView(ElementsView[T], Mapping[int, T]):
     _array_properties: ArrayProperties[T]
     order: Order

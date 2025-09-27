@@ -28,7 +28,6 @@ from packaging.version import Version
 
 from v8serialize._decorators import singledispatchmethod
 from v8serialize._errors import V8SerializeError
-from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._pycompat.exceptions import add_note
 from v8serialize._pycompat.types import NoneType
 from v8serialize._references import SerializedId, SerializedObjectLog
@@ -135,7 +134,7 @@ def _encode_zigzag(number: int) -> int:
     return abs(number * 2) - (number < 0)
 
 
-@dataclass(**slots_if310())
+@dataclass(slots=True)
 class TagConstraintRemover(AbstractContextManager[None, None]):
     """
     Context manager that resets the tag constraint on a WritableTagStream.
@@ -159,7 +158,7 @@ class TagConstraintRemover(AbstractContextManager[None, None]):
         self.stream.allowed_tags = None
 
 
-@dataclass(**slots_if310())
+@dataclass(slots=True)
 class WritableTagStream:
     """Write individual tagged data items in the V8 serialization format.
 
@@ -794,7 +793,7 @@ See Also
 """
 
 
-@dataclass(init=False, **slots_if310())
+@dataclass(init=False, slots=True)
 class DefaultEncodeContext(EncodeContext):
     encode_steps: Sequence[EncodeStep]
     stream: WritableTagStream
@@ -850,7 +849,7 @@ class DefaultEncodeContext(EncodeContext):
         return value
 
 
-@dataclass(**slots_if310())
+@dataclass(slots=True)
 class TagWriter(EncodeStepObject):
     """Defines the conversion of Python types into the V8 serialization format.
 

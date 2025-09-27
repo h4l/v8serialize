@@ -8,7 +8,6 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, overload
 
 from v8serialize._errors import NormalizedKeyError
-from v8serialize._pycompat.dataclasses import slots_if310
 from v8serialize._recursive_eq import recursive_eq
 from v8serialize.jstypes import _repr
 from v8serialize.jstypes._normalise_property_key import normalise_property_key
@@ -33,7 +32,7 @@ MIN_DENSE_ARRAY_USED_RATIO = 1 / 4
 
 
 @recursive_eq
-@dataclass(init=False, **slots_if310(), eq=False)
+@dataclass(init=False, slots=True, eq=False)
 class JSObject(MutableMapping["str | int", "T"], ABC):
     """
     A Python equivalent of [JavaScript plain objects][JavaScript Object].
