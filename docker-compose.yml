@@ -1,5 +1,14 @@
 name: v8serialize
 services:
+
+  echoserver-node-24:
+    profiles: [unstable]
+    container_name: ${COMPOSE_PROJECT_NAME:?}-echoserver-node-24
+    image: ghcr.io/h4l/v8serialize/echoserver:${ECHOSERVER_VERSION:?}-node-24
+    networks: [v8serialize]
+    labels:
+      com.github.h4l.v8serialize.echoserver: "true"
+
   echoserver-node-22:
     container_name: ${COMPOSE_PROJECT_NAME:?}-echoserver-node-22
     image: ghcr.io/h4l/v8serialize/echoserver:${ECHOSERVER_VERSION:?}-node-22
@@ -14,9 +23,17 @@ services:
     labels:
       com.github.h4l.v8serialize.echoserver: "true"
 
-  echoserver-deno:
-    container_name: ${COMPOSE_PROJECT_NAME:?}-echoserver-deno
+  echoserver-deno-1:
+    container_name: ${COMPOSE_PROJECT_NAME:?}-echoserver-deno-1
     image: ghcr.io/h4l/v8serialize/echoserver:${ECHOSERVER_VERSION:?}-deno-1.46.1
+    networks: [v8serialize]
+    labels:
+      com.github.h4l.v8serialize.echoserver: "true"
+
+  echoserver-deno-2:
+    profiles: [unstable]
+    container_name: ${COMPOSE_PROJECT_NAME:?}-echoserver-deno-2
+    image: ghcr.io/h4l/v8serialize/echoserver:${ECHOSERVER_VERSION:?}-deno-2.5.2
     networks: [v8serialize]
     labels:
       com.github.h4l.v8serialize.echoserver: "true"
@@ -27,13 +44,6 @@ services:
     networks: [v8serialize]
     environment:
       V8SERIALIZE_ECHOSERVERS: "${V8SERIALIZE_ECHOSERVERS:-__required_but_not_set__}"
-    depends_on:
-      echoserver-node-22:
-        condition: service_healthy
-      echoserver-node-18:
-        condition: service_healthy
-      echoserver-deno:
-        condition: service_healthy
     command: pytest -m integration -vv
     volumes:
       - .:${WORKSPACE_MOUNT_PATH:-/workspace}

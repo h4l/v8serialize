@@ -92,7 +92,7 @@ jobs:
           )
 
           # Start the V8 echoservers that the integration test communicates with
-          docker compose up -d
+          docker compose up --wait --detach
 
           # Discover the running echoservers
           V8SERIALIZE_ECHOSERVERS=$(./scripts/list-echoservers.sh)
