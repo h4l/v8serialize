@@ -717,12 +717,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="v8serialize.Encoder" class="level1">
 <h1>Encoder</h1>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>Encoder(</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    encode_steps: Iterable[EncodeStep] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> default_encode_steps,</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    features: SerializationFeature <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    v8_version: Version <span class="op">|</span> UnreleasedVersion <span class="op">|</span> <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    encode_steps: Iterable[EncodeStep] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> default_encode_steps,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    features: SerializationFeature <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    v8_version: Version <span class="op">|</span> UnreleasedVersion <span class="op">|</span> <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>A re-usable configuration for serializing objects into V8 serialization format.</p>
 <p>The <code>encode_steps</code>, <code>features</code> and <code>v8_version</code> arguments behave as described for <a href="../reference/encoding_decoding.html#v8serialize.dumps"><code>dumps()</code></a>. The <code>encode()</code> method behaves like <code>dumps()</code> without needing to pass the arguments for every call.</p>
 <section id="parameters-2" class="level2 doc-section doc-section-parameters">
@@ -848,7 +846,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="v8serialize.Decoder" class="level1">
 <h1>Decoder</h1>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>Decoder(<span class="va">self</span>, decode_steps: Iterable[DecodeStep] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> default_decode_steps)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>Decoder(decode_steps: Iterable[DecodeStep] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> default_decode_steps)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>A re-usable configuration for deserializing V8 serialization format data.</p>
 <p>The <code>decode_steps</code> argument behaves as described for <a href="../reference/encoding_decoding.html#v8serialize.loads"><code>loads()</code></a>. The <code>decode()</code> and <code>decodes()</code> methods behave like <code>loads()</code> without needing to pass the <code>decode_steps</code> for every call.</p>
 <section id="parameters-4" class="level2 doc-section doc-section-parameters">
