@@ -43,14 +43,22 @@ target "test_package" {
 }
 
 target "lint" {
-    name = "lint-${lint_type}"
+    name = (
+      lint_type.version == null
+        ? "lint-${lint_type.name}"
+        : "lint-${lint_type.name}-${version_name(lint_type.version)}"
+    )
     matrix = {
-        lint_type = ["check", "format", "mypy"],
+      lint_type = concat(
+        [{name = "check", version = null}],
+        [{name = "format", version = null}],
+        [for py_version in py_versions : {name = "mypy", version = py_version}],
+      ),
     }
     args = {
-        PYTHON_VER = "slim"
+        PYTHON_VER = python_image_tag(coalesce(lint_type.version, py_versions[0]))
     }
-    target = "lint-${lint_type}"
+    target = "lint-${lint_type.name}"
     no-cache-filter = ["lint-setup"]
     output = ["type=cacheonly"]
 }
