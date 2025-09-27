@@ -15,7 +15,6 @@ from hypothesis.stateful import (
     rule,
 )
 
-from v8serialize._pycompat.builtins import callable_staticmethod
 from v8serialize._typing import ElementsView, Order
 from v8serialize.jstypes.jsarrayproperties import (
     MAX_ARRAY_LENGTH,
@@ -137,7 +136,7 @@ class AbstractArrayPropertiesComparisonMachine(RuleBasedStateMachine):
             min_value=-len(self.reference), max_value=len(self.reference) - 1
         )
 
-    @callable_staticmethod
+    @staticmethod
     def get_valid_indexes(
         self: AbstractArrayPropertiesComparisonMachine,
     ) -> st.SearchStrategy[int]:
@@ -148,17 +147,17 @@ class AbstractArrayPropertiesComparisonMachine(RuleBasedStateMachine):
         """Get a strategy generating array lengths <= current length."""
         return st.integers(min_value=0, max_value=len(self.reference))
 
-    @callable_staticmethod
+    @staticmethod
     def get_lengths_lte_current(
         self: AbstractArrayPropertiesComparisonMachine,
     ) -> st.SearchStrategy[int]:
         return self.lengths_lte_current
 
-    @callable_staticmethod
+    @staticmethod
     def not_empty(self: AbstractArrayPropertiesComparisonMachine) -> bool:
         return self._reference is not None and len(self._reference) > 0
 
-    @callable_staticmethod
+    @staticmethod
     def not_too_large(self: AbstractArrayPropertiesComparisonMachine) -> bool:
         return self._reference is not None and len(self._reference) < 2048
 
