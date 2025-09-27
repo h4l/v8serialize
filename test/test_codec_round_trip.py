@@ -246,7 +246,7 @@ all_constants = st.sampled_from([JSHole, JSUndefined, None, True, False])
 
 @given(value=all_constants)
 def test_codec_rt_constants(
-    value: Literal[JSHoleType, JSUndefinedType, None, True, False],
+    value: Literal[JSHoleType, JSUndefinedType, True, False] | None,
     create_rw_ctx: CreateContexts,
 ) -> None:
     encode_ctx, decode_ctx = create_rw_ctx()

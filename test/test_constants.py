@@ -76,7 +76,7 @@ def test_RegExpFlag__canonical() -> None:
     for f in JSRegExpFlag:
         assert f.canonical == f
 
-    all: JSRegExpFlag = reduce(operator.or_, JSRegExpFlag)  # type: ignore[assignment]
+    all: JSRegExpFlag = reduce(operator.or_, JSRegExpFlag)
     assert all.canonical == all
     non_canonical = JSRegExpFlag(0xFFF)
     assert list(non_canonical) == list(all)

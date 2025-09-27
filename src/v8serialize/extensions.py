@@ -114,7 +114,7 @@ class NodeJsArrayBufferViewHostObjectHandler:
             byte_length = len(data)
             stream.write_uint32(buffer_format.nodejs_code, tag=None)
             stream.write_uint32(byte_length, tag=None)
-            stream.data.extend(data)
+            stream.data.extend(data)  # type: ignore[arg-type]
 
 
 _node_js_array_buffer_view_host_object_handler = (

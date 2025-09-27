@@ -42,16 +42,16 @@ class JSBigInt(int):
     def real(self) -> Self:
         return self
 
-    @property  # type: ignore[override]
-    def imag(self) -> Self:
+    @property
+    def imag(self) -> Self:  # type: ignore[override]
         return self.__class__(0)
 
     @property
     def numerator(self) -> Self:
         return self
 
-    @property  # type: ignore[override]
-    def denominator(self) -> Self:
+    @property
+    def denominator(self) -> Self:  # type: ignore[override]
         return self.__class__(1)
 
     def conjugate(self) -> Self:

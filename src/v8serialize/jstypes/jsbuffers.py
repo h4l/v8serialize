@@ -424,7 +424,7 @@ class DataFormat:
     def cast(
         self, view: memoryview[Any]
     ) -> memoryview[int] | memoryview[float] | memoryview[bytes]:
-        return self.data_type.cast(view, data_format=self)  # type: ignore[misc]
+        return self.data_type.cast(view, data_format=self)
 
 
 @dataclass(frozen=True, **slots_if310())
