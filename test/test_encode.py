@@ -7,6 +7,10 @@ import pytest
 from packaging.version import Version
 
 from test.utils import typeval
+from v8serialize._errors import (
+    FeatureNotEnabledEncodeV8SerializeError,
+    UnhandledValueEncodeV8SerializeError,
+)
 from v8serialize._pycompat.exceptions import has_notes
 from v8serialize._references import IllegalCyclicReferenceV8SerializeError
 from v8serialize.constants import (
@@ -18,9 +22,7 @@ from v8serialize.decode import loads
 from v8serialize.encode import (
     DefaultEncodeContext,
     Encoder,
-    FeatureNotEnabledEncodeV8SerializeError,
     TagWriter,
-    UnhandledValueEncodeV8SerializeError,
     WritableTagStream,
     dumps,
     serialize_object_references,

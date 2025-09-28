@@ -27,7 +27,11 @@ from typing import (
 from packaging.version import Version
 
 from v8serialize._decorators import singledispatchmethod
-from v8serialize._errors import V8SerializeError
+from v8serialize._errors import (
+    EncodeV8SerializeError,
+    FeatureNotEnabledEncodeV8SerializeError,
+    UnhandledValueEncodeV8SerializeError,
+)
 from v8serialize._pycompat.exceptions import add_note
 from v8serialize._references import SerializedId, SerializedObjectLog
 from v8serialize._values import (
@@ -80,53 +84,6 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 T_con = TypeVar("T_con", contravariant=True)
-
-
-@dataclass(init=False)
-class EncodeV8SerializeError(V8SerializeError, ValueError):
-    pass
-
-
-@dataclass(init=False)
-class UnhandledValueEncodeV8SerializeError(EncodeV8SerializeError, ValueError):
-    """
-    No [encode step] is able to represent a Python value in the V8 Serialization format.
-
-    Raised when attempting to serialize an object that the none of the
-    configured encode steps know how to represent as V8 serialization tags.
-
-    [encode step]: `v8serialize.encode.EncodeStep`
-    """
-
-    value: object
-
-    def __init__(
-        self,
-        message: str,
-        *args: object,
-        value: object,
-    ) -> None:
-        super().__init__(message, value, *args)
-
-    @property  # type: ignore[no-redef]
-    def value(self) -> object:
-        return self.args[1]
-
-
-@dataclass(init=False)
-class FeatureNotEnabledEncodeV8SerializeError(EncodeV8SerializeError):
-    """
-    The SerializationFeature required to write a value is not enabled.
-
-    Raised when a WritableTagStream is commanded to write data that requires a
-    `SerializationFeature` that is not enabled.
-    """
-
-    feature_required: SerializationFeature
-
-    def __init__(self, message: str, *, feature_required: SerializationFeature) -> None:
-        super(FeatureNotEnabledEncodeV8SerializeError, self).__init__(message)
-        self.feature_required = feature_required
 
 
 def _encode_zigzag(number: int) -> int:

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, cast
 from v8serialize._pycompat.typing import ReadableBinary
 
 if TYPE_CHECKING:
-    from v8serialize.constants import SerializationTag
+    from v8serialize.constants import SerializationFeature, SerializationTag
 
 
 @dataclass(init=False)
@@ -99,3 +99,50 @@ class NormalizedKeyError(KeyError):
 
 class JSRegExpV8SerializeError(V8SerializeError):
     pass
+
+
+@dataclass(init=False)
+class EncodeV8SerializeError(V8SerializeError, ValueError):
+    pass
+
+
+@dataclass(init=False)
+class UnhandledValueEncodeV8SerializeError(EncodeV8SerializeError, ValueError):
+    """
+    No [encode step] is able to represent a Python value in the V8 Serialization format.
+
+    Raised when attempting to serialize an object that the none of the
+    configured encode steps know how to represent as V8 serialization tags.
+
+    [encode step]: `v8serialize.encode.EncodeStep`
+    """
+
+    value: object
+
+    def __init__(
+        self,
+        message: str,
+        *args: object,
+        value: object,
+    ) -> None:
+        super().__init__(message, value, *args)
+
+    @property  # type: ignore[no-redef]
+    def value(self) -> object:
+        return self.args[1]
+
+
+@dataclass(init=False)
+class FeatureNotEnabledEncodeV8SerializeError(EncodeV8SerializeError):
+    """
+    The SerializationFeature required to write a value is not enabled.
+
+    Raised when a WritableTagStream is commanded to write data that requires a
+    `SerializationFeature` that is not enabled.
+    """
+
+    feature_required: SerializationFeature
+
+    def __init__(self, message: str, *, feature_required: SerializationFeature) -> None:
+        super(FeatureNotEnabledEncodeV8SerializeError, self).__init__(message)
+        self.feature_required = feature_required
