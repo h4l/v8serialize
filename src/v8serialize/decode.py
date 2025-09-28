@@ -24,7 +24,6 @@ from typing import (
     TypeVar,
     cast,
     overload,
-    runtime_checkable,
 )
 
 from v8serialize._errors import (
@@ -46,6 +45,9 @@ from v8serialize._values import (
 )
 from v8serialize._values import ArrayBufferViewConstructor as ArrayBufferViewConstructor
 from v8serialize._values import BufferT, BufferT1, BufferT2, BufferT3, ViewT
+from v8serialize._values import HostObjectDeserializer as HostObjectDeserializer
+from v8serialize._values import HostObjectDeserializerFn as HostObjectDeserializerFn
+from v8serialize._values import HostObjectDeserializerObj as HostObjectDeserializerObj
 from v8serialize._values import JSErrorBuilder as JSErrorBuilder
 from v8serialize._values import (
     SharedArrayBufferConstructor as SharedArrayBufferConstructor,
@@ -98,7 +100,6 @@ if TYPE_CHECKING:
     from typing_extensions import Never, TypeAlias
 
 T = TypeVar("T")
-T_co = TypeVar("T_co", covariant=True)
 TagT = TypeVar("TagT", bound=AnySerializationTag)
 
 if TYPE_CHECKING:
@@ -831,25 +832,6 @@ class ReadableTagStream:
             self.read_tag(SerializationTag.kSharedObject)
         result = V8SharedObjectReference(V8SharedValueId(self.read_uint32(tag=False)))
         return ReferencedObject(self.objects.record_reference(result), result)
-
-
-class HostObjectDeserializerFn(Protocol[T_co]):
-    """The signature of a function that reads HostObject tags from a stream."""
-
-    def __call__(self, *, stream: ReadableTagStream) -> T_co: ...
-
-
-@runtime_checkable
-class HostObjectDeserializerObj(Protocol[T_co]):
-    @property
-    def deserialize_host_object(self) -> HostObjectDeserializerFn[T_co]:
-        """The same as `HostObjectDeserializerFn`."""
-
-
-HostObjectDeserializer: TypeAlias = (
-    "HostObjectDeserializerObj[T_co] | HostObjectDeserializerFn[T_co]"
-)
-"""Either `HostObjectDeserializerObj` or `HostObjectDeserializerFn`."""
 
 
 class TagReaderFn(Protocol[TagT_con]):

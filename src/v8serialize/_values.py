@@ -16,6 +16,11 @@ from v8serialize.constants import ArrayBufferViewTag, JSErrorName
 if TYPE_CHECKING:
     from typing_extensions import TypeAlias
 
+    from v8serialize.decode import ReadableTagStream
+    from v8serialize.encode import WritableTagStream
+
+
+T_con = TypeVar("T_con", contravariant=True)
 T_co = TypeVar("T_co", covariant=True)
 
 SharedArrayBufferId = NewType("SharedArrayBufferId", int)
@@ -192,3 +197,45 @@ class JSErrorBuilder(Protocol[T_co]):
     """A function that creates a representation of a serialized Error."""
 
     def __call__(self, partial: AnyJSError, /) -> tuple[T_co, AnyJSError]: ...
+
+
+class HostObjectSerializerFn(Protocol[T_con]):
+    """
+    The type of a function that writes custom [HostObjects][HostObject].
+
+    [HostObject]: `v8serialize.constants.SerializationTag.kHostObject`
+    """
+
+    def __call__(self, *, stream: WritableTagStream, value: T_con) -> None: ...
+
+
+@runtime_checkable
+class HostObjectSerializerObj(Protocol[T_con]):
+    @property
+    def serialize_host_object(self) -> HostObjectSerializerFn[T_con]:
+        """The same as `HostObjectSerializerFn`."""
+
+
+HostObjectSerializer: TypeAlias = (
+    "HostObjectSerializerObj[T_con] | HostObjectSerializerFn[T_con]"
+)
+"""Either a `HostObjectSerializerObj` or `HostObjectSerializerFn`."""
+
+
+class HostObjectDeserializerFn(Protocol[T_co]):
+    """The signature of a function that reads HostObject tags from a stream."""
+
+    def __call__(self, *, stream: ReadableTagStream) -> T_co: ...
+
+
+@runtime_checkable
+class HostObjectDeserializerObj(Protocol[T_co]):
+    @property
+    def deserialize_host_object(self) -> HostObjectDeserializerFn[T_co]:
+        """The same as `HostObjectDeserializerFn`."""
+
+
+HostObjectDeserializer: TypeAlias = (
+    "HostObjectDeserializerObj[T_co] | HostObjectDeserializerFn[T_co]"
+)
+"""Either `HostObjectDeserializerObj` or `HostObjectDeserializerFn`."""

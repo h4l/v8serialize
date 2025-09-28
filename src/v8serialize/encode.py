@@ -21,7 +21,6 @@ from typing import (
     TypeVar,
     cast,
     overload,
-    runtime_checkable,
 )
 
 from packaging.version import Version
@@ -41,6 +40,9 @@ from v8serialize._values import (
     AnyJSError,
     AnySharedArrayBuffer,
 )
+from v8serialize._values import HostObjectSerializer as HostObjectSerializer
+from v8serialize._values import HostObjectSerializerFn as HostObjectSerializerFn
+from v8serialize._values import HostObjectSerializerObj as HostObjectSerializerObj
 from v8serialize.constants import (
     FLOAT64_SAFE_INT_RANGE,
     INT32_RANGE,
@@ -83,7 +85,6 @@ if TYPE_CHECKING:
     from typing_extensions import Never, TypeAlias
 
 T = TypeVar("T")
-T_con = TypeVar("T_con", contravariant=True)
 
 
 def _encode_zigzag(number: int) -> int:
@@ -657,29 +658,6 @@ class WritableTagStream:
         self.objects.record_reference(value if identity is None else identity)
         self.write_tag(SerializationTag.kSharedObject)
         self.write_uint32(value.shared_value_id, tag=None)
-
-
-class HostObjectSerializerFn(Protocol[T_con]):
-    """
-    The type of a function that writes custom [HostObjects][HostObject].
-
-    [HostObject]: `v8serialize.constants.SerializationTag.kHostObject`
-    """
-
-    def __call__(self, *, stream: WritableTagStream, value: T_con) -> None: ...
-
-
-@runtime_checkable
-class HostObjectSerializerObj(Protocol[T_con]):
-    @property
-    def serialize_host_object(self) -> HostObjectSerializerFn[T_con]:
-        """The same as `HostObjectSerializerFn`."""
-
-
-HostObjectSerializer: TypeAlias = (
-    "HostObjectSerializerObj[T_con] | HostObjectSerializerFn[T_con]"
-)
-"""Either a `HostObjectSerializerObj` or `HostObjectSerializerFn`."""
 
 
 class EncodeContext(Protocol):
