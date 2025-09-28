@@ -351,9 +351,9 @@ quartodoc:
         - kind: page
           path: "extensions_nodejs"
           summary:
-            name: Node.JS Buffers
+            name: Node.js Buffers
             desc: |
-              Node.JS's custom Buffer HostObjects.
+              Node.js's custom Buffer HostObjects.
           contents:
             - extensions.NodeJsArrayBufferViewHostObjectHandler
             - extensions.serialize_js_array_buffer_views_as_nodejs_host_object

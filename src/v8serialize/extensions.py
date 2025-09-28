@@ -40,6 +40,21 @@ class NodeJsArrayBufferViewHostObjectHandler(
     tags are the V8 serialization format's way to allow an application to insert
     their own custom data into the serialized data).
 
+    [`loads()`]: `v8serialize.decode.loads`
+    [`dumps()`]: `v8serialize.encode.dumps`
+
+    ::: {.callout-tip}
+    Support for Node.js custom ArrayBuffer views is enabled by default (using
+    this) by [`loads()`] and can be controlled by its `nodejs` option.
+
+    It's not required to enable Node.js's custom ArrayBuffer view
+    serialization to send buffers to Node.js, because Node.js also supports the
+    default ArrayBuffer view encoding V8 serialization format, so it's not
+    enabling it results in wider compatibility. However it can be enabled using
+    [`serialize_js_array_buffer_views_as_nodejs_host_object`] with the
+    `encode_steps` option of [`dumps()`].
+    :::
+
     Examples
     --------
     Serialize a Buffer from Node.JS something like:
@@ -162,9 +177,13 @@ def serialize_js_array_buffer_views_as_nodejs_host_object(
 
     Notes
     -----
-    This is an Object Mapper (`SerializeObjectFn`) that can be used to encode
-    JSDataView and JSTypedArray in the same custom HostObject format that
-    Node.JS writes using the Node.JS `v8.serialize()` function.
+    This is an [encode step] that can be used as one of the `encode_steps` with
+    `dumps()` or `Encoder()`.
+
+    [encode step]: `v8serialize.encode.EncodeStep`
+
+    It encodes JSDataView and JSTypedArray in the same custom HostObject format
+    that Node.JS writes using the Node.JS `v8.serialize()` function.
 
     Because Node.JS is capable of reading the normal encoding of
     `JSArrayBuffer`, `JSDataView` and `JSTypedArray`, this doesn't need to be
