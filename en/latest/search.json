@@ -64,7 +64,7 @@
     "href": "howto/use_at_a_glance.html#serialize-with-python",
     "title": "How to use at a glance",
     "section": "1 Serialize with Python",
-    "text": "1 Serialize with Python\n\nfrom base64 import b64encode\nfrom datetime import datetime, UTC\nimport re\n\nfrom v8serialize import dumps\nfrom v8serialize.jstypes import JSObject, JSArray, JSUndefined\n\nserialized = dumps(\n    [\n        \"strings 🧵🧶🪡\",\n        123,\n        None,\n        JSUndefined,\n        JSArray([(0, \"a\"), (1, \"b\"), (123456789, \"sparse\")]),\n        JSObject({\"msg\": \"Hi\"}),\n        b\"\\xc0\\xff\\xee\",\n        2**128,\n        {\"maps\": True},\n        {\"sets\", \"yes\"},\n        re.compile(r\"^\\w+$\"),\n        datetime(2024, 1, 1, tzinfo=UTC),\n    ]\n)\n\nprint(b64encode(serialized).decode())\n\n/w9BDFMUc3RyaW5ncyDwn6e18J+ntvCfqqFVezBfQQNBAlUAUwFhJAACQQJVAVMBYiQAAkECVZWa7zpTBnNwYXJzZSQAAiQAA29TA21zZ1MCSGl7AUIDwP/uWiIAAAAAAAAAAAAAAAAAAAAAATtTBG1hcHNUOgInUwN5ZXNTBHNldHMsAlJTBV5cdyskgAJEAABAHyXMeEIkAAw=",
+    "text": "1 Serialize with Python\n\nfrom base64 import b64encode\nfrom datetime import datetime, UTC\nimport re\n\nfrom v8serialize import dumps\nfrom v8serialize.jstypes import JSObject, JSArray, JSUndefined\n\nserialized = dumps(\n    [\n        \"strings 🧵🧶🪡\",\n        123,\n        None,\n        JSUndefined,\n        JSArray([(0, \"a\"), (1, \"b\"), (123456789, \"sparse\")]),\n        JSObject({\"msg\": \"Hi\"}),\n        b\"\\xc0\\xff\\xee\",\n        2**128,\n        {\"maps\": True},\n        {\"sets\", \"yes\"},\n        re.compile(r\"^\\w+$\"),\n        datetime(2024, 1, 1, tzinfo=UTC),\n    ]\n)\n\nprint(b64encode(serialized).decode())\n\n/w9BDFMUc3RyaW5ncyDwn6e18J+ntvCfqqFVezBfQQNBAlUAUwFhJAACQQJVAVMBYiQAAkECVZWa7zpTBnNwYXJzZSQAAiQAA29TA21zZ1MCSGl7AUIDwP/uWiIAAAAAAAAAAAAAAAAAAAAAATtTBG1hcHNUOgInUwRzZXRzUwN5ZXMsAlJTBV5cdyskgAJEAABAHyXMeEIkAAw=",
     "crumbs": [
       "How to use at a glance"
     ]
@@ -766,49 +766,49 @@
   {
     "objectID": "reference/extensions_nodejs.html",
     "href": "reference/extensions_nodejs.html",
-    "title": "Node.JS Buffers",
+    "title": "Node.js Buffers",
     "section": "",
-    "text": "Node.JS’s custom Buffer HostObjects.",
+    "text": "Node.js’s custom Buffer HostObjects.",
     "crumbs": [
       "Reference",
       "HostObject Extensions",
-      "Node.JS Buffers"
+      "Node.js Buffers"
     ]
   },
   {
     "objectID": "reference/extensions_nodejs.html#examples",
     "href": "reference/extensions_nodejs.html#examples",
-    "title": "Node.JS Buffers",
+    "title": "Node.js Buffers",
     "section": "Examples",
     "text": "Examples\nSerialize a Buffer from Node.JS something like:\n$ node --version\nv22.4.0\n$ node -e 'console.log(\n    require(\"v8\").serialize(Uint8Array.from([1, 2, 3]))\n        .toString(\"base64\"))'\n/w9cAQMBAgM=\n&gt;&gt;&gt; from v8serialize import loads, TagReader\n&gt;&gt;&gt; from base64 import b64decode\n&gt;&gt;&gt; decode_steps = [TagReader(\n...   host_object_deserializer=NodeJsArrayBufferViewHostObjectHandler()\n... )]\n&gt;&gt;&gt; loads(b64decode('/w9cAQMBAgM='), decode_steps=decode_steps)\nJSUint8Array(JSArrayBuffer(b'\\x01\\x02\\x03'))",
     "crumbs": [
       "Reference",
       "HostObject Extensions",
-      "Node.JS Buffers"
+      "Node.js Buffers"
     ]
   },
   {
     "objectID": "reference/extensions_nodejs.html#methods",
     "href": "reference/extensions_nodejs.html#methods",
-    "title": "Node.JS Buffers",
+    "title": "Node.js Buffers",
     "section": "Methods",
     "text": "Methods\n\n\n\nName\nDescription\n\n\n\n\ndeserialize_host_object\nRead a HostObject from the stream as a Node.JS ArrayBuffer/TypedArray.\n\n\nserialize_host_object\nSerialize JSDataView and JSTypedArray using Node.js’s custom HostObject format.\n\n\n\n\ndeserialize_host_object\nextensions.NodeJsArrayBufferViewHostObjectHandler.deserialize_host_object(\n    stream: ReadableTagStream,\n)\nRead a HostObject from the stream as a Node.JS ArrayBuffer/TypedArray.\n\nReturns\n\n\n\nName\nType\nDescription\n\n\n\n\n\nJSDataView | JSTypedArray\nThe buffer wrapped in a view.\n\n\n\n\n\nRaises\n\n\n\nName\nType\nDescription\n\n\n\n\n\nNodeJsArrayBufferViewHostObjectHandlerDecodeError\nWhen the stream’s HostObject data is not a valid Node.JS Buffer.\n\n\n\n\n\n\nserialize_host_object\nextensions.NodeJsArrayBufferViewHostObjectHandler.serialize_host_object(\n    stream: WritableTagStream,\n    value: JSDataView | JSTypedArray,\n)\nSerialize JSDataView and JSTypedArray using Node.js’s custom HostObject format.\n\nSee Also\nserialize_js_array_buffer_views_as_nodejs_host_object",
     "crumbs": [
       "Reference",
       "HostObject Extensions",
-      "Node.JS Buffers"
+      "Node.js Buffers"
     ]
   },
   {
     "objectID": "reference/extensions_nodejs.html#notes",
     "href": "reference/extensions_nodejs.html#notes",
-    "title": "Node.JS Buffers",
+    "title": "Node.js Buffers",
     "section": "Notes",
-    "text": "Notes\nThis is an Object Mapper (SerializeObjectFn) that can be used to encode JSDataView and JSTypedArray in the same custom HostObject format that Node.JS writes using the Node.JS v8.serialize() function.\nBecause Node.JS is capable of reading the normal encoding of JSArrayBuffer, JSDataView and JSTypedArray, this doesn’t need to be used to send data to Node.JS (unlike on the deserializing side, where NodeJsArrayBufferViewHostObjectHandler must be used to read Node.JS’s custom encoding).",
+    "text": "Notes\nThis is an encode step that can be used as one of the encode_steps with dumps() or Encoder().\nIt encodes JSDataView and JSTypedArray in the same custom HostObject format that Node.JS writes using the Node.JS v8.serialize() function.\nBecause Node.JS is capable of reading the normal encoding of JSArrayBuffer, JSDataView and JSTypedArray, this doesn’t need to be used to send data to Node.JS (unlike on the deserializing side, where NodeJsArrayBufferViewHostObjectHandler must be used to read Node.JS’s custom encoding).",
     "crumbs": [
       "Reference",
       "HostObject Extensions",
-      "Node.JS Buffers"
+      "Node.js Buffers"
     ]
   },
   {
@@ -1153,7 +1153,7 @@
     "href": "reference/index.html",
     "title": "Reference",
     "section": "",
-    "text": "Core v8serialize functionality.\n\n\n\nEncoding & Decoding\nloads() and dumps() read and write V8-serialized data.\n\n\nCustomized Encoding\nThe v8serialize.encode module writes V8-serialized data.\n\n\nCustomized Decoding\nThe v8serialize.decode module reads V8-serialized data.\n\n\nExceptions\nExceptions raised by v8serialize.\n\n\nTypes & Protocols\nType annotations & Protocols used throughout v8serialize.\n\n\n\n\n\n\nv8serialize.jstypes provides Python equivalents of JavaScript types used in V8-serialized data.\n\n\n\nArrayBuffer, TypedArray, DataView\nPython equivalents of JavaScript’s binary data buffer types.\n\n\nDate\nPython equivalent of JavaScript’s Date is datetime.datetime.\n\n\nError\nPython equivalents of JavaScript Error types.\n\n\nMap & Set\nPython equivalents of JavaScript’s Map & Set types.\n\n\nObject & Array\nPython equivalents of JavaScript’s Object & Array types.\n\n\nPrimitives\nPython equivalents of JavaScript primitives that don’t have a natural Python analogue.\n\n\nRegExp\nPython equivalents of JavaScript RegExp type.\n\n\nUtilities\nFunctions associated with v8codec.jstypes.\n\n\n\n\n\n\nV8 serialization format and JavaScript constants.\n\n\n\nAPI Constants\nEnums and constant values for loads()/dumps()\n\n\nJavaScript Constants\nEnums and constant values for JavaScript types.\n\n\nV8 Serialization Format Constants\nEnums and constant values for the V8 serialization format.\n\n\n\n\n\n\nPlatform-specific HostObject support.\n\n\n\nNode.JS Buffers\nNode.JS’s custom Buffer HostObjects.",
+    "text": "Core v8serialize functionality.\n\n\n\nEncoding & Decoding\nloads() and dumps() read and write V8-serialized data.\n\n\nCustomized Encoding\nThe v8serialize.encode module writes V8-serialized data.\n\n\nCustomized Decoding\nThe v8serialize.decode module reads V8-serialized data.\n\n\nExceptions\nExceptions raised by v8serialize.\n\n\nTypes & Protocols\nType annotations & Protocols used throughout v8serialize.\n\n\n\n\n\n\nv8serialize.jstypes provides Python equivalents of JavaScript types used in V8-serialized data.\n\n\n\nArrayBuffer, TypedArray, DataView\nPython equivalents of JavaScript’s binary data buffer types.\n\n\nDate\nPython equivalent of JavaScript’s Date is datetime.datetime.\n\n\nError\nPython equivalents of JavaScript Error types.\n\n\nMap & Set\nPython equivalents of JavaScript’s Map & Set types.\n\n\nObject & Array\nPython equivalents of JavaScript’s Object & Array types.\n\n\nPrimitives\nPython equivalents of JavaScript primitives that don’t have a natural Python analogue.\n\n\nRegExp\nPython equivalents of JavaScript RegExp type.\n\n\nUtilities\nFunctions associated with v8codec.jstypes.\n\n\n\n\n\n\nV8 serialization format and JavaScript constants.\n\n\n\nAPI Constants\nEnums and constant values for loads()/dumps()\n\n\nJavaScript Constants\nEnums and constant values for JavaScript types.\n\n\nV8 Serialization Format Constants\nEnums and constant values for the V8 serialization format.\n\n\n\n\n\n\nPlatform-specific HostObject support.\n\n\n\nNode.js Buffers\nNode.js’s custom Buffer HostObjects.",
     "crumbs": [
       "Reference"
     ]
@@ -1193,7 +1193,7 @@
     "href": "reference/index.html#hostobject-extensions",
     "title": "Reference",
     "section": "",
-    "text": "Platform-specific HostObject support.\n\n\n\nNode.JS Buffers\nNode.JS’s custom Buffer HostObjects.",
+    "text": "Platform-specific HostObject support.\n\n\n\nNode.js Buffers\nNode.js’s custom Buffer HostObjects.",
     "crumbs": [
       "Reference"
     ]

@@ -195,7 +195,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../reference/extensions_nodejs.html">HostObject Extensions</a></li><li class="breadcrumb-item"><a href="../reference/extensions_nodejs.html">Node.JS Buffers</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../reference/extensions_nodejs.html">HostObject Extensions</a></li><li class="breadcrumb-item"><a href="../reference/extensions_nodejs.html">Node.js Buffers</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
     </div>
@@ -358,7 +358,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../reference/extensions_nodejs.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Node.JS Buffers</span></a>
+ <span class="menu-text">Node.js Buffers</span></a>
   </div>
 </li>
       </ul>
@@ -373,7 +373,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#node.js-buffers" id="toc-node.js-buffers" class="nav-link active" data-scroll-target="#node.js-buffers">Node.JS Buffers</a></li>
+  <li><a href="#node.js-buffers" id="toc-node.js-buffers" class="nav-link active" data-scroll-target="#node.js-buffers">Node.js Buffers</a></li>
   <li><a href="#v8serialize.extensions.NodeJsArrayBufferViewHostObjectHandler" id="toc-v8serialize.extensions.NodeJsArrayBufferViewHostObjectHandler" class="nav-link" data-scroll-target="#v8serialize.extensions.NodeJsArrayBufferViewHostObjectHandler">extensions.NodeJsArrayBufferViewHostObjectHandler</a>
   <ul class="collapse">
   <li><a href="#examples" id="toc-examples" class="nav-link" data-scroll-target="#examples">Examples</a></li>
@@ -394,20 +394,34 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="toc-actions"><ul><li><a href="https://github.com/h4l/v8serialize/edit/main/reference/extensions_nodejs.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/h4l/v8serialize/blob/main/reference/extensions_nodejs.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li><li><a href="https://github.com/h4l/v8serialize/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../reference/extensions_nodejs.html">HostObject Extensions</a></li><li class="breadcrumb-item"><a href="../reference/extensions_nodejs.html">Node.JS Buffers</a></li></ol></nav></header>
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../reference/extensions_nodejs.html">HostObject Extensions</a></li><li class="breadcrumb-item"><a href="../reference/extensions_nodejs.html">Node.js Buffers</a></li></ol></nav></header>
 
 
 
 
 <section id="node.js-buffers" class="level1">
-<h1>Node.JS Buffers</h1>
-<p>Node.JS’s custom Buffer HostObjects.</p>
+<h1>Node.js Buffers</h1>
+<p>Node.js’s custom Buffer HostObjects.</p>
 </section>
 <section id="v8serialize.extensions.NodeJsArrayBufferViewHostObjectHandler" class="level1">
 <h1>extensions.NodeJsArrayBufferViewHostObjectHandler</h1>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>extensions.NodeJsArrayBufferViewHostObjectHandler()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Support for deserializing ArrayBuffer views from NodeJS’s custom serialization.</p>
 <p>NodeJS uses its own method of serializing ArrayBuffer views instead of the default V8 serialization. It encodes them in HostObject tag data (HostObject tags are the V8 serialization format’s way to allow an application to insert their own custom data into the serialized data).</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Support for Node.js custom ArrayBuffer views is enabled by default (using this) by <a href="../reference/encoding_decoding.html#v8serialize.loads"><code>loads()</code></a> and can be controlled by its <code>nodejs</code> option.</p>
+<p>It’s not required to enable Node.js’s custom ArrayBuffer view serialization to send buffers to Node.js, because Node.js also supports the default ArrayBuffer view encoding V8 serialization format, so it’s not enabling it results in wider compatibility. However it can be enabled using <a href="../reference/extensions_nodejs.html#v8serialize.extensions.serialize_js_array_buffer_views_as_nodejs_host_object"><code>serialize_js_array_buffer_views_as_nodejs_host_object</code></a> with the <code>encode_steps</code> option of <a href="../reference/encoding_decoding.html#v8serialize.dumps"><code>dumps()</code></a>.</p>
+</div>
+</div>
 <section id="examples" class="level2 doc-section doc-section-examples">
 <h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
 <p>Serialize a Buffer from Node.JS something like:</p>
@@ -515,7 +529,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Serialize JSDataView and JSTypedArray using node.js’s custom HostObject format.</p>
 <section id="notes" class="level2 doc-section doc-section-notes">
 <h2 class="doc-section doc-section-notes anchored" data-anchor-id="notes">Notes</h2>
-<p>This is an Object Mapper (<code>SerializeObjectFn</code>) that can be used to encode JSDataView and JSTypedArray in the same custom HostObject format that Node.JS writes using the Node.JS <code>v8.serialize()</code> function.</p>
+<p>This is an <a href="../reference/types_protocols.html#v8serialize.encode.EncodeStep">encode step</a> that can be used as one of the <code>encode_steps</code> with <code>dumps()</code> or <code>Encoder()</code>.</p>
+<p>It encodes JSDataView and JSTypedArray in the same custom HostObject format that Node.JS writes using the Node.JS <code>v8.serialize()</code> function.</p>
 <p>Because Node.JS is capable of reading the normal encoding of <code>JSArrayBuffer</code>, <code>JSDataView</code> and <code>JSTypedArray</code>, this doesn’t need to be used to send data to Node.JS (unlike on the deserializing side, where <code>NodeJsArrayBufferViewHostObjectHandler</code> must be used to read Node.JS’s custom encoding).</p>
 </section>
 </section>
