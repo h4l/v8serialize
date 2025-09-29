@@ -56,7 +56,6 @@ select = [
   "D",   # pydocstyle
   "E",
   "F",
-  "FA",  # flake8-future-annotations
   "PYI", # flake8-pyi
   "I",   # isort
 ]
@@ -75,3 +74,4 @@ convention = "numpy"
 
 [tool.ruff.lint.isort]
 extra-standard-library = ["typing_extensions", "_typeshed"]
+required-imports = ["from __future__ import annotations"]
