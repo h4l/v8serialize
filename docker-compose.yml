@@ -2,7 +2,6 @@ name: v8serialize
 services:
 
   echoserver-node-24:
-    profiles: [unstable]
     container_name: ${COMPOSE_PROJECT_NAME:?}-echoserver-node-24
     image: ghcr.io/h4l/v8serialize/echoserver:${ECHOSERVER_VERSION:?}-node-24
     networks: [v8serialize]
@@ -31,7 +30,6 @@ services:
       com.github.h4l.v8serialize.echoserver: "true"
 
   echoserver-deno-2:
-    profiles: [unstable]
     container_name: ${COMPOSE_PROJECT_NAME:?}-echoserver-deno-2
     image: ghcr.io/h4l/v8serialize/echoserver:${ECHOSERVER_VERSION:?}-deno-2.5.2
     networks: [v8serialize]
