@@ -14,6 +14,29 @@ and this project adheres to
 
 - Removed support for Python 3.9 (which is out of support from 1st October 2025)
 
+### Added
+
+- Support for reading Float16Array from Node.js 24
+
+  Although support for Float16Array was added in v8serialize 0.1.0, support for
+  them in Node.js was added more recently in version 24. We now support reading
+  and writing Float16Array from/to the custom V8 serialization format extension
+  Node.js uses to serialize array buffer views. Versions before this would fail
+  to decode Float16Array serialised by Node.js 24. ([#12])
+
+### Changed
+
+- Improved typing of JavaScript buffer types (`JSArrayBuffer`,
+  `JSArrayBufferView`, `JS*Array`, `JSDataView`). ([#12])
+
+  Assigning These types often required explicit casting, e.g.
+  `view: JSTypedArray = JSUint8Array(b'')` would previously be a type error, but
+  now works. They now use covariant rather than invariant generic type
+  parameters, which allows assigning subtypes to a more general type without
+  casting.
+
+[#12]: https://github.com/h4l/v8serialize/issues/12
+
 ## [0.3.0] — 2025-09-26
 
 > [!IMPORTANT]
