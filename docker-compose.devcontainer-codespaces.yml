@@ -1,0 +1,5 @@
+services:
+  integration_test:
+    volumes:
+      - "/var/lib/docker/codespacemount/workspace:${WORKSPACE_MOUNT_PATH:?}"
+    working_dir: $PWD

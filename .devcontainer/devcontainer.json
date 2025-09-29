@@ -1,0 +1,47 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
+{
+  "name": "v8serialize",
+  "build": {
+    "target": "devcontainer",
+    "dockerfile": "./Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  },
+  "containerEnv": {
+    "V8SERIALIZE_NETWORK_EXTERNAL": "true",
+    "V8SERIALIZE_NETWORK": "devcontainer_v8serialize"
+  },
+  "initializeCommand": "V8SERIALIZE_NETWORK=devcontainer_v8serialize; { docker network inspect \"${V8SERIALIZE_NETWORK:?}\" > /dev/null 2>&1 && echo \"Network '${V8SERIALIZE_NETWORK:?}' exists\"; } || docker network create \"${V8SERIALIZE_NETWORK:?}\"",
+  "runArgs": ["--network=devcontainer_v8serialize"],
+  "postCreateCommand": "pipx install poetry",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "charliermarsh.ruff",
+        "denoland.vscode-deno",
+        "esbenp.prettier-vscode",
+        "hashicorp.hcl",
+        "ms-python.mypy-type-checker",
+        "ms-python.python"
+      ],
+      "settings": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "[jsonc]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true
+        },
+        "python.testing.pytestArgs": ["."],
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestEnabled": true,
+        "python.analysis.typeCheckingMode": "off",
+        "deno.enable": true,
+        "deno.enablePaths": ["./testing/v8serialize-echo/"]
+      }
+    }
+  }
+}
