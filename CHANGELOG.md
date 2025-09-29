@@ -10,6 +10,8 @@ and this project adheres to
 
 ### Backwards-incompatible changes
 
+#### Dependency changes
+
 - Removed support for Python 3.9 (which is out of support from 1st October 2025)
 
 ## [0.3.0] — 2025-09-26
@@ -20,36 +22,43 @@ and this project adheres to
 > to affect typical users, unless they're explicitly creating and persisting
 > `JSPrimitiveObject` or customising decoding.
 
-<details>
-<summary><h3>Backwards-incompatible changes<h3></summary>
+### Backwards-incompatible changes
 
-#### Encoding/decoding primitive string objects
+#### Encoding/decoding changes
 
-The encoding/decoding of primitive string objects was incorrect in 0.1.0 and has
-changed to match the current V8 serialisation format (see the fixed section).
-The backwards compatibility impact of this is that `JSPrimitiveObject` values
-containing strings serialized by `v8serialize` in 0.1.0 are not deserializable
-in this version.
+- <details>
+    <summary>
+      Encoding/decoding of
+      <a
+        href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String"
+        >JavaScript boxed String objects</a
+      >
+      (not regular <code>string</code>) was incorrect and has changed to match the
+      current V8 serialization format.
+    </summary>
+    <br />
+    (See the <a href="#0.3.0-fixed">fixed section</a>). The backwards
+    compatibility impact of this is that <code>JSPrimitiveObject</code> values
+    containing strings serialized by <code>v8serialize</code> before 0.3.0 are not
+    deserializable in this version. (Note that this does not affect normal
+    JavaScript string values, only wrapped/boxed <code>String</code> objects.)
+    These objects are not created by default, so to be affected, code would need
+    to have explicitly created and serialised instances and persisted the
+    serialised representation to be loaded by this version. Instances of this
+    value sent to or received from real V8 implementations are not affected in a
+    backwards-incompatible way, as values would fail to decode in either direction
+    because of the mutually-incompatible encoding.
+  </details>
 
-These objects are not created by default, so to be affected, code would need to
-have explicitly created and serialised instances and persisted the serialised
-representation to be loaded by this version.
+#### Python API changes
 
-Instances of this value sent to or received from real V8 implementations are not
-affected in a backwards-incompatible way, as values would fail to decode in
-either direction because of the mutually-incompatible encoding.
-
-#### API changes
-
-The `v8serialize.decode.ReadableTagStream.read_js_primitive_object` method now
-requires a `ctx: DecodeContext` argument, as many other methods on this type do.
-This was required to fix [#8].
-
-</details>
+- The `v8serialize.decode.ReadableTagStream.read_js_primitive_object` method now
+  requires a `ctx: DecodeContext` argument (as many other methods on this type
+  do). This was required to fix [#8].
 
 [#8]: https://github.com/h4l/v8serialize/issues/8
 
-### Fixed
+### <a id="0.3.0-fixed"></a>Fixed
 
 - [Wrapped/boxed string values][MDN Primitive] (JavaScript `new String("x")` /
   Python `JSPrimitiveObject("x")`, (used to distinguish `new String("x")` from
