@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.4.0]
+
 ### Backwards-incompatible changes
 
 #### Dependency changes
@@ -168,3 +172,4 @@ was installing the project from git and then working on other things, sorry!
 [0.1.0]: https://github.com/h4l/v8serialize/releases/tag/v0.1.0
 [0.2.0-alpha.0]: https://github.com/h4l/v8serialize/releases/tag/v0.2.0-alpha.0
 [0.3.0]: https://github.com/h4l/v8serialize/releases/tag/v0.3.0
+[0.4.0]: https://github.com/h4l/v8serialize/releases/tag/v0.4.0
